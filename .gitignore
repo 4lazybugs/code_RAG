@@ -3,3 +3,4 @@
 *.json
 *.pdf
 __pycache__
+ssh-key
