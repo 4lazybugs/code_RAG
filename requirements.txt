@@ -1,0 +1,65 @@
+# LangChain & LLM Core
+langchain==0.3.26
+langchain-core==0.3.68
+langchain-community==0.3.26
+langchain-ollama==0.3.4
+langchain-chroma>=0.1.0
+
+# LLM & Model Dependencies
+torch==2.2.2
+transformers==4.36.2
+bitsandbytes==0.46.1
+accelerate==0.25.0
+sentencepiece>=0.1.99
+vllm
+
+# Data Handling
+pandas>=2.0.0
+scipy>=1.11.0
+numpy>=1.26.2
+sqlalchemy
+pyarrow
+openpyxl
+pathlib
+
+# PDF 처리
+PyPDF2
+PyMuPDF
+
+# Evaluation
+bert-score
+rouge_score==0.1.2
+evaluate==0.4.1
+sacrebleu==2.4.0
+
+# TensorFlow 관련
+tensorflow
+tf-keras
+tensorboard==2.14.0
+
+# Embedding / NLP
+sentence-transformers
+nltk
+spacy
+tiktoken==0.5.2
+
+# HuggingFace 등 기타 유틸
+datasets==2.15.0
+jsonlines
+filelock
+tokenizers==0.15.0
+einops==0.7.0
+deepspeed==0.12.6
+peft==0.7.1
+
+# 기타 유틸
+packaging
+tqdm
+dataclasses
+openai==0.28.1
+metrics
+moverscore==1.0.3
+pot==0.9.3
+
+# Pydantic 호환
+pydantic==2.11.7
