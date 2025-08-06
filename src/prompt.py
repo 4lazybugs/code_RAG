@@ -14,7 +14,7 @@ Snippets:
 Question:
 {question}
 
-Answer (English):
+Answer (Korean):
 """)
 
 
@@ -101,7 +101,7 @@ You ran:
 Results (CSV):
 {csv}
 
-Answer concisely in English."""
+Answer concisely in Korean."""
 )
 
 
@@ -137,5 +137,5 @@ followup_prompt = (
 final_answer_prompt = (
                 "Original Question:\n{original_question}\n\n"
                 "Step-by-step Q&A History:\n{qa_history}\n\n"
-                "Based on this history, provide a concise final answer in English:"
+                "Based on this history, provide a concise final answer in Korean:"
             )

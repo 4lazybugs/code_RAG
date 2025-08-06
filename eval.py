@@ -24,8 +24,18 @@ from bleurt import score
 from rag import AllExpert, PartialExpert, SqlExpert, RawLlmExpert, AdaptiveExpert, SelfAskExpert
 from src.store_db import load_stores
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+from konlpy.tag import Okt
+from rouge_score.tokenizers import Tokenizer
+
+class KoreanTokenizer(Tokenizer):
+    def __init__(self):
+        self.okt = Okt()
+
+    def tokenize(self, text):
+        return self.okt.morphs(text)
 
 class BaseEvaluator(ABC):
     """
@@ -36,7 +46,7 @@ class BaseEvaluator(ABC):
       - compute_scores(): metric별 점수 계산 (새로 추가)
     """
     def __init__(self, expert, qa_data_path: str, sample_size: int = None,
-                 sbert_model_name: str = "all-MiniLM-L6-v2"):
+                 sbert_model_name: str = "snunlp/KR-SBERT-V40K-klueNLI-augSTS"):
         self.expert = expert
         self.qa_data_path = qa_data_path
         self.sample_size = sample_size
@@ -136,7 +146,12 @@ class BaseEvaluator(ABC):
 
 class Rouge1Evaluator(BaseEvaluator):
     metric_key = 'rouge1'
-    
+
+    def __init__(self, expert, qa_data_path, sample_size=None):
+        super().__init__(expert, qa_data_path, sample_size)
+        korean_tokenizer = KoreanTokenizer()
+        self.rouge1_scorer = RougeScorer(['rouge1'], use_stemmer=False, tokenizer=korean_tokenizer)
+
     def compute_scores(self, references: list, generated: list) -> list:
         return [self.rouge1_scorer.score(ref, gen)['rouge1'].fmeasure
                 for ref, gen in zip(references, generated)]
@@ -144,10 +159,16 @@ class Rouge1Evaluator(BaseEvaluator):
 
 class RougeLEvaluator(BaseEvaluator):
     metric_key = 'rougeL'
-    
+
+    def __init__(self, expert, qa_data_path, sample_size=None):
+        super().__init__(expert, qa_data_path, sample_size)
+        korean_tokenizer = KoreanTokenizer()
+        self.rougeL_scorer = RougeScorer(['rougeL'], use_stemmer=False, tokenizer=korean_tokenizer)
+
     def compute_scores(self, references: list, generated: list) -> list:
         return [self.rougeL_scorer.score(ref, gen)['rougeL'].fmeasure
                 for ref, gen in zip(references, generated)]
+
 
 
 class BertEvaluator(BaseEvaluator):
@@ -277,16 +298,20 @@ if __name__ == '__main__':
     retriever_mode   = 'soil'
     selected_modes = [
         #'adaptive_3','adaptive_5',
-        'selfask_1','selfask_3','selfask_5'#,  
-        #'partial_1','partial_3','partial_5','partial_10','partial_15',
-        #'raw_llm'
+        #'selfask_1',
+        #'selfask_3',
+        #'selfask_5'#,  
+        #'partial_1','partial_3','partial_5',
+        #'partial_10',
+        #'partial_15',
+        'raw_llm'
     ]
-    selected_metrics = ['bleurt','rouge1','rougeL','bert','sbert']
+    selected_metrics = ['rouge1','rougeL','bert','sbert']
     sample_size      = 100
     qa_data_path = {
         'qna':  'qa_data/qa_agriculture.json',
         'crop': 'qa_data/qa_crop.json',
-        'soil': 'qa_data/qa_soil_llama400b.json'
+        'soil': 'qa_data/qa_soil_llama400b_kor.json'
     }
 
     # 2) k=1로 초기 retriever 세팅
@@ -353,7 +378,7 @@ if __name__ == '__main__':
                 'bert':   BertEvaluator,
                 'sbert':  SbertEvaluator,
                 'mover':  MoverEvaluator,  # <- 추가
-                'bleurt': BleurtEvaluator,
+                #'bleurt': BleurtEvaluator,
             }[metric]
             ev = EvCls(expert, qa_data_path[retriever_mode], sample_size)
             ev._cache[mode] = (questions, references, generated)

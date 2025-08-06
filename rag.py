@@ -187,7 +187,7 @@ class AdaptiveExpert(BaseExpert):
             model_impl="transformers",    # HF loader 강제 사용
             trust_remote_code=True,      # 로컬의 커스텀 코드 읽기
             dtype="half",                # fp16
-            gpu_memory_utilization=0.6,  # 메모리 사용량 조절
+            gpu_memory_utilization=0.9,  # 메모리 사용량 조절
             max_num_seqs=1,              # 동시 처리 시퀀스 수 줄임
             max_model_len=1824          # 최대 시퀀스 길이 줄임 (기본 4096 → 1968)
         )
@@ -513,7 +513,7 @@ def main():
 
         while True:
             print(help_text)
-            mode = input("Mode → all/partial/sql/raw_llm/adaptive/self_ask (q to quit): ").strip().lower()
+            mode = input("Mode → all/partial/sql/raw_llm/self_ask (q to quit): ").strip().lower()
             if mode == "q": 
                 break
             if mode not in expert_instances:

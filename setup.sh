@@ -35,3 +35,7 @@ ollama pull llama3.2
 
 # 고성능 model for H100 VRAM(80GB), 34B, multilingual
 ollama pull yi:34b-chat
+
+# 4) konlpy 위해서는 Java 11 이상이 필요
+sudo apt update
+sudo apt install default-jdk 

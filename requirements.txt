@@ -1,3 +1,8 @@
+## 현재 컴퓨터 스펙 #####
+'''
+CUDA 12.4, NVIDIA Driver 550.144.03, GPU: NVIDIA H100 80GB, cuDNN: (미설치 또는 미확인)
+'''
+
 # === PyTorch (CUDA 12.1, vllm 0.3.2 호환) ===
 torch==2.1.2+cu121
 torchvision==0.16.2+cu121
@@ -14,6 +19,7 @@ chromadb==0.6.3
 transformers==4.39.3
 tokenizers==0.15.2
 sentencepiece==0.2.0
+konlpy==0.6.0 # n-gram지표 한국어 처리용 토크나이저 
 
 # === VLLM & 관련 ===
 vllm<=0.3.2
@@ -34,7 +40,7 @@ bert-score==0.3.13
 rouge_score==0.1.2
 sacrebleu==2.4.0
 moverscore==1.0.3
-bleurt                  # 추가
+bleurt==0.4.0                 # 추가
 sentence-transformers==2.6.1
 tqdm                    # 추가
 
