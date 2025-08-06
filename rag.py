@@ -68,7 +68,7 @@ class AllExpert(BaseExpert):
     """Expert that uses all documents for RAG (accuracy-focused)"""
     
     def setup(self, retriever_mode: str) -> None:
-        model = OllamaLLM(model="Mistral-nemo", temperature=0.0, top_p=1.0, top_k=40)
+        model = OllamaLLM(model="yi:34b-chat", temperature=0.0, top_p=1.0, top_k=40)
         if retriever_mode not in self.retriever_map:
             raise ValueError(f"Unknown retriever_mode: {retriever_mode}")
         self.qa_chain = RetrievalQA.from_chain_type(
@@ -95,7 +95,7 @@ class PartialExpert(BaseExpert):
     """Expert that uses top-K snippets for RAG (speed/partial answers)"""
     
     def setup(self, retriever_mode: str) -> None:
-        self.model = OllamaLLM(model="Mistral-nemo", temperature=0.0, top_p=1.0, top_k=40)
+        self.model = OllamaLLM(model="yi:34b-chat", temperature=0.0, top_p=1.0, top_k=40)
         if retriever_mode not in self.retriever_map:
             raise ValueError(f"Unknown retriever_mode: {retriever_mode}")
         self.retriever = self.retriever_map[retriever_mode]
@@ -124,8 +124,8 @@ class SqlExpert(BaseExpert):
 
     def setup(self, retriever_mode: str) -> None:
         self.text2sql = OllamaLLM(model="sqlcoder:15b", temperature=0.2, top_p=0.9, top_k=40)
-        self.reform = reform_prompt | OllamaLLM(model="Mistral-nemo", temperature=0.0, top_p=1.0, top_k=40)
-        self.ans_chain = naive_llm_prompt | OllamaLLM(model="Mistral-nemo", temperature=0.0, top_p=1.0, top_k=40)
+        self.reform = reform_prompt | OllamaLLM(model="yi:34b-chat", temperature=0.0, top_p=1.0, top_k=40)
+        self.ans_chain = naive_llm_prompt | OllamaLLM(model="yi:34b-chat", temperature=0.0, top_p=1.0, top_k=40)
 
     def handle(self, question: str) -> str:
         try:
@@ -154,7 +154,7 @@ class RawLlmExpert(BaseExpert):
     """Expert that uses raw LLM without retrieval"""
     
     def setup(self, retriever_mode: str) -> None:
-        self.model = OllamaLLM(model="Mistral-nemo", temperature=0.0, top_p=1.0, top_k=40)
+        self.model = OllamaLLM(model="yi:34b-chat", temperature=0.0, top_p=1.0, top_k=40)
 
     def handle(self, question: str) -> str:
         try:
@@ -292,7 +292,7 @@ class SelfAskExpert(BaseExpert):
     def setup(self, retriever_mode: str) -> None:
         # 단일 모델만 사용 - LLMChain 완전 제거
         self.model = OllamaLLM(
-            model="Mistral-nemo", 
+            model="yi:34b-chat", 
             temperature=0.0, 
             top_p=1.0, 
             top_k=40
@@ -466,7 +466,7 @@ def create_expert_instances(retriever_map: Dict[str, Any], retriever_mode: str,
     experts["all"] = AllExpert(retriever_map, retriever_mode)
     experts["partial"] = PartialExpert(retriever_map, retriever_mode)
     experts["sql"] = SqlExpert(retriever_map, retriever_mode, qna_sql_path, crop_sql_path)
-    experts["adaptive"] = AdaptiveExpert(retriever_map, retriever_mode)
+    #experts["adaptive"] = AdaptiveExpert(retriever_map, retriever_mode)
     experts["raw_llm"] = RawLlmExpert(retriever_map, retriever_mode)
     experts["self_ask"] = SelfAskExpert(retriever_map, retriever_mode)
     
@@ -493,10 +493,11 @@ all        | 전체 DB를 대상으로 RAG (정확도 우선)
 partial    | 상위 K개 snippet만 RAG (속도/부분답변)
 sql        | text→SQL→실행→해석 (테이블 기반 추천)
 raw_llm    | LLM 자유 응답 (retrieval 없이)
-adaptive   | Adaptive gating + RAG (Self-RAG 방식)
 self_ask   | Self-Ask 방식: 충분도 검사→추가질문→답변 집계
 (종료: q)
 """.strip()
+
+# adaptive   | Adaptive gating + RAG (Self-RAG 방식)
 
 
 def main():

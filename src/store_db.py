@@ -1,4 +1,8 @@
 # store_db.py
+import chromadb.telemetry.opentelemetry as _telemetry
+_telemetry.capture = lambda *args, **kwargs: None
+from langchain_ollama import OllamaEmbeddings
+OllamaEmbeddings._type = "ollama_embeddings"
 import os
 import shutil
 import pandas as pd
@@ -234,7 +238,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.init:
-        build_pdf_vector_db(VEC_DIR = SOIL_VEC_DIR, PDF_PATH = PDF_PATH_03, collection_name="soil", init=False)
+        # 기존 벡터 DB 전체 삭제
+        if os.path.isdir(VEC_ROOT):
+            print(f"[INIT] 기존 벡터 DB 전체 삭제: {VEC_ROOT}")
+            shutil.rmtree(VEC_ROOT)
+        # QnA, Crop, Soil PDF 모두 재구축
+        build_qna_vector_db()
+        build_crop_vector_db()
+        build_pdf_vector_db(VEC_DIR=SOIL_VEC_DIR,
+                            PDF_PATH=PDF_PATH_01,
+                            collection_name="soil",
+                            init=True)
     else:
         print("사용법:")
-        print("  python store_db.py --init   # DB를 초기화하고 재구축")
+        print("  python store_db.py --init   # 모든 DB를 초기화하고 재구축")

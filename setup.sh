@@ -32,3 +32,6 @@ ollama pull sqlcoder:15b
 ollama pull mistral-nemo
 # ollama model
 ollama pull llama3.2
+
+# 고성능 model for H100 VRAM(80GB), 34B, multilingual
+ollama pull yi:34b-chat
