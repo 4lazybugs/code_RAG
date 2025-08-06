@@ -6,7 +6,7 @@ rag_prompt = ChatPromptTemplate.from_template("""
 You are an expert in agricultural Q&A.
 Use ONLY the snippets below.  
 If the answer is not in the provided information, reply:
-"I don't know based on the provided information."
+"주어진 정보 가지고는 판단하기가 어렵습니다."
 
 Snippets:
 {reviews}
