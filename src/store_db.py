@@ -34,7 +34,7 @@ SQL_ROOT        = "./db/sql_db"
 QNA_SQL_FPATH   = os.path.join(SQL_ROOT, "agriculture_QnA.db")
 CROP_SQL_FPATH  = os.path.join(SQL_ROOT, "crop_recommendation.db")
 
-EMBED_MODEL     = "mxbai-embed-large"
+EMBED_MODEL     = "BAAI/bge-m3"
 
 ##########################################
 ######## csv -> vector db #################
