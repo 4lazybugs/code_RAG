@@ -3,18 +3,18 @@ from langchain_core.prompts import ChatPromptTemplate
 # —————— all/partial RAG용 LLM 분기 ——————
 # 1) 사용자 질문을 리포뮬레이션
 rag_prompt = ChatPromptTemplate.from_template("""
-You are an expert in agricultural Q&A.
-Use ONLY the snippets below.  
-If the answer is not in the provided information, reply:
+당신은 농업 Q&A 전문가입니다.
+아래 제공된 스니펫만을 사용하여 답변하세요.  
+제공된 정보에 답이 없으면 다음과 같이 답변하세요:
 "주어진 정보 가지고는 판단하기가 어렵습니다."
 
-Snippets:
+스니펫:
 {reviews}
 
-Question:
+질문:
 {question}
 
-Answer (Korean):
+답변 (한국어):
 """)
 
 
@@ -92,16 +92,16 @@ SQL:
 """)
 
 naive_llm_prompt = ChatPromptTemplate.from_template(
-"""You are an expert in agricultural data interpretation.
-User asked: {question}
+"""당신은 농업 데이터 해석 전문가입니다.
+사용자 질문: {question}
 
-You ran:
+실행한 쿼리:
 {query}
 
-Results (CSV):
+결과 (CSV):
 {csv}
 
-Answer concisely in Korean."""
+간결하게 한국어로 답변하세요."""
 )
 
 
@@ -109,33 +109,32 @@ adaptive_inst = "Answer the following question. The question may be ambiguous an
 
 
 suff_check_prompt = (
-    "Original Question:\n{original_question}\n\n"
-    "Collected Q&A so far:\n{context}\n\n"
-    "You must decide whether you have absolutely all information needed "
-    "to answer fully and accurately. If anything is missing, answer NO. "
-    "Only respond YES or NO:"
+    "원래 질문:\n{original_question}\n\n"
+    "지금까지 수집된 Q&A:\n{context}\n\n"
+    "정확하고 완전한 답변에 필요한 모든 정보가 충분히 모였는지 판단하세요. "
+    "조금이라도 부족하면 NO라고 답하세요. "
+    "반드시 YES 또는 NO만 답변하세요:"
 )
 
 followup_prompt = (
-    "You are an assistant specialized in query reformulation. "
-    "Given an original question and any collected context, your task is NOT to ask a new question, "
-    "but to analyze what specific information is missing or unclear and break the original question "
-    "into smaller “information needs” or sub‑questions that, if answered, would enable a complete answer.\n\n"
-    "Original Question:\n"
+    "당신은 질의 재구성에 특화된 어시스턴트입니다. "
+    "원래 질문과 현재까지의 맥락을 보고, 새로운 질문을 만드는 것이 아니라 "
+    "정확한 답변을 위해 어떤 정보가 부족하거나 불명확한지 분석하고, "
+    "이를 각각의 '정보 요구' 또는 하위 질문으로 나눠서 번호로 나열하세요.\n\n"
+    "원래 질문:\n"
     "{original_question}\n\n"
-    "Collected Context:\n"
+    "수집된 맥락:\n"
     "{context}\n\n"
-    "Identify and list each missing piece of information or clarification needed to answer the original question. "
-    "Output as numbered items, e.g.:\n"
+    "원래 질문에 답하기 위해 추가로 필요한 정보나 명확히 해야 할 점을 번호로 나열하세요. 예시:\n"
     "1. …\n"
     "2. …\n"
     "3. …\n"
-    "– and do NOT generate a direct follow-up question."
+    "– 직접적인 후속 질문은 생성하지 마세요."
 )
 
 
 final_answer_prompt = (
-                "Original Question:\n{original_question}\n\n"
-                "Step-by-step Q&A History:\n{qa_history}\n\n"
-                "Based on this history, provide a concise final answer in Korean:"
-            )
+    "원래 질문:\n{original_question}\n\n"
+    "단계별 Q&A 히스토리:\n{qa_history}\n\n"
+    "이 히스토리를 바탕으로 간결하게 최종 답변을 한국어로 작성하세요:"
+)
