@@ -173,15 +173,17 @@ class RougeLEvaluator(BaseEvaluator):
 
 class BertEvaluator(BaseEvaluator):
     metric_key = 'bert'
-    
+
     def compute_scores(self, references: list, generated: list) -> list:
-        _, _, F1 = bert_score(
-            generated, references,
-            lang='en',
-            model_type='bert-base-uncased',
+        # generated, references 순서로 호출
+        P, R, F1 = bert_score(
+            generated,
+            references,
+            lang='ko',                              # 한국어 토크나이저
+            model_type='bert-base-multilingual-cased',  # 다국어 BERT
             device=device,
             batch_size=16,
-            verbose=False
+            rescale_with_baseline=True              # 선택 옵션
         )
         return F1.cpu().numpy().tolist()
 
@@ -298,12 +300,12 @@ if __name__ == '__main__':
     retriever_mode   = 'soil'
     selected_modes = [
         #'adaptive_3','adaptive_5',
-        #'selfask_1',
-        #'selfask_3',
-        #'selfask_5'#,  
-        #'partial_1','partial_3','partial_5',
-        #'partial_10',
-        #'partial_15',
+        'selfask_1',
+        'selfask_3',
+        'selfask_5',  
+        'partial_1','partial_3','partial_5',
+        'partial_10',
+        'partial_15',
         'raw_llm'
     ]
     selected_metrics = ['rouge1','rougeL','bert','sbert']

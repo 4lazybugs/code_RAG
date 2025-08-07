@@ -2,7 +2,6 @@
 import chromadb.telemetry.opentelemetry as _telemetry
 _telemetry.capture = lambda *args, **kwargs: None
 from langchain_ollama import OllamaEmbeddings
-OllamaEmbeddings._type = "ollama_embeddings"
 import os
 import shutil
 import pandas as pd
@@ -67,7 +66,7 @@ def build_qna_vector_db():
             persist_directory=QNA_VEC_DIR,
             embedding_function=embeddings
         )
-        store.add_documents(documents=docs[start:end], ids=ids[start:end])
+        store.add_documents(documents=docs[start:end], ids=ids[start:end]) 
         del store
 
     print(f"[INIT] QnA 벡터 DB 저장 완료: {total} documents")
