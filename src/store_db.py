@@ -9,6 +9,7 @@ import pandas as pd
 from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain.embeddings import HuggingFaceEmbeddings
 from sqlalchemy import create_engine
 import argparse
 # PDF 처리를 위한 추가 라이브러리
@@ -48,7 +49,7 @@ def build_qna_vector_db():
 
     print("[INIT] Q&A 벡터 DB 구축 중...")
     df_qna = pd.read_parquet(QNA_PARQ_PATH, engine="pyarrow")
-    embeddings = OllamaEmbeddings(model=EMBED_MODEL)
+    embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
 
     docs, ids = [], []
     for i, row in df_qna.iterrows():
@@ -84,7 +85,7 @@ def build_crop_vector_db():
     raw_df.columns = raw_df.iloc[0]
     df = raw_df[1:].reset_index(drop=True)
 
-    embeddings = OllamaEmbeddings(model=EMBED_MODEL)
+    embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
     docs, ids = [], []
     for i, row in df.iterrows():
         content = " ".join(f"{k}: {v}" for k, v in row.items())
@@ -134,7 +135,7 @@ def build_pdf_vector_db(VEC_DIR, PDF_PATH, collection_name, init=False):
     print(f"[INIT] PDF → Document 추출 중: {PDF_PATH}")
     pdf_docs = parse_pdf_to_docs(PDF_PATH)
 
-    embeddings = OllamaEmbeddings(model=EMBED_MODEL)
+    embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
     store = Chroma(
         collection_name=collection_name,
         persist_directory=VEC_DIR,
@@ -192,7 +193,7 @@ def load_all_docs():
 
 def load_stores(ndocs : int):
     """모든 벡터/SQL 스토어가 없으면 빌드하고, 있으면 로드한 뒤 retriever를 반환합니다."""
-    embeddings = OllamaEmbeddings(model=EMBED_MODEL)
+    embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
 
     # QnA 벡터 retriever
     if not os.path.isdir(QNA_VEC_DIR):
