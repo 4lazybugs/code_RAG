@@ -1,6 +1,10 @@
 *.xlsx
 *.csv
-*.json
 *.pdf
+*.bin
+*.pickle
+
 __pycache__
 ssh-key
+
+results/*.json

@@ -22,6 +22,7 @@ QNA_PARQ_PATH      = "raw_db/agriculture_QnA.parquet"
 PDF_PATH_01   = "raw_db/USDA_soil_survey_manual.pdf"
 PDF_PATH_02   = "raw_db/food_and_agriculture.pdf"
 PDF_PATH_03   = "raw_db/WRB_soil.pdf"
+PDF_PATH_04   = "raw_db/agri_bug_manual_kor.pdf"
 
 # ---VEC DB 경로 선언 ---
 VEC_ROOT        = "./db/vector_db"
@@ -29,6 +30,7 @@ VEC_ROOT        = "./db/vector_db"
 SOIL_VEC_DIR    = os.path.join(VEC_ROOT, "soil.db")
 QNA_VEC_DIR     = os.path.join(VEC_ROOT, "agriculture_QnA.db")
 CROP_VEC_DIR    = os.path.join(VEC_ROOT, "crop_recommendation.db")
+BUGS_VEC_DIR    = os.path.join(VEC_ROOT, "bugs.db")
 
 SQL_ROOT        = "./db/sql_db"
 QNA_SQL_FPATH   = os.path.join(SQL_ROOT, "agriculture_QnA.db")
@@ -222,13 +224,21 @@ def load_stores(ndocs : int):
     )
     retriever_soil = soil_store.as_retriever(search_kwargs={"k": ndocs})
 
+    # Bugs PDF 벡터 retriever
+    bugs_store = Chroma(
+        collection_name="bugs",
+        persist_directory=SOIL_VEC_DIR,
+        embedding_function=embeddings
+    )
+    retriever_bugs = bugs_store.as_retriever(search_kwargs={"k": ndocs})
+
     # SQL DB
     if not os.path.exists(QNA_SQL_FPATH):
         build_qna_sql_db()
     if not os.path.exists(CROP_SQL_FPATH):
         build_crop_sql_db()
 
-    return retriever_qna, retriever_crop, retriever_soil, QNA_SQL_FPATH, CROP_SQL_FPATH
+    return retriever_qna, retriever_crop, retriever_soil, retriever_bugs, QNA_SQL_FPATH, CROP_SQL_FPATH
 
 
 if __name__ == "__main__":
@@ -248,6 +258,10 @@ if __name__ == "__main__":
         build_pdf_vector_db(VEC_DIR=SOIL_VEC_DIR,
                             PDF_PATH=PDF_PATH_01,
                             collection_name="soil",
+                            init=True)
+        build_pdf_vector_db(VEC_DIR=BUGS_VEC_DIR,
+                            PDF_PATH=PDF_PATH_04,
+                            collection_name="bugs",
                             init=True)
     else:
         print("사용법:")

@@ -296,29 +296,35 @@ if __name__ == '__main__':
     start_time = time.time()
 
     # 1) 파라미터 입력 필수!!
-    qa_mode = 'soil'
-    retriever_mode   = 'soil'
+    #qa_mode = 'soil'
+    qa_mode = 'bugs'
+
+    #retriever_mode   = 'soil'
+    retriever_mode   = 'bugs'
+    
     selected_modes = [
-        #'adaptive_3','adaptive_5',
-        'selfask_1',
-        'selfask_3',
-        'selfask_5',  
-        'partial_1','partial_3','partial_5',
+        #'adaptive_3','adaptive_5',  
+        #'partial_1',
+        #'partial_3',
+        #'partial_5',
         'partial_10',
-        'partial_15',
-        'raw_llm'
+        #'partial_15',
+        'raw_llm',
+        'selfask_1',
+        #'selfask_3','selfask_5'
     ]
     selected_metrics = ['rouge1','rougeL','bert','sbert']
     sample_size      = 100
     qa_data_path = {
         'qna':  'qa_data/qa_agriculture.json',
         'crop': 'qa_data/qa_crop.json',
-        'soil': 'qa_data/qa_soil_llama400b_kor.json'
+        'soil': 'qa_data/qa_soil_llama400b_kor.json',
+        'bugs': 'qa_data/qa_bug_gpt5_kor.json'
     }
 
     # 2) k=1로 초기 retriever 세팅
-    retr_qna, retr_crop, retr_soil, qna_sql, crop_sql = load_stores(ndocs=10)
-    retr_map = {'qna': retr_qna, 'crop': retr_crop, 'soil': retr_soil}
+    retr_qna, retr_crop, retr_soil, retr_bugs, qna_sql, crop_sql = load_stores(ndocs=10)
+    retr_map = {'qna': retr_qna, 'crop': retr_crop, 'soil': retr_soil, 'bugs': retr_bugs}
 
     # 3) AdaptiveExpert는 한 번만 생성 (13B 모델 로딩)
     #adaptive = AdaptiveExpert(retr_map, retriever_mode)
@@ -331,8 +337,8 @@ if __name__ == '__main__':
         # -----------------------
         if mode.startswith('adaptive_'):
             k = int(mode.split('_')[1])
-            r_q, r_c, r_s, _, _ = load_stores(ndocs=k)
-            retr = {"qna": r_q, "crop": r_c, "soil": r_s}[retriever_mode]
+            r_q, r_c, r_s, r_b, _, _ = load_stores(ndocs=k)
+            retr = {"qna": r_q, "crop": r_c, "soil": r_s, "bugs": r_b}[retriever_mode]
             
             # 기존 인스턴스의 retriever와 args만 교체
             adaptive.retriever = retr
@@ -341,8 +347,8 @@ if __name__ == '__main__':
             
         elif mode.startswith('partial_'):
             k = int(mode.split('_')[1])
-            r_q, r_c, r_s, _, _ = load_stores(ndocs=k)
-            retr = {"qna": r_q, "crop": r_c, "soil": r_s}[retriever_mode]
+            r_q, r_c, r_s, r_b, _, _ = load_stores(ndocs=k)
+            retr = {"qna": r_q, "crop": r_c, "soil": r_s, "bugs":r_b}[retriever_mode]
             
             expert = PartialExpert(retr_map, retriever_mode)
             expert.retriever = retr
