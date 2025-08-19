@@ -19,6 +19,7 @@ import re, math
 import numpy as np
 from collections import Counter
 from bleurt import score
+from src.utils import get_config
 
 # Expert 클래스들
 from rag import AllExpert, PartialExpert, SqlExpert, RawLlmExpert, AdaptiveExpert, SelfAskExpert
@@ -45,8 +46,9 @@ class BaseEvaluator(ABC):
       - eval(): metric별 평가 로직 구현
       - compute_scores(): metric별 점수 계산 (새로 추가)
     """
-    def __init__(self, expert, qa_data_path: str, sample_size: int = None,
-                 sbert_model_name: str = "snunlp/KR-SBERT-V40K-klueNLI-augSTS"):
+    def __init__(self, expert, qa_data_path: str, sample_size: int = None):
+        self.args = get_config()
+        self.sbert_model_name = self.args.sbert_model_name
         self.expert = expert
         self.qa_data_path = qa_data_path
         self.sample_size = sample_size
@@ -56,7 +58,7 @@ class BaseEvaluator(ABC):
         # scorers / models
         self.rouge1_scorer = RougeScorer(['rouge1'], use_stemmer=False)
         self.rougeL_scorer = RougeScorer(['rougeL'], use_stemmer=False)
-        self.sbert_model   = SentenceTransformer(sbert_model_name, device=str(device))
+        self.sbert_model   = SentenceTransformer(self.sbert_model_name, device=str(device))
         self.f1_metric     = evaluate.load("squad")
 
     def get_data(self, mode: str):
@@ -68,7 +70,6 @@ class BaseEvaluator(ABC):
                 random.seed(42) 
                 dataset = random.sample(dataset, self.sample_size)
 
-            # question 그대로 넘김 (instruction 없음)
             questions  = [item['question'] for item in dataset]
             references = [str(item['answer']) for item in dataset]
             generated  = self.generate(questions, mode)
@@ -86,7 +87,6 @@ class BaseEvaluator(ABC):
                 ans, info = res, None
             preds.append(ans)
             infos.append(info)
-        # adaptive 모드면 info를 저장해두고, 아니면 None 리스트
         self._infos[mode] = infos
         return preds
 
@@ -105,10 +105,8 @@ class BaseEvaluator(ABC):
                 'reference': references[i],
                 'generated': generated[i],
             }
-            # metric 값 추가
             for m_name, m_vals in metrics.items():
                 rec[m_name] = float(m_vals[i])
-            # adaptive 모드의 info가 있을 때만 JSON에 포함
             if infos[i] is not None:
                 rec['info'] = infos[i]
             records.append(rec)
@@ -120,13 +118,10 @@ class BaseEvaluator(ABC):
 
     @abstractmethod
     def compute_scores(self, references: list, generated: list) -> list:
-        """metric별 점수 계산"""
         pass
 
     def eval(self, mode: str, output_path: str):
         q, r, g = self.get_data(mode)
-
-        # 클래스 이름 기반 추출 후, 명시적 매핑
         orig = self.__class__.__name__.replace('Evaluator','').lower()
         mapping = {
             'rouge1': 'rouge1',
@@ -146,11 +141,9 @@ class BaseEvaluator(ABC):
 
 class Rouge1Evaluator(BaseEvaluator):
     metric_key = 'rouge1'
-
     def __init__(self, expert, qa_data_path, sample_size=None):
         super().__init__(expert, qa_data_path, sample_size)
-        korean_tokenizer = KoreanTokenizer()
-        self.rouge1_scorer = RougeScorer(['rouge1'], use_stemmer=False, tokenizer=korean_tokenizer)
+        self.rouge1_scorer = RougeScorer(['rouge1'], use_stemmer=False)
 
     def compute_scores(self, references: list, generated: list) -> list:
         return [self.rouge1_scorer.score(ref, gen)['rouge1'].fmeasure
@@ -159,38 +152,31 @@ class Rouge1Evaluator(BaseEvaluator):
 
 class RougeLEvaluator(BaseEvaluator):
     metric_key = 'rougeL'
-
     def __init__(self, expert, qa_data_path, sample_size=None):
         super().__init__(expert, qa_data_path, sample_size)
-        korean_tokenizer = KoreanTokenizer()
-        self.rougeL_scorer = RougeScorer(['rougeL'], use_stemmer=False, tokenizer=korean_tokenizer)
+        self.rougeL_scorer = RougeScorer(['rougeL'], use_stemmer=False)
 
     def compute_scores(self, references: list, generated: list) -> list:
         return [self.rougeL_scorer.score(ref, gen)['rougeL'].fmeasure
                 for ref, gen in zip(references, generated)]
 
 
-
 class BertEvaluator(BaseEvaluator):
     metric_key = 'bert'
-
     def compute_scores(self, references: list, generated: list) -> list:
-        # generated, references 순서로 호출
         P, R, F1 = bert_score(
-            generated,
-            references,
-            lang='ko',                              # 한국어 토크나이저
-            model_type='bert-base-multilingual-cased',  # 다국어 BERT
+            generated, references,
+            lang='ko',
+            model_type= self.args.bert_model_name,
             device=device,
             batch_size=16,
-            rescale_with_baseline=True              # 선택 옵션
+            rescale_with_baseline=True
         )
         return F1.cpu().numpy().tolist()
 
 
 class SbertEvaluator(BaseEvaluator):
     metric_key = 'sbert'
-    
     def compute_scores(self, references: list, generated: list) -> list:
         ref_emb = self.sbert_model.encode(references, convert_to_tensor=True, batch_size=16)
         gen_emb = self.sbert_model.encode(generated, convert_to_tensor=True, batch_size=16)
@@ -200,23 +186,17 @@ class SbertEvaluator(BaseEvaluator):
 
 class BleurtEvaluator(BaseEvaluator):
     metric_key = 'bleurt'
-
     def __init__(self, expert, qa_data_path, sample_size=None):
         super().__init__(expert, qa_data_path, sample_size)
-        # 정확한 BLEURT 모델 지정 (예전처럼)
         self.metric = evaluate.load("bleurt", config_name="bleurt-20", module_type="metric")
 
     def compute_scores(self, references: list, generated: list) -> list:
-        result = self.metric.compute(
-            predictions=generated,
-            references=references
-        )
+        result = self.metric.compute(predictions=generated, references=references)
         return result["scores"]
 
 
 class MoverEvaluator(BaseEvaluator):
     metric_key = 'mover'
-
     _tok_pat = re.compile(r"\w+|\S", flags=re.UNICODE)
 
     def _tokenize(self, text: str):
@@ -234,54 +214,37 @@ class MoverEvaluator(BaseEvaluator):
             return np.zeros((1, self.sbert_model.get_sentence_embedding_dimension()), dtype=np.float32)
         return self.sbert_model.encode(tokens, convert_to_numpy=True, show_progress_bar=False)
 
-    # ---- Torch Sinkhorn OT ----
     def _sinkhorn_wasserstein(self, w_h, w_r, C, eps=0.1, n_iter=100):
-        """
-        w_h: (m,) hypothesis weights
-        w_r: (n,) reference weights
-        C  : (m,n) cost matrix (numpy)
-        returns scalar Wasserstein distance
-        """
-        # to torch
         device = torch.device("cpu")
-        a = torch.from_numpy(w_h).to(device)         # (m,)
-        b = torch.from_numpy(w_r).to(device)         # (n,)
-        M = torch.from_numpy(C).to(device)           # (m,n)
-
-        K = torch.exp(-M / eps)                      # (m,n)
+        a = torch.from_numpy(w_h).to(device)
+        b = torch.from_numpy(w_r).to(device)
+        M = torch.from_numpy(C).to(device)
+        K = torch.exp(-M / eps)
         u = torch.ones_like(a) / a.size(0)
         v = torch.ones_like(b) / b.size(0)
-
         for _ in range(n_iter):
             u = a / (K @ v + 1e-12)
             v = b / (K.t() @ u + 1e-12)
-
-        P = torch.diag(u) @ K @ torch.diag(v)        # transport plan
+        P = torch.diag(u) @ K @ torch.diag(v)
         dist = (P * M).sum().item()
         return dist
 
     def _one_pair_score(self, ref, hyp, idf_ref, idf_hyp, stop_words=None):
         r_toks = self._tokenize(ref)
         h_toks = self._tokenize(hyp)
-
         if stop_words:
             r_toks = [t for t in r_toks if t not in stop_words]
             h_toks = [t for t in h_toks if t not in stop_words]
-
         if len(r_toks) == 0 or len(h_toks) == 0:
             return 0.0
 
-        r_emb = self._embed_tokens(r_toks)  # (n,d)
-        h_emb = self._embed_tokens(h_toks)  # (m,d)
-
-        # Euclidean cost
-        C = np.linalg.norm(h_emb[:, None, :] - r_emb[None, :, :], ord=2, axis=-1)  # (m,n)
-
+        r_emb = self._embed_tokens(r_toks)
+        h_emb = self._embed_tokens(h_toks)
+        C = np.linalg.norm(h_emb[:, None, :] - r_emb[None, :, :], ord=2, axis=-1)
         w_r = np.array([idf_ref.get(t, 1.0) for t in r_toks], dtype=np.float64)
         w_h = np.array([idf_hyp.get(t, 1.0) for t in h_toks], dtype=np.float64)
         w_r = w_r / (w_r.sum() + 1e-12)
         w_h = w_h / (w_h.sum() + 1e-12)
-
         dist = self._sinkhorn_wasserstein(w_h, w_r, C, eps=0.1, n_iter=50)
         return 1.0 - float(dist)
 
@@ -295,68 +258,62 @@ if __name__ == '__main__':
     openai.api_key = os.getenv("OPENAI_API_KEY")
     start_time = time.time()
 
-    # 1) 파라미터 입력 필수!!
-    #qa_mode = 'soil'
-    qa_mode = 'bugs'
-
-    #retriever_mode   = 'soil'
-    retriever_mode   = 'bugs'
+    # 1) 파라미터 입력
+    qa_mode = 'soil'          # 데이터셋 선택: 'qna' / 'crop' / 'soil' / 'bugs' / 'farm'
+    retriever_mode = 'soil'   # 리트리버 선택: 'qna' / 'crop' / 'soil' / 'bugs' / 'farm'
     
     selected_modes = [
-        #'adaptive_3','adaptive_5',  
-        #'partial_1',
-        #'partial_3',
-        #'partial_5',
+        'partial_1',
+        'partial_3',
+        'partial_5',
         'partial_10',
-        #'partial_15',
-        'raw_llm',
         'selfask_1',
-        #'selfask_3','selfask_5'
+        'selfask_3',
+        'selfask_5',
+        'raw_llm'
     ]
     selected_metrics = ['rouge1','rougeL','bert','sbert']
-    sample_size      = 100
+    sample_size      = 100  # None이면 전체 데이터셋 사용
     qa_data_path = {
         'qna':  'qa_data/qa_agriculture.json',
         'crop': 'qa_data/qa_crop.json',
-        'soil': 'qa_data/qa_soil_llama400b_kor.json',
-        'bugs': 'qa_data/qa_bug_gpt5_kor.json'
+        'soil': 'qa_data/qa_soil_gemini_100.json',
+        'bugs': 'qa_data/qa_bug_gpt5_advanced_kor.json',
+        'farm': 'qa_data/qa_farm.json'
     }
 
-    # 2) k=1로 초기 retriever 세팅
-    retr_qna, retr_crop, retr_soil, retr_bugs, qna_sql, crop_sql = load_stores(ndocs=10)
-    retr_map = {'qna': retr_qna, 'crop': retr_crop, 'soil': retr_soil, 'bugs': retr_bugs}
+    # 2) 초기 retriever 세팅 (dict 반환 사용)
+    stores = load_stores(ndocs=10)
+    retr_map = {k: stores[k] for k in ['qna','crop','soil','bugs','farm'] if k in stores}
+    qna_sql = stores['qna_sql']
+    crop_sql = stores['crop_sql']
 
-    # 3) AdaptiveExpert는 한 번만 생성 (13B 모델 로딩)
-    #adaptive = AdaptiveExpert(retr_map, retriever_mode)
+    # 3) (선택) AdaptiveExpert는 필요시만 생성
+    # adaptive = AdaptiveExpert(retr_map, retriever_mode)
 
     summary = []
 
     for mode in selected_modes:
-        # -----------------------
-        # 1) 모드별 Expert 설정 (매번 새로 생성)
-        # -----------------------
+        # 1) 모드별 Expert 설정
         if mode.startswith('adaptive_'):
             k = int(mode.split('_')[1])
-            r_q, r_c, r_s, r_b, _, _ = load_stores(ndocs=k)
-            retr = {"qna": r_q, "crop": r_c, "soil": r_s, "bugs": r_b}[retriever_mode]
-            
-            # 기존 인스턴스의 retriever와 args만 교체
+            stores_k = load_stores(ndocs=k)
+            retr = stores_k[retriever_mode]
             adaptive.retriever = retr
             adaptive.args.ndocs = k
             expert = adaptive
-            
+
         elif mode.startswith('partial_'):
             k = int(mode.split('_')[1])
-            r_q, r_c, r_s, r_b, _, _ = load_stores(ndocs=k)
-            retr = {"qna": r_q, "crop": r_c, "soil": r_s, "bugs":r_b}[retriever_mode]
-            
+            stores_k = load_stores(ndocs=k)
+            retr = stores_k[retriever_mode]
             expert = PartialExpert(retr_map, retriever_mode)
             expert.retriever = retr
-            
-        elif mode.startswith('selfask'):
-            k = int(mode.split('_')[1])  # 예: 'selfask_5' → 5
+
+        elif mode.startswith('selfask_'):
+            k = int(mode.split('_')[1])
             expert = SelfAskExpert(retr_map, retriever_mode, max_iter=k)
-            
+
         elif mode == 'all':
             expert = AllExpert(retr_map, retriever_mode)
         elif mode == 'raw_llm':
@@ -366,9 +323,7 @@ if __name__ == '__main__':
         else:
             raise ValueError(f"Unknown mode: {mode}")
 
-        # -----------------------
-        # 2) 한 번만 답 생성
-        # -----------------------
+        # 2) 한 번만 답 생성 (base 캐시)
         base_ev = Rouge1Evaluator(
             expert,
             qa_data_path=qa_data_path[qa_mode],
@@ -376,19 +331,19 @@ if __name__ == '__main__':
         )
         questions, references, generated = base_ev.get_data(mode)
 
-        # -----------------------
         # 3) metric별 평가
-        # -----------------------
         for metric in selected_metrics:
             EvCls = {
                 'rouge1': Rouge1Evaluator,
                 'rougeL': RougeLEvaluator,
                 'bert':   BertEvaluator,
                 'sbert':  SbertEvaluator,
-                'mover':  MoverEvaluator,  # <- 추가
-                #'bleurt': BleurtEvaluator,
+                'mover':  MoverEvaluator,
+                # 'bleurt': BleurtEvaluator,
             }[metric]
-            ev = EvCls(expert, qa_data_path[retriever_mode], sample_size)
+
+            # ⚠️ 평가 데이터셋은 qa_mode 기준으로 유지
+            ev = EvCls(expert, qa_data_path[qa_mode], sample_size)
             ev._cache[mode] = (questions, references, generated)
             ev._infos[mode] = base_ev._infos.get(mode, [None]*len(questions))
 
@@ -396,9 +351,7 @@ if __name__ == '__main__':
             ev.eval(mode, out_path)
 
             recs = json.load(open(out_path, 'r', encoding='utf-8'))
-            # metric 값들만 리스트로 추출
             values = [r[metric] for r in recs]
-            # 평균과 표준편차 계산 (population std)
             avg = float(np.mean(values))
             std = float(np.std(values))
             summary.append({
@@ -408,27 +361,18 @@ if __name__ == '__main__':
                 'std': std
             })
 
-        # -----------------------
-        # 4) 평가 끝난 후 expert 강제 정리 (모든 모드에 적용)
-        # -----------------------
-        # AdaptiveExpert는 재사용하므로 삭제하지 않음
+        # 4) 정리
         if not mode.startswith('adaptive_'):
             del expert
             torch.cuda.empty_cache()
             gc.collect()
 
-    # -----------------------
-    # 5) 결과 저장
-    # -----------------------
-    # DataFrame 생성
+    # 5) 결과 저장 (average / std 시트)
     df = pd.DataFrame(summary)
-    # 평균 시트
     df_avg = df.pivot(index='mode', columns='metric', values='average')
-    # 표준편차 시트
     df_std = df.pivot(index='mode', columns='metric', values='std')
 
     os.makedirs('results', exist_ok=True)
-    # 두 시트를 가진 Excel 파일로 저장
     with pd.ExcelWriter('results/summary.xlsx') as writer:
         df_avg.to_excel(writer, sheet_name='average')
         df_std.to_excel(writer, sheet_name='std')

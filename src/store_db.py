@@ -5,17 +5,23 @@ from langchain_ollama import OllamaEmbeddings
 import os
 import shutil
 import pandas as pd
-from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain.embeddings import HuggingFaceEmbeddings
 from sqlalchemy import create_engine
+from src.utils import load_yaml 
+from src.utils import get_config
+
 import argparse
 # PDF 처리를 위한 추가 라이브러리
 import PyPDF2
 from pathlib import Path
 import fitz  # PyMuPDF
+import glob
 
+CFG = get_config()
+
+# 이제 이렇게 바로 사용
 # --- RAW DB 경로 선언 ---
 CROP_CSV_PATH      = "raw_db/crop_recommendation.csv"
 QNA_PARQ_PATH      = "raw_db/agriculture_QnA.parquet"
@@ -23,6 +29,8 @@ PDF_PATH_01   = "raw_db/USDA_soil_survey_manual.pdf"
 PDF_PATH_02   = "raw_db/food_and_agriculture.pdf"
 PDF_PATH_03   = "raw_db/WRB_soil.pdf"
 PDF_PATH_04   = "raw_db/agri_bug_manual_kor.pdf"
+PDF_PATH_FARM_01 = "raw_db/Farming Schedules and Strategic Crop Guidebooks/*.pdf"
+PDF_PATH_FARM_02 = "raw_db/Rice Cultivation and Strategic Crop Guides/*.pdf"
 
 # ---VEC DB 경로 선언 ---
 VEC_ROOT        = "./db/vector_db"
@@ -31,15 +39,16 @@ SOIL_VEC_DIR    = os.path.join(VEC_ROOT, "soil.db")
 QNA_VEC_DIR     = os.path.join(VEC_ROOT, "agriculture_QnA.db")
 CROP_VEC_DIR    = os.path.join(VEC_ROOT, "crop_recommendation.db")
 BUGS_VEC_DIR    = os.path.join(VEC_ROOT, "bugs.db")
+FARM_VEC_DIR    = os.path.join(VEC_ROOT, "farm.db")
 
 SQL_ROOT        = "./db/sql_db"
 QNA_SQL_FPATH   = os.path.join(SQL_ROOT, "agriculture_QnA.db")
 CROP_SQL_FPATH  = os.path.join(SQL_ROOT, "crop_recommendation.db")
 
-EMBED_MODEL     = "BAAI/bge-m3"
+EMBED_MODEL = CFG.embedor_model_name
 
 ##########################################
-######## csv -> vector db #################
+######## csv -> vector db ################
 ##########################################
 def build_qna_vector_db():
     """raw_db/agriculture_QnA.parquet 로부터 QnA 벡터 DB를 새로 만듭니다."""
@@ -127,7 +136,7 @@ def parse_pdf_to_docs(pdf_path: str) -> list[Document]:
 
 def build_pdf_vector_db(VEC_DIR, PDF_PATH, collection_name, init=False):
     if init == True:
-        """raw_db/Soil_Questions.pdf 로부터 Soil Exam PDF 벡터 DB를 새로 만듭니다."""
+        # raw_db/Soil_Questions.pdf 로부터 Soil Exam PDF 벡터 DB를 새로 만듦
         if os.path.isdir(VEC_DIR):
             print(f"[INIT] 기존 Soil PDF 벡터 폴더 삭제: {VEC_DIR}")
             shutil.rmtree(VEC_DIR)
@@ -192,45 +201,51 @@ def load_all_docs():
 
     return ALL_DOCS
 
-def load_stores(ndocs : int):
-    """모든 벡터/SQL 스토어가 없으면 빌드하고, 있으면 로드한 뒤 retriever를 반환합니다."""
+def load_stores(ndocs: int):
+    """모든 벡터/SQL 스토어가 없으면 빌드하고, 있으면 로드한 뒤 dict 형태로 반환합니다."""
     embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
+    stores = {}
 
-    # QnA 벡터 retriever
+    # QnA
     if not os.path.isdir(QNA_VEC_DIR):
         build_qna_vector_db()
-    qna_store = Chroma(
+    stores["qna"] = Chroma(
         collection_name="agriculture_QnA",
         persist_directory=QNA_VEC_DIR,
         embedding_function=embeddings
-    )
-    retriever_qna = qna_store.as_retriever(search_kwargs={"k": ndocs})
+    ).as_retriever(search_kwargs={"k": ndocs})
 
-    # Crop 벡터 retriever
+    # Crop
     if not os.path.isdir(CROP_VEC_DIR):
         build_crop_vector_db()
-    crop_store = Chroma(
+    stores["crop"] = Chroma(
         collection_name="crop_recommendation",
         persist_directory=CROP_VEC_DIR,
         embedding_function=embeddings
-    )
-    retriever_crop = crop_store.as_retriever(search_kwargs={"k": ndocs})
+    ).as_retriever(search_kwargs={"k": ndocs})
 
-    # Soil PDF 벡터 retriever
-    soil_store = Chroma(
+    # Soil PDF
+    stores["soil"] = Chroma(
         collection_name="soil",
         persist_directory=SOIL_VEC_DIR,
         embedding_function=embeddings
-    )
-    retriever_soil = soil_store.as_retriever(search_kwargs={"k": ndocs})
+    ).as_retriever(search_kwargs={"k": ndocs})
 
-    # Bugs PDF 벡터 retriever
-    bugs_store = Chroma(
+    # Bugs PDF
+    stores["bugs"] = Chroma(
         collection_name="bugs",
-        persist_directory=SOIL_VEC_DIR,
+        persist_directory=BUGS_VEC_DIR,
         embedding_function=embeddings
-    )
-    retriever_bugs = bugs_store.as_retriever(search_kwargs={"k": ndocs})
+    ).as_retriever(search_kwargs={"k": ndocs})
+
+    # Farm PDF
+    if not os.path.isdir(FARM_VEC_DIR):
+        build_farming_vector_db()
+    stores["farm"] = Chroma(
+        collection_name="farming",
+        persist_directory=FARM_VEC_DIR,
+        embedding_function=embeddings
+    ).as_retriever(search_kwargs={"k": ndocs})
 
     # SQL DB
     if not os.path.exists(QNA_SQL_FPATH):
@@ -238,31 +253,84 @@ def load_stores(ndocs : int):
     if not os.path.exists(CROP_SQL_FPATH):
         build_crop_sql_db()
 
-    return retriever_qna, retriever_crop, retriever_soil, retriever_bugs, QNA_SQL_FPATH, CROP_SQL_FPATH
+    stores["qna_sql"] = QNA_SQL_FPATH
+    stores["crop_sql"] = CROP_SQL_FPATH
+
+    return stores
 
 
+def build_farming_vector_db():
+    """농사 관련 PDF들을 하나의 벡터 DB로 통합 구축"""
+    if os.path.isdir(FARM_VEC_DIR):
+        print(f"[INIT] 기존 Farming 벡터 폴더 삭제: {FARM_VEC_DIR}")
+        shutil.rmtree(FARM_VEC_DIR)
+    os.makedirs(FARM_VEC_DIR, exist_ok=True)
+
+    embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
+    store = Chroma(
+        collection_name="farming",
+        persist_directory=FARM_VEC_DIR,
+        embedding_function=embeddings
+    )
+
+    # PDF 경로들을 리스트로 정리
+    pdf_paths = {
+        "schedules": glob.glob(PDF_PATH_FARM_01),
+        "rice": glob.glob(PDF_PATH_FARM_02)
+    }
+
+    total_files = 0
+    total_docs = 0
+
+    for category, file_list in pdf_paths.items():
+        if not file_list:
+            print(f"[WARN] PDF 파일이 존재하지 않음: {category}")
+            continue
+
+        print(f"\n[INIT] {category} 카테고리 처리 중...")
+        for fpath in file_list:
+            print(f"[INIT] PDF → Document 추출 중: {Path(fpath).name}")
+            pdf_docs = parse_pdf_to_docs(fpath)
+            
+            # ID에 카테고리와 파일명 포함
+            ids = [f"{category}_{Path(fpath).stem}_p{d.metadata['page']}" 
+                  for d in pdf_docs]
+            
+            # metadata에 카테고리 정보 추가
+            for doc in pdf_docs:
+                doc.metadata["category"] = category
+            
+            store.add_documents(documents=pdf_docs, ids=ids)
+            total_files += 1
+            total_docs += len(pdf_docs)
+
+    print(f"\n[INIT] Farming 벡터 DB 저장 완료:")
+    print(f"- 총 파일 수: {total_files}")
+    print(f"- 총 문서 수: {total_docs}")
+    return store
+
+# main 부분 수정
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Vector/SQL DB 초기화")
     parser.add_argument("--init", action="store_true",
-                        help="기존 DB를 삭제하고 재구축합니다.")
+                       help="기존 DB를 삭제하고 재구축합니다.")
     args = parser.parse_args()
 
     if args.init:
-        # 기존 벡터 DB 전체 삭제
         if os.path.isdir(VEC_ROOT):
             print(f"[INIT] 기존 벡터 DB 전체 삭제: {VEC_ROOT}")
             shutil.rmtree(VEC_ROOT)
-        # QnA, Crop, Soil PDF 모두 재구축
+        
+        # QnA, Crop 벡터 DB 구축
         build_qna_vector_db()
         build_crop_vector_db()
-        build_pdf_vector_db(VEC_DIR=SOIL_VEC_DIR,
-                            PDF_PATH=PDF_PATH_01,
-                            collection_name="soil",
-                            init=True)
-        build_pdf_vector_db(VEC_DIR=BUGS_VEC_DIR,
-                            PDF_PATH=PDF_PATH_04,
-                            collection_name="bugs",
-                            init=True)
+        
+        # Farming PDF 통합 벡터 DB 구축
+        build_farming_vector_db()
+        
+        # SQL DB 구축
+        build_qna_sql_db()
+        build_crop_sql_db()
     else:
         print("사용법:")
         print("  python store_db.py --init   # 모든 DB를 초기화하고 재구축")

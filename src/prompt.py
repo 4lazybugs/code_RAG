@@ -1,25 +1,22 @@
 from langchain_core.prompts import ChatPromptTemplate
 
-# —————— all/partial RAG용 LLM 분기 ——————
-# 1) 사용자 질문을 리포뮬레이션
+# RAG prompts for all/partial modes
 rag_prompt = ChatPromptTemplate.from_template("""
-당신은 농업 Q&A 전문가입니다.
-아래 제공된 스니펫만을 사용하여 답변하세요.  
-제공된 정보에 답이 없으면 다음과 같이 답변하세요:
-"주어진 정보 가지고는 판단하기가 어렵습니다."
+You are an agricultural Q&A expert.
+Please answer using only the provided snippets below.
+If the answer cannot be found in the provided information, respond with:
+"Cannot determine from the given information."
 
-스니펫:
+Snippets:
 {reviews}
 
-질문:
+Question:
 {question}
 
-답변 (한국어):
+Answer:
 """)
 
-
-# —————— Text-2-SQL용 LLM 분기 ——————
-# 1) 사용자 질문을 리포뮬레이션
+# Text-to-SQL LLM branch
 reform_prompt = ChatPromptTemplate.from_template("""
 You are an expert at clarifying user requests for SQL queries on an agricultural database.
 The user may use shorthand like:
@@ -36,9 +33,6 @@ User Question:
 
 Rewritten Instruction:
 """)
-
-# 2) 리포뮬레이션된 지시를 SQL로 변환
-
 
 text2sql_prompt = ChatPromptTemplate.from_template("""
 You are an expert SQL generator for an agricultural SQLite database.
@@ -68,7 +62,7 @@ LABEL FILTERING:
 FATAL RULES:
 1. Output **exactly one** SQL statement—**nothing else**.  
 2. Must start with `SELECT label FROM crop_recommendation`.  
-3. Numeric “around X” handling:  
+3. Numeric "around X" handling:  
    - X ≥ 1 → `BETWEEN round(X*0.9,1) AND round(X*1.1,1)`  
    - X < 1 → `BETWEEN round(X-0.05,2) AND round(X+0.05,2)`  
 4. Use only listed columns; no `DISTINCT`, `JOIN`, `WITH`, no trailing semicolon.  
@@ -92,49 +86,46 @@ SQL:
 """)
 
 naive_llm_prompt = ChatPromptTemplate.from_template(
-"""당신은 농업 데이터 해석 전문가입니다.
-사용자 질문: {question}
+"""You are an agricultural data interpretation expert.
+User Question: {question}
 
-실행한 쿼리:
+Executed Query:
 {query}
 
-결과 (CSV):
+Results (CSV):
 {csv}
 
-간결하게 한국어로 답변하세요."""
+Please provide a concise answer."""
 )
-
 
 adaptive_inst = "Answer the following question. The question may be ambiguous and have multiple correct answers, and in that case, you have to provide a long-form answer including all correct answers."
 
-
 suff_check_prompt = (
-    "원래 질문:\n{original_question}\n\n"
-    "지금까지 수집된 Q&A:\n{context}\n\n"
-    "정확하고 완전한 답변에 필요한 모든 정보가 충분히 모였는지 판단하세요. "
-    "조금이라도 부족하면 NO라고 답하세요. "
-    "반드시 YES 또는 NO만 답변하세요:"
+    "Original Question:\n{original_question}\n\n"
+    "Collected Q&A so far:\n{context}\n\n"
+    "Determine if we have gathered sufficient information for an accurate and complete answer. "
+    "If there's any missing information, respond with NO. "
+    "Answer only with YES or NO:"
 )
 
 followup_prompt = (
-    "당신은 질의 재구성에 특화된 어시스턴트입니다. "
-    "원래 질문과 현재까지의 맥락을 보고, 새로운 질문을 만드는 것이 아니라 "
-    "정확한 답변을 위해 어떤 정보가 부족하거나 불명확한지 분석하고, "
-    "이를 각각의 '정보 요구' 또는 하위 질문으로 나눠서 번호로 나열하세요.\n\n"
-    "원래 질문:\n"
+    "You are an assistant specialized in query decomposition. "
+    "Review the original question and current context to analyze what information "
+    "is missing or unclear. Instead of creating new questions, break down the "
+    "information needs into numbered sub-points.\n\n"
+    "Original Question:\n"
     "{original_question}\n\n"
-    "수집된 맥락:\n"
+    "Collected Context:\n"
     "{context}\n\n"
-    "원래 질문에 답하기 위해 추가로 필요한 정보나 명확히 해야 할 점을 번호로 나열하세요. 예시:\n"
-    "1. …\n"
-    "2. …\n"
-    "3. …\n"
-    "– 직접적인 후속 질문은 생성하지 마세요."
+    "List the additional information needed or points to clarify using numbers. Example:\n"
+    "1. ...\n"
+    "2. ...\n"
+    "3. ...\n"
+    "- Do not generate direct follow-up questions."
 )
 
-
 final_answer_prompt = (
-    "원래 질문:\n{original_question}\n\n"
-    "단계별 Q&A 히스토리:\n{qa_history}\n\n"
-    "이 히스토리를 바탕으로 간결하게 최종 답변을 한국어로 작성하세요:"
+    "Original Question:\n{original_question}\n\n"
+    "Step-by-step Q&A History:\n{qa_history}\n\n"
+    "Based on this history, please provide a concise final answer:"
 )

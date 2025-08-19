@@ -229,6 +229,11 @@ def get_config():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", type=str, default=default_cfg.get('model_name'))
+    parser.add_argument("--sbert_model_name", type=str, default=default_cfg.get('sbert_model_name'))
+    parser.add_argument("--bert_model_name", type=str, default=default_cfg.get('bert_model_name'))
+    parser.add_argument("--embedor_model_name", type=str, default=default_cfg.get('embedor_model_name'))
+    
+    
     parser.add_argument("--input_file", type=str, default=default_cfg.get('input_file'))
     parser.add_argument("--output_file", type=str, default=default_cfg.get('output_file'))
     parser.add_argument("--task", type=str, default=default_cfg.get('task'))
@@ -238,6 +243,7 @@ def get_config():
     parser.add_argument("--w_rel", type=float, default=default_cfg.get('w_rel'))
     parser.add_argument("--w_sup", type=float, default=default_cfg.get('w_sup'))
     parser.add_argument("--w_use", type=float, default=default_cfg.get('w_use'))
+
 
     args = parser.parse_args()
     return args
