@@ -19,7 +19,12 @@ import re, math
 import numpy as np
 from collections import Counter
 from bleurt import score
+
 from src.utils import get_config
+import src.store_db as store_db  # 모듈 자체를 import
+CFG = get_config()
+# store_db 전역 임베딩 모델 주입
+store_db.EMBED_MODEL = getattr(CFG, "embedor_model_name", None)
 
 # Expert 클래스들
 from rag import AllExpert, PartialExpert, SqlExpert, RawLlmExpert, AdaptiveExpert, SelfAskExpert
@@ -263,13 +268,13 @@ if __name__ == '__main__':
     retriever_mode = 'soil'   # 리트리버 선택: 'qna' / 'crop' / 'soil' / 'bugs' / 'farm'
     
     selected_modes = [
-        'partial_1',
-        'partial_3',
-        'partial_5',
+        #'partial_1',
+        #'partial_3',
+        #'partial_5',
         'partial_10',
         'selfask_1',
-        'selfask_3',
-        'selfask_5',
+        #'selfask_3',
+        #'selfask_5',
         'raw_llm'
     ]
     selected_metrics = ['rouge1','rougeL','bert','sbert']
@@ -277,6 +282,7 @@ if __name__ == '__main__':
     qa_data_path = {
         'qna':  'qa_data/qa_agriculture.json',
         'crop': 'qa_data/qa_crop.json',
+        #'soil': 'qa_data/qa_soil_llama400b.json',
         'soil': 'qa_data/qa_soil_gemini_100.json',
         'bugs': 'qa_data/qa_bug_gpt5_advanced_kor.json',
         'farm': 'qa_data/qa_farm.json'

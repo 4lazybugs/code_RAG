@@ -92,6 +92,9 @@ class PartialExpert(BaseExpert):
     def handle(self, question: str) -> str:
         try:
             snippets = self.retriever.get_relevant_documents(question)
+            if not snippets:
+                return self.model.invoke(question).strip()
+            
             review = "\n\n".join(d.page_content for d in snippets)
             result = self.rag_chain.invoke({"reviews": review, "question": question})
             return result

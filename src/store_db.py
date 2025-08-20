@@ -1,51 +1,53 @@
 # store_db.py
 import chromadb.telemetry.opentelemetry as _telemetry
 _telemetry.capture = lambda *args, **kwargs: None
-from langchain_ollama import OllamaEmbeddings
+
+from langchain_ollama import OllamaEmbeddings  # (미사용이면 제거 가능)
 import os
 import shutil
 import pandas as pd
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
-from langchain.embeddings import HuggingFaceEmbeddings
+# ⚠️ deprecation 반영: community 모듈로 변경
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from sqlalchemy import create_engine
-from src.utils import load_yaml 
-from src.utils import get_config
+
 
 import argparse
+import sys
 # PDF 처리를 위한 추가 라이브러리
-import PyPDF2
+import PyPDF2  # (미사용이면 제거 가능)
 from pathlib import Path
 import fitz  # PyMuPDF
 import glob
 
-CFG = get_config()
+# 전역 설정 값(메인에서 세팅)
+CFG = None
+EMBED_MODEL = None
 
-# 이제 이렇게 바로 사용
 # --- RAW DB 경로 선언 ---
 CROP_CSV_PATH      = "raw_db/crop_recommendation.csv"
 QNA_PARQ_PATH      = "raw_db/agriculture_QnA.parquet"
-PDF_PATH_01   = "raw_db/USDA_soil_survey_manual.pdf"
-PDF_PATH_02   = "raw_db/food_and_agriculture.pdf"
-PDF_PATH_03   = "raw_db/WRB_soil.pdf"
-PDF_PATH_04   = "raw_db/agri_bug_manual_kor.pdf"
-PDF_PATH_FARM_01 = "raw_db/Farming Schedules and Strategic Crop Guidebooks/*.pdf"
-PDF_PATH_FARM_02 = "raw_db/Rice Cultivation and Strategic Crop Guides/*.pdf"
+PDF_PATH_01        = "raw_db/USDA_soil_survey_manual.pdf"
+PDF_PATH_02        = "raw_db/food_and_agriculture.pdf"
+PDF_PATH_03        = "raw_db/WRB_soil.pdf"
+PDF_PATH_04        = "raw_db/agri_bug_manual_kor.pdf"
+PDF_PATH_FARM_01   = "raw_db/Farming Schedules and Strategic Crop Guidebooks/*.pdf"
+PDF_PATH_FARM_02   = "raw_db/Rice Cultivation and Strategic Crop Guides/*.pdf"
 
-# ---VEC DB 경로 선언 ---
+# --- VEC DB 경로 선언 ---
 VEC_ROOT        = "./db/vector_db"
-# 벡터 스토어 디렉토리명에 .db 확장자 추가
 SOIL_VEC_DIR    = os.path.join(VEC_ROOT, "soil.db")
 QNA_VEC_DIR     = os.path.join(VEC_ROOT, "agriculture_QnA.db")
 CROP_VEC_DIR    = os.path.join(VEC_ROOT, "crop_recommendation.db")
 BUGS_VEC_DIR    = os.path.join(VEC_ROOT, "bugs.db")
 FARM_VEC_DIR    = os.path.join(VEC_ROOT, "farm.db")
 
+# --- SQL DB 경로 선언 ---
 SQL_ROOT        = "./db/sql_db"
 QNA_SQL_FPATH   = os.path.join(SQL_ROOT, "agriculture_QnA.db")
 CROP_SQL_FPATH  = os.path.join(SQL_ROOT, "crop_recommendation.db")
 
-EMBED_MODEL = CFG.embedor_model_name
 
 ##########################################
 ######## csv -> vector db ################
@@ -77,7 +79,7 @@ def build_qna_vector_db():
             persist_directory=QNA_VEC_DIR,
             embedding_function=embeddings
         )
-        store.add_documents(documents=docs[start:end], ids=ids[start:end]) 
+        store.add_documents(documents=docs[start:end], ids=ids[start:end])
         del store
 
     print(f"[INIT] QnA 벡터 DB 저장 완료: {total} documents")
@@ -116,10 +118,10 @@ def build_crop_vector_db():
 
     print(f"[INIT] Crop 벡터 DB 저장 완료: {total} documents")
 
+
 ##########################################
 ######## pdf -> vector db ################
 ##########################################
-# --- PDF 에서 글자 추출해서 text document 로 변환하는 함수 ----------
 def parse_pdf_to_docs(pdf_path: str) -> list[Document]:
     """PDF 파일을 페이지 단위로 읽어 Document 리스트로 반환."""
     docs = []
@@ -135,10 +137,10 @@ def parse_pdf_to_docs(pdf_path: str) -> list[Document]:
 
 
 def build_pdf_vector_db(VEC_DIR, PDF_PATH, collection_name, init=False):
-    if init == True:
-        # raw_db/Soil_Questions.pdf 로부터 Soil Exam PDF 벡터 DB를 새로 만듦
+    """단일 PDF를 벡터 DB에 적재"""
+    if init is True:
         if os.path.isdir(VEC_DIR):
-            print(f"[INIT] 기존 Soil PDF 벡터 폴더 삭제: {VEC_DIR}")
+            print(f"[INIT] 기존 PDF 벡터 폴더 삭제: {VEC_DIR}")
             shutil.rmtree(VEC_DIR)
         os.makedirs(VEC_DIR, exist_ok=True)
 
@@ -153,12 +155,11 @@ def build_pdf_vector_db(VEC_DIR, PDF_PATH, collection_name, init=False):
     )
     ids = [f"page_{d.metadata['page']}" for d in pdf_docs]
     store.add_documents(documents=pdf_docs, ids=ids)
-    print(f"[INIT] Soil PDF 벡터 DB 저장 완료: {len(pdf_docs)} documents")
-
+    print(f"[INIT] PDF 벡터 DB 저장 완료: {len(pdf_docs)} documents")
 
 
 ##########################################
-######## csv -> SQL db #################
+######## csv -> SQL db ###################
 ##########################################
 def build_qna_sql_db():
     """raw_db/agriculture_QnA.parquet 로부터 QnA용 SQLite DB를 새로 만듭니다."""
@@ -193,13 +194,12 @@ def build_crop_sql_db():
 ##########################################
 def load_all_docs():
     df_qna = pd.read_parquet(QNA_PARQ_PATH, engine="pyarrow")
-    
     ALL_DOCS = [
         Document(page_content=f"Q: {row['question'].strip()}\nA: {row['answers'].strip()}")
         for _, row in df_qna.iterrows()
     ]
-
     return ALL_DOCS
+
 
 def load_stores(ndocs: int):
     """모든 벡터/SQL 스토어가 없으면 빌드하고, 있으면 로드한 뒤 dict 형태로 반환합니다."""
@@ -224,7 +224,7 @@ def load_stores(ndocs: int):
         embedding_function=embeddings
     ).as_retriever(search_kwargs={"k": ndocs})
 
-    # Soil PDF
+    # Soil PDF (이미 구축되었다고 가정하고 로드만)
     stores["soil"] = Chroma(
         collection_name="soil",
         persist_directory=SOIL_VEC_DIR,
@@ -291,15 +291,15 @@ def build_farming_vector_db():
         for fpath in file_list:
             print(f"[INIT] PDF → Document 추출 중: {Path(fpath).name}")
             pdf_docs = parse_pdf_to_docs(fpath)
-            
+
             # ID에 카테고리와 파일명 포함
-            ids = [f"{category}_{Path(fpath).stem}_p{d.metadata['page']}" 
-                  for d in pdf_docs]
-            
+            ids = [f"{category}_{Path(fpath).stem}_p{d.metadata['page']}"
+                   for d in pdf_docs]
+
             # metadata에 카테고리 정보 추가
             for doc in pdf_docs:
                 doc.metadata["category"] = category
-            
+
             store.add_documents(documents=pdf_docs, ids=ids)
             total_files += 1
             total_docs += len(pdf_docs)
@@ -308,29 +308,3 @@ def build_farming_vector_db():
     print(f"- 총 파일 수: {total_files}")
     print(f"- 총 문서 수: {total_docs}")
     return store
-
-# main 부분 수정
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Vector/SQL DB 초기화")
-    parser.add_argument("--init", action="store_true",
-                       help="기존 DB를 삭제하고 재구축합니다.")
-    args = parser.parse_args()
-
-    if args.init:
-        if os.path.isdir(VEC_ROOT):
-            print(f"[INIT] 기존 벡터 DB 전체 삭제: {VEC_ROOT}")
-            shutil.rmtree(VEC_ROOT)
-        
-        # QnA, Crop 벡터 DB 구축
-        build_qna_vector_db()
-        build_crop_vector_db()
-        
-        # Farming PDF 통합 벡터 DB 구축
-        build_farming_vector_db()
-        
-        # SQL DB 구축
-        build_qna_sql_db()
-        build_crop_sql_db()
-    else:
-        print("사용법:")
-        print("  python store_db.py --init   # 모든 DB를 초기화하고 재구축")
