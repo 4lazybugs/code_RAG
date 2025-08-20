@@ -21,8 +21,10 @@ w_use: 0.5
 ###################
 #model_name: "$MODEL_DIR" # local huggingface model directory, selfrag/llama2_7b를 환경변수로 저장하였음
 #model_name: "yi:34b-chat"
-model_name : "qwen2.5:32b-instruct"
-
+#model_name : "qwen2.5:32b-instruct"
+model_name : 'qwen3:32b'
+#model_name : 'exaone3.5:32b'
+#model_name : 'qwq:32b'
 
 ####################
 ## EMBEDDER 모델 설정 
