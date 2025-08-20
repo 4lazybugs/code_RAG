@@ -171,11 +171,11 @@ class BertEvaluator(BaseEvaluator):
     def compute_scores(self, references: list, generated: list) -> list:
         P, R, F1 = bert_score(
             generated, references,
-            lang='ko',
+            #lang='ko',
             model_type= self.args.bert_model_name,
             device=device,
             batch_size=16,
-            rescale_with_baseline=True
+            rescale_with_baseline=False
         )
         return F1.cpu().numpy().tolist()
 
@@ -278,12 +278,12 @@ if __name__ == '__main__':
         'raw_llm'
     ]
     selected_metrics = ['rouge1','rougeL','bert','sbert']
-    sample_size      = 100  # None이면 전체 데이터셋 사용
+    sample_size      = 1  # None이면 전체 데이터셋 사용
     qa_data_path = {
         'qna':  'qa_data/qa_agriculture.json',
         'crop': 'qa_data/qa_crop.json',
-        #'soil': 'qa_data/qa_soil_llama400b.json',
-        'soil': 'qa_data/qa_soil_gemini_100.json',
+        'soil': 'qa_data/qa_soil_llama400b.json',
+        #'soil': 'qa_data/qa_soil_gemini_100.json',
         'bugs': 'qa_data/qa_bug_gpt5_advanced_kor.json',
         'farm': 'qa_data/qa_farm.json'
     }
