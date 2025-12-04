@@ -16,18 +16,17 @@ from transformers import AutoTokenizer
 from typing import Dict, Any, List, Optional, Tuple
 from retriever import load_semantic_retrievers
 from langchain_core.documents import Document
+from retriever import load_semantic_retrievers
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True,max_split_size_mb:128,garbage_collection_threshold:0.6"
 
 # --------------------------------------------------
 
-def create_expert_instances(retriever_map: Dict[str, Any], retriever_mode: str, 
-                           qna_sql_path: str, crop_sql_path: str) -> Dict[str, BaseExpert]:
+def create_expert_instances(retriever_map: Dict[str, Any], retriever_mode: str) -> Dict[str, BaseExpert]:
     """Factory function to create expert instances"""
     experts = {}
     experts["all"] = AllExpert(retriever_map, retriever_mode)
     experts["partial"] = PartialExpert(retriever_map, retriever_mode)
-    experts["sql"] = SqlExpert(retriever_map, retriever_mode, qna_sql_path, crop_sql_path)
     #experts["adaptive"] = AdaptiveExpert(retriever_map, retriever_mode)
     experts["raw_llm"] = RawLlmExpert(retriever_map, retriever_mode)
     experts["self_ask"] = SelfAskExpert(retriever_map, retriever_mode)
@@ -53,15 +52,13 @@ self_ask   | Self-Ask 방식: 충분도 검사→추가질문→답변 집계
 
 if __name__ == "__main__":
     CFG = get_config()
-
-    import store_db
-    store_db.EMBED_MODEL = "upskyy/bge-m3-korean"
+    CFG.EMBED_MODEL = "embedor_model_name"
 
     try:
         ndocs = 5
 
         # 기존 csv/pdf/straw 등
-        stores = load_stores(ndocs=ndocs)
+        stores = load_semantic_retrievers(ndocs=ndocs)
 
         # 🔹 docs_semantic_md 하위 폴더별 retriever 로드
         semantic_folder_retrievers = load_semantic_retrievers(ndocs=ndocs)
@@ -89,14 +86,9 @@ if __name__ == "__main__":
         print(f"[DEBUG] retriever_mode: {retriever_mode}")
 
         # SQL 경로
-        qna_sql_path  = stores['qna_sql']
-        crop_sql_path = stores['crop_sql']
-
         expert_instances = create_expert_instances(
             retriever_map,
             retriever_mode,
-            qna_sql_path,
-            crop_sql_path
         )
 
         help_text = get_help_text()
