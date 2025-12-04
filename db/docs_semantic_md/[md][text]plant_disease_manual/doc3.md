@@ -1,0 +1,1 @@
+We can also see metal rods.

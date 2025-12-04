@@ -1,0 +1,1 @@
+Based on the provided information, it seems like you've shared parts of a document or conversation that includes agricultural data and possibly instructions for growing certain crops such as radishes and summer radishes (Young Summer Radish). Here's a summary of what can be inferred from the given text:

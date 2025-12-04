@@ -1,0 +1,1 @@
+4. **Mathematical Expressions**: There are mathematical expressions that seem to be part of calculations or formulas but lack context for their application.

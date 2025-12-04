@@ -1,0 +1,5 @@
+We can also see the white color object. We can also see the white color object is placed on the white color surface. We can also see the white color object is placed on the white color surface. We can also see the white color object is placed on the white color surface. We can also see the white color object is placed on the white color surface. We can also see the white color object is placed on the white color surface. We can also see the white color object is placed on the white color surface. We can also see the white color object is placed on the white color surface. We can also see the white color object is placed on the white color surface. We can also see the white color object is placed on the white color surface. We can also see the white color object is placed on the white color surface. We can also see the white color object is placed
+
+<!-- image -->
+
+In this image we can see a plant.

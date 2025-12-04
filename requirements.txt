@@ -1,56 +1,55 @@
-## 현재 컴퓨터 스펙 #####
-'''
-CUDA 12.4, NVIDIA Driver 550.144.03, GPU: NVIDIA H100 80GB, cuDNN: (미설치 또는 미확인)
-'''
+############################################################
+# 1) HuggingFace / SBERT
+############################################################
+transformers>=4.45.0
+sentence-transformers>=3.0.0
+safetensors>=0.4.3
+accelerate>=0.34.0
+huggingface-hub>=0.24.0
+sentencepiece>=0.1.99
 
-# === PyTorch (CUDA 12.1, vllm 0.3.2 호환) ===
-torch==2.1.2+cu121
-torchvision==0.16.2+cu121
-torchaudio==2.1.2+cu121
---extra-index-url https://download.pytorch.org/whl/cu121
+############################################################
+# 2) LangChain / RAG
+############################################################
+langchain==0.3.7
+langchain-core>=0.3.15
+langchain-community>=0.3.3
+langchain-ollama>=0.2.0
+langchain-chroma>=0.1.6
+chromadb>=0.5.0
+vllm
 
-# === LangChain & Extensions ===
-langchain==0.3.26
-langchain-ollama==0.3.4
-langchain-chroma==0.2.3
-chromadb==0.6.3
--U langchain-community
+############################################################
+# 3) NLP Metrics & Utils
+############################################################
+bert-score>=0.3.13
+evaluate>=0.4.3
+rouge-score>=0.1.2
+konlpy>=0.6.0
 
-# === Transformers & Tokenizers ===
-transformers==4.39.3
-tokenizers==0.15.2
-sentencepiece==0.2.0
-konlpy==0.6.0 # n-gram지표 한국어 처리용 토크나이저 
+############################################################
+# 4) Data / Utils
+############################################################
+pandas>=2.2.0
+numpy>=1.26.0
+tqdm>=4.66.0
+jsonlines>=3.0.0
 
-# === VLLM & 관련 ===
-vllm<=0.3.2
-accelerate==0.25.0
-bitsandbytes==0.41.3
+############################################################
+# 5) PDF / Parsing / DB
+############################################################
+PyMuPDF>=1.24.0           # import fitz
+PyPDF2>=3.0.0
+SQLAlchemy>=2.0.0
+openai>=1.0.0
+pydantic>=2.0.0
 
-# === Core Dependencies ===
-numpy>=1.26.2
-pandas>=2.0.0
-sqlalchemy
-PyPDF2
-pymupdf
+############################################################
+# 6) Tensor/Keras
+############################################################
+tf-keras
 
-# === Prompt/RAG 평가용 ===
-jsonlines
-evaluate==0.4.5
-bert-score==0.3.13
-rouge_score==0.1.2
-sacrebleu==2.4.0
-moverscore==1.0.3
-bleurt==0.4.0                 # 추가
-sentence-transformers==2.6.1
-tqdm                    # 추가
-
-# === OpenAI API ===
-openai                  # 추가
-
-# === Config 파일 처리 ===
-PyYAML                  # 추가
-
-# === (선택) 기타 ===
-# fastapi, uvicorn[standard]    # 웹 서비스용
-# deepspeed==0.12.6             # 분산 트레이닝 등
+############################################################
+# 7) 주의: 아래는 pip로 설치하지 말고 conda로 설치하세요.
+# conda install -c conda-forge openpyxl
+############################################################

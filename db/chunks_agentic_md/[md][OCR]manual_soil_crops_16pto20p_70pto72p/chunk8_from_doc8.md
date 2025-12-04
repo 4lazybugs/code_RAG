@@ -1,0 +1,3 @@
+- For Young Summer Radish, there is a reference to 45/10a with values ranging from 0.9 to 2.2 kg/10a.
+- Nutrient levels are specified as NO-N at 100 mg/kg and EC at 2 dS/m.
+- There are tables showing nutrient uptake or growth metrics over different weeks, indicating how the crops develop under specific conditions.

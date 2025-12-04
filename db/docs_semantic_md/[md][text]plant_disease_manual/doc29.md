@@ -1,0 +1,1 @@
+In the background we can see the ground.

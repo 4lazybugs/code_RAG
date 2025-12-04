@@ -3,8 +3,11 @@
 *.pdf
 *.bin
 *.pickle
+*.png
 
 __pycache__
 ssh-key
 
 results/*.json
+qa_data/*.json
+qa_data/test_qa
