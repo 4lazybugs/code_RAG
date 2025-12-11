@@ -5,7 +5,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from typing import List
 from pathlib import Path
 from langchain_ollama.chat_models import ChatOllama as OllamaLLM
-import os, re, time
+import re, time
 from utils import get_config
 
 ########## <embeddor 객체> ##################### 
@@ -34,6 +34,10 @@ text_splitter = SemanticChunker(
 ########### < (2) agentic chunking 설정 > #####################################
 prompt = ChatPromptTemplate.from_template(
 """
+※ 주의: 입력이 짧더라도 절대 '정제 불필요'와 같은 안내 메시지를 출력하지 않는다.
+입력이 무엇이든 항상 정제된 Markdown만 출력한다.
+추가적인 문장, 설명, 변명, 요약, 시스템 안내 메시지를 절대 출력하지 않는다.
+
 너는 OCR 또는 자동 추출로 생성된 Markdown 문서를 정제하고,
 필요할 경우 의미 단위(semantic unit) 기준으로 재구성하는 전문 편집자다.
 
@@ -41,42 +45,25 @@ prompt = ChatPromptTemplate.from_template(
 - raw: 전체 Markdown 텍스트
 
 # 작업 목표
-1) **원본 Markdown 구조를 최대한 보존하며**, 잘못 추출된 부분만 선택적으로 정제한다.
-   - 헤더(### 등), 리스트, 코드블록, 표, 인라인 HTML(<div>, <img> 등),
-     이미지 경로, 링크 형식 등 **모든 Markdown/HTML 문법 요소는 유지**한다.
-   - 문장 중간 끊김, 잘못된 줄바꿈, 명백한 OCR 오타, 잘못된 띄어쓰기 등
-     **명확하게 문제가 있는 부분만 최소 범위로 고친다.**
-   - 의미나 표현이 자연스러우며 문제가 없는 부분은 절대 수정하지 않는다.
-     (불필요한 문장 재작성·재표현·스타일 변경 금지)
-   - 의미 없는 빈 줄이나 중복 문장은 제거하되,
-     텍스트의 구조적 순서와 원래 섹션 흐름은 유지한다.
+1) **Markdown 구조를 최대한 보존한 채 최소한의 정제만 수행**한다.  
+   - 헤더(### 등), 리스트, 코드블록, 표, 인라인 HTML(<div>, <img> 등),  
+     이미지·링크 등 **모든 Markdown/HTML 문법 요소는 변경 없이 유지**한다.
+   - 문장 끊김, 잘못된 줄바꿈, 명백한 OCR 오타·띄어쓰기만 **필요 최소 범위에서 수정**한다.
+   - 의미가 자연스럽고 문제가 없는 문장은 절대 재작성하거나 표현을 바꾸지 않는다.
+   - 불필요한 빈 줄·중복 문장은 제거하되, 문서의 **원래 흐름과 구조는 그대로 유지**한다.
 
-2) **semantic unit(의미 단위)**을 기준으로 문단 또는 섹션을 적절히 **병합하거나 분할**한다.
-   - 하나의 주제 흐름을 설명하는 여러 문단이 불필요하게 분리되어 있으면 자연스럽게 **하나의 의미 단위로 병합**한다.
-   - 반대로 주제가 전환되면 그 지점에서 **새로운 문단 또는 섹션으로 분리**한다.
-   - 이때 Markdown 구조는 유지하되, 텍스트 단위의 재구성은 허용된다.
-   - 단, **임의로 새로운 큰 제목(H1~H2)을 생성하지 않는다.**
+2) 텍스트 문단에 한해 **의미 단위 기준 병합·분할**을 수행한다.  
+   - 같은 주제를 설명하는 문단은 자연스럽게 병합하고,  
+     주제가 바뀌는 지점에서는 문단 또는 섹션을 분리한다.
+   - 구조를 해치는 과도한 재구성은 금지하며, 새로운 상위 제목(H1~H2) 생성은 하지 않는다.
 
-3) **검색·RAG·임베딩 용도에 적합하도록 문서의 의미 단위(chunk)를 정돈**한다.
-   - 각 의미 단위는 **독립적으로 이해 가능한 chunk**가 되도록 조정한다.
-   - chunk 간 **context leakage가 최소화**되도록 자연스러운 경계를 형성한다.
-   - 가능하다면 한 chunk는 **대략 300~1500 tokens(또는 그에 상응하는 길이)** 내에서 유지되도록 조정하되,
-     Markdown 구조를 무리하게 깨뜨리지 않는다.
-
-# 스타일 및 주의사항
-- 텍스트 정제는 “텍스트 문단”에만 적용하고,
-  이미지, 표, 코드블록, 리스트 등은 원래 위치와 구조를 유지한다.
-- 사실 보완/창작 금지.
-  **필요한 경우에만 정제하고, 불필요한 부분은 절대로 수정하지 않는다.**
-- Markdown/HTML 블록은 절대 삭제하거나 변형하지 않는다.
-  예:
-    - `### 03. 흙토람에서 관비처방서 확인하기`는 그대로 유지.
-    - `<div>...</div>` 이미지 박스도 그대로 유지.
+3) 결과 문서는 **RAG·임베딩용으로 독립적 의미 단위(chunk)**가 되도록 정돈한다.  
+   - 각 chunk는 독립적으로 이해 가능해야 하며,  
+     길이는 대략 300~1500 tokens 범위를 권장하되 Markdown 구조를 무리하게 변경하지 않는다.
 
 # 출력 형식
-- 전체 문서를 **정제된 Markdown 형태 그대로 출력**한다.
-- 코드블록, JSON, 배열 형태로 감싸지 말고,
-  **정상적인 Markdown 문자열만 출력한다.**
+- 전체 문서를 **정제된 Markdown 그대로 출력**한다.
+- 코드블록, JSON, 배열 등으로 감싸지 않는다.
 
 # 지금 처리할 입력
 raw: {input}
@@ -101,37 +88,42 @@ if __name__ == "__main__":
     CFG = get_config()
     
     model_name = CFG.model_name
-    llm = OllamaLLM(model=model_name, temperature=0.0, top_p=1.0, top_k=40)
+    llm = OllamaLLM(
+        model=model_name,
+        temperature=0.0,
+        top_p=1.0,
+        top_k=40,
+    )
+    # 전역 chain 필요하면 global 로 빼도 되고, 여기서만 써도 됨
+    global chain
     chain = prompt | llm
 
-    md_root = Path("db/raw_db_extracted")
+    # 원본 md들이 들어있는 루트
+    md_root = Path("db/raw_db_extracted/")
     md_files = list(md_root.rglob("*.md"))
     print(f"[INFO] 찾은 md 파일 개수: {len(md_files)}")
 
-    base_output_chunks = Path("db/chunks_agentic_md_only")
-    base_output_chunks.mkdir(parents=True, exist_ok=True)
+    # 정제된 md를 저장할 루트
+    output_dir = Path("db/cleaned_md")  # 폴더 이름은 취향껏
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     for md_file in md_files:
         print(f"\n[INFO] 처리 시작 → {md_file}")
 
+        # 원본 Markdown 읽기
         md_text = md_file.read_text(encoding="utf-8").strip()
-        stem = md_file.stem
-        out_dir = base_output_chunks / f"[md]{stem}"
-        out_dir.mkdir(parents=True, exist_ok=True)
 
-        # 1회 agentic chunking
-        chunks = get_propositions(md_text)
+        # LLM에게 그대로 넘겨서 '전처리된 Markdown 전체' 받기
+        resp = chain.invoke({"input": md_text})
+        cleaned = (getattr(resp, "content", "") or "").strip()
 
-        for j, chunk in enumerate(chunks, 1):
-            clean_chunk = chunk.strip()
-            if len(clean_chunk) < 20:
-                print(f"[skip] chunk_{j} (len={len(clean_chunk)})")
-                continue
-            out_path = out_dir / f"chunk{j}.md"
-            out_path.write_text(clean_chunk, encoding="utf-8")
-            print(f"[SAVE] {out_path}")
+        # 출력 경로: 원래 구조 유지하고 싶으면 상대 경로 그대로 써도 됨
+        rel_path = md_file.relative_to(md_root)        # raw_db_extracted 이하 경로
+        out_path = output_dir / rel_path              # 동일 구조로 저장
+        out_path.parent.mkdir(parents=True, exist_ok=True)
 
-        print(f"[DONE] {md_file} 처리 완료")
+        out_path.write_text(cleaned, encoding="utf-8")
+        print(f"[SAVE] 정제된 md 저장 → {out_path}")
 
     elapsed = time.time() - start
     print(f"\n총 걸린 시간: {elapsed:.2f}초")

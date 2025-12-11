@@ -11,3 +11,4 @@ ssh-key
 results/*.json
 qa_data/*.json
 qa_data/test_qa
+db/raw_db_extracted/*
