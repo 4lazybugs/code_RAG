@@ -5,7 +5,7 @@ from paddleocr import PaddleOCRVL
 pipeline = PaddleOCRVL()
 
 # 입력 폴더 (재귀 탐색)
-input_dir = Path("db/raw_db/")
+input_dir = Path("db/raw_db/manual_book")
 pdf_files = list(input_dir.rglob("*.pdf"))
 print(f"총 {len(pdf_files)}개의 PDF를 찾았습니다.")
 

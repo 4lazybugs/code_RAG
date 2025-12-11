@@ -35,8 +35,8 @@ model_name : "qwen2.5:32b-instruct"
 ## EMBEDDER 모델 설정 
 ###################
 #embedor_model_name: 'mixedbread-ai/mxbai-embed-large-v1' # 영어 embedor
-embedor_model_name: "dragonkue/BGE-m3-ko" # 한국어 전용 embedor
-
+#embedor_model_name: "dragonkue/BGE-m3-ko" # 한국어 전용 embedor
+embedor_model_name: "upskyy/bge-m3-korean"
 
 
 ##################

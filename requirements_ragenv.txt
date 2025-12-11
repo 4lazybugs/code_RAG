@@ -16,6 +16,7 @@ langchain-core>=0.3.15
 langchain-community>=0.3.3
 langchain-ollama>=0.2.0
 langchain-chroma>=0.1.6
+pip install langchain-experimental
 chromadb>=0.5.0
 vllm
 
