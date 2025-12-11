@@ -98,37 +98,25 @@ if __name__ == "__main__":
     llm = OllamaLLM(model=model_name, temperature=0.0)
     chain = qa_prompt | llm
 
-    rawdb_root = Path("db/raw_db")
-    qa_root = Path("qa_data/GT")
-    pdf_files = list(rawdb_root.rglob("*.pdf"))
-
-    for pdf_path in pdf_files:
-        pdf_name = pdf_path.stem        # "c"
-        out_dir = qa_root / pdf_name    # qa_data/GT/c
-
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-    # 이제 QA 생성 (md 파일 기반)
-    md_root = Path("db/cleaned_md")
+    md_root = Path("db/raw_db_extracted/")
     md_files = list(md_root.rglob("*.md"))
     print("[INFO] md 파일:", len(md_files))
 
     qa_id = 1
+    qa_root = Path("qa_data/GT/")
 
-    # PDF 경로와 MD 경로를 1:1 매핑시키고 싶으면 아래에서 batch 처리
-    # 여기서는 일단 전체 md를 3개씩 묶어서 하나의 QA 파일로 만듦
-    qa_file = out_dir / "GT_QA_DATA.jsonl"   # ← 저장될 파일 경로 명확히 지정
-    with qa_file.open("w", encoding="utf-8") as f:
-        for batch in batch_md_files(md_files, batch_size=3):
-            print("[INFO] 처리 batch:", batch)
+    for md_path in md_files:
+        pdf_name = md_path.stem
+        out_dir = qa_root / pdf_name
+        out_dir.mkdir(parents=True, exist_ok=True)
 
-            texts = []
-            for md in batch:
-                texts.append(md.read_text(encoding="utf-8"))
-            merged_context = "\n\n".join(texts)
+        qa_file = out_dir / "GT_QA_DATA.jsonl"
 
-            qas = gen_qas(merged_context, chain)
+        # 이 md 파일만 context로 사용
+        text = md_path.read_text(encoding="utf-8")
+        qas = gen_qas(text, chain)
 
+        with qa_file.open("w", encoding="utf-8") as f:
             for qa in qas:
                 f.write(json.dumps({
                     "id": qa_id,
@@ -138,5 +126,3 @@ if __name__ == "__main__":
                 qa_id += 1
 
     print("[DONE] 총 소요:", time.time() - start)
-    print("[DONE] 저장:", qa_file)
-
