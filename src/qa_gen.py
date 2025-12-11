@@ -98,31 +98,49 @@ if __name__ == "__main__":
     llm = OllamaLLM(model=model_name, temperature=0.0)
     chain = qa_prompt | llm
 
+    # md 파일들 읽기
     md_root = Path("db/raw_db_extracted/")
     md_files = list(md_root.rglob("*.md"))
     print("[INFO] md 파일:", len(md_files))
 
-    qa_id = 1
     qa_root = Path("qa_data/GT/")
+    qa_root.mkdir(parents=True, exist_ok=True)
+
+    qa_id = 1  # 전체 QA에 대해 유니크 id 부여 (원하면 pdf별로 리셋해도 됨)
 
     for md_path in md_files:
-        pdf_name = md_path.stem
-        out_dir = qa_root / pdf_name
-        out_dir.mkdir(parents=True, exist_ok=True)
+        # 1) pdf 이름: 상위 폴더 이름을 pdf 폴더로 사용한다고 가정
+        #    예: db/raw_db_extracted/dfdf.pdf/a.md -> pdf_name = "dfdf.pdf"
+        pdf_name = md_path.parent.name
 
-        qa_file = out_dir / "GT_QA_DATA.jsonl"
+        # 2) chunk 이름: 파일 이름에서 .md 제거
+        #    예: a.md -> a
+        chunk_name = md_path.stem
+
+        # 3) GT 저장 위치: qa_data/GT/dfdf.pdf/a.json
+        pdf_out_dir = qa_root / pdf_name
+        pdf_out_dir.mkdir(parents=True, exist_ok=True)
+
+        qa_file = pdf_out_dir / f"{chunk_name}.json"
 
         # 이 md 파일만 context로 사용
         text = md_path.read_text(encoding="utf-8")
-        qas = gen_qas(text, chain)
+        raw_qas = gen_qas(text, chain)
 
+        # id 포함해서 JSON 배열 형태로 저장
+        qas_with_id = []
+        for qa in raw_qas:
+            qas_with_id.append({
+                "id": qa_id,
+                "question": qa["question"],
+                "answer": qa["answer"],
+            })
+            qa_id += 1
+
+        # a.json, b.json 안에는 하나의 JSON 배열로 저장
         with qa_file.open("w", encoding="utf-8") as f:
-            for qa in qas:
-                f.write(json.dumps({
-                    "id": qa_id,
-                    "question": qa["question"],
-                    "answer": qa["answer"],
-                }, ensure_ascii=False) + "\n")
-                qa_id += 1
+            json.dump(qas_with_id, f, ensure_ascii=False, indent=2)
+
+        print(f"[DONE] 저장: {qa_file}")
 
     print("[DONE] 총 소요:", time.time() - start)
