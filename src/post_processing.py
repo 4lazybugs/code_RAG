@@ -1,6 +1,3 @@
-from sentence_transformers import SentenceTransformer
-from langchain_experimental.text_splitter import SemanticChunker
-from langchain_core.embeddings.embeddings import Embeddings
 from langchain_core.prompts import ChatPromptTemplate
 from typing import List
 from pathlib import Path
@@ -8,30 +5,7 @@ from langchain_ollama.chat_models import ChatOllama as OllamaLLM
 import re, time
 from utils import get_config
 
-########## <embeddor 객체> ##################### 
-''' LangChain에서 임베딩 모델을 쓰기 위해,
-   "임베딩 모델"을 내부에 들고 있는 객체(embeddor) 가 필요 '''
-class embeddor(Embeddings):
-    def __init__(self):
-        self.model =  SentenceTransformer("upskyy/bge-m3-korean") # embedding 모델 초기화
-    def embed_documents(self, texts):
-        return self.model.encode(texts).tolist() # numpy array -> list
-    def embed_query(self, text):
-        return self.model.encode([text])[0].tolist() # numpy array(user query) -> list
-        # [0]은 user query는 하나인데 encoded vector는 2D이기 때문
-################################################
-
-
-########### < (1) semantic chunking> ###################################
-text_splitter = SemanticChunker(
-    embeddings=embeddor(),
-    # percentile - 모든 문장간 차이 계산 by 상위 5%(default)
-    breakpoint_threshold_type="percentile" # "standard_deviation", "interquartile_range"
-)
-#########################################################################
-
-
-########### < (2) agentic chunking 설정 > #####################################
+########### < agentic chunking 설정 > #####################################
 prompt = ChatPromptTemplate.from_template(
 """
 ※ 주의: 입력이 짧더라도 절대 '정제 불필요'와 같은 안내 메시지를 출력하지 않는다.
