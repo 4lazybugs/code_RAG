@@ -75,7 +75,7 @@ if __name__ == "__main__":
     clean_dir = Path("db/cleaned_md/farm_consulting/")
     clean_dir.mkdir(parents=True, exist_ok=True)
 
-    MAX_CHARS = 300  # 스킵 기준(문자 수)
+    MAX_CHARS = 100  # 스킵 기준(문자 수)
     for pdf_path in pdf_files:
         print(f"\nProcessing: {pdf_path}")
 
@@ -91,17 +91,19 @@ if __name__ == "__main__":
             out_path.parent.mkdir(parents=True, exist_ok=True)
             res.save_to_markdown(save_path=out_path)
             print(f"Saved page {page_idx} → {out_path}")
-
-            if len(res) < MAX_CHARS:
-                print(f"[SKIP] 길이 초과({len(res)} chars) → 저장 안함")
+            
+            md_path = out_path / f"{rel_path.stem}_{page_idx}.md" 
+            md_text = md_path.read_text(encoding="utf-8")
+            if len(md_text) < MAX_CHARS:
+                print(f"[SKIP] {rel_path}_{page_idx} ({len(md_text)} chars)")
                 continue
 
-            cleaned = mask_pii_md(res)   # ✅ 저장 전에 PII 마스킹
+            cleaned_md = mask_pii_md(res)   # ✅ 저장 전에 PII 마스킹
             
             clean_path = clean_dir / rel_path              # 동일 구조로 저장
             clean_path.parent.mkdir(parents=True, exist_ok=True)
             # md로 저장
-            cleaned.save_to_markdown(save_path=clean_path)
+            cleaned_md.save_to_markdown(save_path=clean_path)
             print(f"Saved page {page_idx} → {clean_path}")
     ##################################################################################
 
@@ -119,7 +121,7 @@ if __name__ == "__main__":
     clean_dir = Path("db/cleaned_md/manual_book/")
     clean_dir.mkdir(parents=True, exist_ok=True)
 
-    MAX_CHARS = 50  # 스킵 기준(문자 수)
+    MAX_CHARS = 100  # 스킵 기준(문자 수)
     for pdf_path in pdf_files:
         print(f"\nProcessing: {pdf_path}")
 
@@ -128,30 +130,25 @@ if __name__ == "__main__":
         
         # 각 페이지 결과 저장
         for page_idx, res in enumerate(output):
-            rel_dir = pdf_path.relative_to(input_dir).parent  # 폴더 구조만 유지
-            base = pdf_path.stem                              # pdf 파일명(확장자 제거)
-
-            out_path = save_dir / rel_dir / f"{base}_{page_idx:04d}.md"
+            # Markdown 파일 이름 생성: test2_0.md처럼
+            # 출력 경로: 원래 구조 유지하고 싶으면 상대 경로 그대로 써도 됨
+            rel_path = pdf_path.relative_to(input_dir)        # raw_db_extracted 이하 경로
+            out_path = save_dir / rel_path              # 동일 구조로 저장
             out_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # 1) res를 문자열로 변환(중요)
-            md_text = str(res)  # 또는 res.to_markdown() 같은 메서드가 있으면 그걸 사용
-
-            # 2) 원본 저장
-            out_path.write_text(md_text, encoding="utf-8")
-            print(f"Saved page {page_idx} → {out_path} ({len(md_text)} chars)")
-
-            # 3) 길이 기준 스킵 (문구도 수정)
+            res.save_to_markdown(save_path=out_path)
+            print(f"Saved page {page_idx} → {out_path}")
+            
+            md_path = out_path / f"{rel_path.stem}_{page_idx}.md" 
+            md_text = md_path.read_text(encoding="utf-8")
             if len(md_text) < MAX_CHARS:
-                print(f"[SKIP] 길이 미만({len(md_text)} chars) → 저장 안함")
+                print(f"[SKIP] {rel_path}_{page_idx} ({len(md_text)} chars)")
                 continue
-
-            # 4) 마스킹 후 저장
-            cleaned_text = mask_pii_md(md_text)
-            clean_path = clean_dir / rel_dir / f"{base}_{page_idx:04d}.md"
+            
+            clean_path = clean_dir / rel_path              # 동일 구조로 저장
             clean_path.parent.mkdir(parents=True, exist_ok=True)
-            clean_path.write_text(cleaned_text, encoding="utf-8")
-            print(f"Saved cleaned page {page_idx} → {clean_path}")
+            # md로 저장
+            res.save_to_markdown(save_path=clean_path)
+            print(f"Saved page {page_idx} → {clean_path}")
     ##################################################################################
 
     end = time.time()
