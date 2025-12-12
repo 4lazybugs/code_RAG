@@ -103,8 +103,9 @@ if __name__ == "__main__":
             res.save_to_markdown(save_path=clean_path)
             # md로 저장
             cleaned_text = mask_pii_md(md_text)
-            md_path.write_text(cleaned_text, encoding="utf-8")
-            print(f"Saved page {page_idx} → {clean_path}")
+            cleaned_md_path = clean_dir / rel_path / f"{rel_path.stem}_{page_idx}.md"
+            cleaned_md_path.write_text(cleaned_text, encoding="utf-8")
+            print(f"Saved page {page_idx} → {cleaned_md_path}")
     ##################################################################################
 
     ####### ~farm_consulting #########################################################
@@ -143,12 +144,11 @@ if __name__ == "__main__":
             if len(md_text) < MAX_CHARS:
                 print(f"[SKIP] {rel_path}_{page_idx} ({len(md_text)} chars)")
                 continue
-            
+
             clean_path = clean_dir / rel_path              # 동일 구조로 저장
             clean_path.parent.mkdir(parents=True, exist_ok=True)
-            # md로 저장
             res.save_to_markdown(save_path=clean_path)
-            print(f"Saved page {page_idx} → {clean_path}")
+            print(f"Saved page {page_idx} → {cleaned_md_path}")
     ##################################################################################
 
     end = time.time()
