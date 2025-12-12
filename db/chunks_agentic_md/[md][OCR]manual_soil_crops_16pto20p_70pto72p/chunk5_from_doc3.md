@@ -1,1 +1,0 @@
-Here is a cleaned-up version of the text with some translations:

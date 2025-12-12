@@ -1,1 +1,0 @@
-However, I can try to extract and translate any clear segments:

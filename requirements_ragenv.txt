@@ -19,6 +19,7 @@ langchain-chroma>=0.1.6
 pip install langchain-experimental
 chromadb>=0.5.0
 vllm
+pip install -U langchain-google-genai
 
 ############################################################
 # 3) NLP Metrics & Utils

@@ -1,1 +1,0 @@
-### Example Summary of Data Points:

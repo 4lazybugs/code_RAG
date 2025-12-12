@@ -1,9 +1,11 @@
 from langchain_core.prompts import ChatPromptTemplate
-from typing import List
 from pathlib import Path
-from langchain_ollama.chat_models import ChatOllama as OllamaLLM
-import re, time
+from langchain_google_genai import ChatGoogleGenerativeAI  # ✅ 추가
+import re, time, os
 from utils import get_config
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI 
+
 
 ########### < agentic chunking 설정 > #####################################
 prompt = ChatPromptTemplate.from_template(
@@ -37,35 +39,24 @@ prompt = ChatPromptTemplate.from_template(
 {input}
 """
 )
-
-def get_propositions(text: str) -> List[str]:
-    resp = chain.invoke({"input": text})
-    content = (getattr(resp, "content", "") or "").strip()
-    # 여기서는 JSON 파싱 대신 fallback으로 라인 스플릿(원하시면 json.loads로 바꿔도 됨)
-    try:
-        import json
-        return json.loads(content)
-    except Exception:
-        fallback = [p.strip() for p in re.split(r"\n{2,}", content) if p.strip()]
-        return fallback
 ######################################################################
 
 
 if __name__ == "__main__":
     start = time.time()
+    load_dotenv()
+    api_key = os.getenv("GOOGLE_API_KEY")
     CFG = get_config()
-    
-    model_name = CFG.model_name
-    llm = OllamaLLM(model=model_name, temperature=0.0, top_p=1.0, top_k=40)
-    chain = prompt | llm
+
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0, api_key=api_key)
 
     # 원본 md들이 들어있는 루트
-    md_root = Path("db/test")
-    md_files = list(md_root.rglob("*.md"))
+    md_root = Path("db/test/")
+    md_files = list(md_root.glob("**/**/*.md"))
     print(f"[INFO] 찾은 md 파일 개수: {len(md_files)}")
 
     # 정제된 md를 저장할 루트
-    output_dir = Path("db/cleaned_md")  # 폴더 이름은 취향껏
+    output_dir = Path("db/post_processed_md")  # 폴더 이름은 취향껏
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for md_file in md_files:
@@ -73,18 +64,18 @@ if __name__ == "__main__":
 
         # 원본 Markdown 읽기
         md_text = md_file.read_text(encoding="utf-8").strip()
-
-        # LLM에게 그대로 넘겨서 '전처리된 Markdown 전체' 받기
-        resp = chain.invoke({"input": md_text})
-        cleaned = (getattr(resp, "content", "") or "").strip()
+        message = prompt.format_messages(input=md_text)
+        processed_md = llm.invoke(message).content
 
         # 출력 경로: 원래 구조 유지하고 싶으면 상대 경로 그대로 써도 됨
         rel_path = md_file.relative_to(md_root)        # raw_db_extracted 이하 경로
         out_path = output_dir / rel_path              # 동일 구조로 저장
         out_path.parent.mkdir(parents=True, exist_ok=True)
 
-        out_path.write_text(cleaned, encoding="utf-8")
+        out_path.write_text(processed_md, encoding="utf-8")
         print(f"[SAVE] 정제된 md 저장 → {out_path}")
 
-    elapsed = time.time() - start
-    print(f"\n총 걸린 시간: {elapsed:.2f}초")
+    end = time.time()
+    elapsed = end - start
+    minutes, seconds = divmod(elapsed, 60)
+    print(f"\n총 걸린 시간: {int(minutes)}분 {seconds:.2f}초")

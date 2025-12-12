@@ -1,1 +1,0 @@
-This table suggests that during the second week, the growth range is between 3.6 and 3.9 kg/10a with a nutrient level of 100 mg/kg for NO-N.

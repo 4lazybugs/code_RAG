@@ -1,2 +1,0 @@
-- **Furrow Irrigation**:
-  - Briefly noted.

@@ -1,1 +1,0 @@
-3. **Provide Context**: Include a brief introduction explaining what the report is about (e.g., crop yield over time, nutrient management).

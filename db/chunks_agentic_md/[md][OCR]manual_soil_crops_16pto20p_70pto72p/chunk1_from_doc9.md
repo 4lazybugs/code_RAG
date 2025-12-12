@@ -1,1 +1,0 @@
-It seems like you've provided a mix of text and descriptions of images, but the actual content is quite fragmented and lacks clear context. I'll try to summarize and organize the information as best as possible:

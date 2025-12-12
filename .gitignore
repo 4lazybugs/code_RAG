@@ -13,3 +13,4 @@ db/raw_db_extracted/*
 db/cleaned_md/*
 qa_data/*
 db/*
+.env

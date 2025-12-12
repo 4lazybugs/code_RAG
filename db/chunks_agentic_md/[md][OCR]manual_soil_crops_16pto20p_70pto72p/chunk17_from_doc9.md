@@ -1,1 +1,0 @@
-The provided information covers a range of topics from soil properties and water management techniques to specific research models and studies. If you need more detailed analysis or specific data extraction, please provide additional context or clarify which aspects you are most interested in.

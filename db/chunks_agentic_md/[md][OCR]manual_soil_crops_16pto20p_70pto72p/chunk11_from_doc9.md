@@ -1,2 +1,0 @@
-- **Fountain Hose Irrigation**:
-  - Also briefly mentioned.

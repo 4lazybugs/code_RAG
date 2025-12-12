@@ -1,1 +1,0 @@
-4. **Explain Mathematical Expressions**: Provide explanations or context for any mathematical expressions used in the text to make them understandable.
