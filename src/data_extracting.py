@@ -98,12 +98,12 @@ if __name__ == "__main__":
                 print(f"[SKIP] {rel_path}_{page_idx} ({len(md_text)} chars)")
                 continue
 
-            cleaned_md = mask_pii_md(res)   # ✅ 저장 전에 PII 마스킹
-            
             clean_path = clean_dir / rel_path              # 동일 구조로 저장
             clean_path.parent.mkdir(parents=True, exist_ok=True)
+            res.save_to_markdown(save_path=clean_path)
             # md로 저장
-            cleaned_md.save_to_markdown(save_path=clean_path)
+            cleaned_text = mask_pii_md(md_text)
+            md_path.write_text(cleaned_text, encoding="utf-8")
             print(f"Saved page {page_idx} → {clean_path}")
     ##################################################################################
 
