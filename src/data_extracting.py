@@ -92,11 +92,9 @@ if __name__ == "__main__":
             res.save_to_markdown(save_path=out_path)
             print(f"Saved page {page_idx} → {out_path}")
 
-            with open(out_path, "r", encoding="utf-8") as f:
-                md_text = f.read()
-                if len(res) < MAX_CHARS:
-                    print(f"[SKIP] 길이 초과({len(res)} chars) → 저장 안함: {out_path}")
-                    continue
+            if len(res) < MAX_CHARS:
+                print(f"[SKIP] 길이 초과({len(res)} chars) → 저장 안함: {out_path}")
+                continue
 
             cleaned = mask_pii_md(res)   # ✅ 저장 전에 PII 마스킹
             
@@ -140,11 +138,9 @@ if __name__ == "__main__":
             res.save_to_markdown(save_path=out_path)
             print(f"Saved page {page_idx} → {out_path}")
 
-            with open(out_path, "r", encoding="utf-8") as f:
-                md_text = f.read()
-                if len(res) < MAX_CHARS:
-                    print(f"[SKIP] 길이 초과({len(res)} chars) → 저장 안함: {out_path}")
-                    continue
+            if len(res) < MAX_CHARS:
+                print(f"[SKIP] 길이 초과({len(res)} chars) → 저장 안함: {out_path}")
+                continue
 
             clean_path = clean_dir / rel_path              # 동일 구조로 저장
             clean_path.parent.mkdir(parents=True, exist_ok=True)
