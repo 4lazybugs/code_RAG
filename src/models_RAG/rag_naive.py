@@ -1,6 +1,7 @@
 from .base import BaseExpert
 from langchain_ollama.llms import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
 # --------------------------------------------------
 
 # RAG prompts for all/partial modes
@@ -29,7 +30,12 @@ class PartialExpert(BaseExpert):
     """Expert that uses top-K snippets for RAG (speed/partial answers)"""
     
     def setup(self, retriever_mode: str) -> None:
-        self.model = OllamaLLM(model=self.args.model_name, temperature=0.0, top_p=1.0, top_k=40)
+        self.model = ChatOpenAI(
+            base_url="http://127.0.0.1:8000/v1",
+            api_key="EMPTY",
+            model="Qwen/Qwen2.5-32B-Instruct",
+            temperature=0.0,
+        )
         if retriever_mode not in self.retriever_map:
             raise ValueError(f"Unknown retriever_mode: {retriever_mode}")
         self.retriever = self.retriever_map[retriever_mode]

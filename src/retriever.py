@@ -1,4 +1,4 @@
-# retriever.py 예시
+# retriever.py
 
 from typing import Dict, Any, List, Tuple, Optional
 from pathlib import Path
@@ -23,8 +23,9 @@ from utils import get_config
 CFG = get_config()
 SEMANTIC_EMBED_MODEL = getattr(CFG, "embedor_model_name", "upskyy/bge-m3-korean")
 
+
 class SentenceTransformerEmbeddings(Embeddings):
-    """docs_semantic_md용 SentenceTransformer 임베딩 래퍼"""
+    """SentenceTransformer 임베딩 래퍼"""
     def __init__(self, model_name: str | None = None):
         if model_name is None:
             model_name = SEMANTIC_EMBED_MODEL
@@ -47,20 +48,22 @@ class SentenceTransformerEmbeddings(Embeddings):
 
 # 프로젝트 루트 기준 경로
 BASE_DIR = Path(__file__).resolve().parent.parent
-MD_ROOT  = BASE_DIR / "db" / "docs_semantic_md"
-VEC_ROOT = BASE_DIR / "db" / "vector_db" / "docs_semantic_md"
 
 
-def make_collection_name(folder_name: str) -> str:
+# =========================
+# 컬렉션 이름 생성 (범용)
+# =========================
+def make_collection_name(folder_key: str, prefix: str) -> str:
     """
-    Chroma collection 이름 규칙을 만족하도록 폴더 이름을 안전하게 변환
-    (store_db_semantic에서 쓰던 로직이랑 동일하게 맞춰줘야,
-     이미 만들어둔 vec DB를 그대로 불러올 수 있음)
+    prefix + folder_key를 Chroma collection 규칙에 맞게 안전 변환
+    예:
+      prefix="semantic", folder_key="straw"   -> "semantic_straw"
+      prefix="cleaned",  folder_key="A/subA"  -> "cleaned_A_subA"
     """
-    raw = f"semantic_{folder_name}"
+    raw = f"{prefix}_{folder_key}"
+
     # 알파벳/숫자/언더스코어/하이픈 외는 '_'로 치환
-    name = re.sub(r"[^a-zA-Z0-9_-]+", "_", raw)
-    name = name.strip("_")
+    name = re.sub(r"[^a-zA-Z0-9_-]+", "_", raw).strip("_")
 
     if len(name) < 3:
         name = "col_" + (name or "default")
@@ -73,6 +76,71 @@ def make_collection_name(folder_name: str) -> str:
         name = name + "_c"
 
     return name
+
+
+# =========================
+# 범용 벡터DB 로더
+# =========================
+def load_folder_vector_retrievers(
+    *,
+    data_root: Path,
+    vec_root: Path,
+    prefix: str,
+    level: int = 1,
+    ndocs: int = 5,
+) -> Dict[str, Any]:
+    """
+    data_root 하위의 level-depth 폴더들을 순회하며
+    vec_root/<rel_path> 에서 Chroma를 로드해 retriever dict로 반환.
+
+    - 반환 key: rel_path (예: "straw" 또는 "A/subA")
+    - collection: make_collection_name(rel_path, prefix)
+    - persist_directory: vec_root/rel_path
+
+    level 의미:
+      level=1 => data_root/* (하위 1레벨 폴더가 DB 단위)
+      level=2 => data_root/*/* (하위 2레벨 폴더가 DB 단위)
+    """
+    data_root = data_root.resolve()
+    vec_root = vec_root.resolve()
+
+    if not data_root.exists():
+        raise FileNotFoundError(f"data_root not found: {data_root}")
+    if not vec_root.exists():
+        raise FileNotFoundError(f"vec_root not found: {vec_root}")
+
+    emb = SentenceTransformerEmbeddings()
+    retrievers: Dict[str, Any] = {}
+
+    # level-depth 폴더들 수집
+    # level=1 -> "*/"
+    # level=2 -> "*/*/"
+    pattern = ("*/" * level).rstrip("/")
+    candidates = [p for p in data_root.glob(pattern) if p.is_dir()]
+
+    if not candidates:
+        print(f"[WARN] no folders under {data_root} at level={level}")
+        return retrievers
+
+    for folder in candidates:
+        rel = folder.relative_to(data_root).as_posix()  # 예: "straw" or "A/subA"
+        vec_dir = vec_root / rel
+
+        if not vec_dir.exists():
+            print(f"[WARN] vec DB not found: {vec_dir}")
+            continue
+
+        collection_name = make_collection_name(rel, prefix=prefix)
+
+        store = Chroma(
+            collection_name=collection_name,
+            persist_directory=str(vec_dir),
+            embedding_function=emb,
+        )
+        retrievers[rel] = store.as_retriever(search_kwargs={"k": ndocs})
+
+    print(f"[LOAD] loaded {len(retrievers)} retrievers (prefix={prefix}, level={level})")
+    return retrievers
 
 
 # ---------------------------------------------
@@ -151,50 +219,17 @@ class MultiCosineRetriever(BaseRetriever):
         return self._get_relevant_documents(query, run_manager=None)
 
 
-# ---------------------------------------------
-# docs_semantic_md 하위 폴더별 retriever 로더
-# ---------------------------------------------
-def load_semantic_retrievers(ndocs: int = 5) -> Dict[str, Any]:
+def load_cleaned_md_level2_retrievers(ndocs: int = 10) -> Dict[str, Any]:
     """
-    db/docs_semantic_md/<folder> 구조를 가정하고,
-    각 폴더별로 Chroma 벡터DB를 로드해서 retriever로 반환.
-
-    - vec DB 경로: db/vector_db/docs_semantic_md/<folder_name>
-    - collection_name: make_collection_name(folder_name) 로 생성
-    - 이미 store_db_semantic(또는 별도 스크립트)로 인덱싱해 둔 상태라고 가정.
-      (없으면 경고만 찍고 스킵)
+    cleaned_md 하위 2레벨(L1/L2) 폴더별 DB 로드
+    - data_root: db/cleaned_md/<L1>/<L2>
+    - vec_root : db/vector_db/cleaned_md/<L1>/<L2>
+    - collection: cleaned_<L1>_<L2> (safe)
     """
-    if not MD_ROOT.exists():
-        raise FileNotFoundError(f"MD root not found: {MD_ROOT}")
-
-    VEC_ROOT.mkdir(parents=True, exist_ok=True)
-
-    emb = SentenceTransformerEmbeddings()
-    retrievers: Dict[str, Any] = {}
-
-    subdirs = [d for d in MD_ROOT.iterdir() if d.is_dir()]
-    if not subdirs:
-        print(f"[WARN] docs_semantic_md 하위 폴더가 없습니다: {MD_ROOT}")
-
-    for folder in subdirs:
-        vec_dir = VEC_ROOT / folder.name
-        collection_name = make_collection_name(folder.name)
-
-        if not vec_dir.exists():
-            print(f"[WARN] vec DB not found for '{folder.name}' → {vec_dir}")
-            # 이미 인덱싱 해 둔 환경이 아니라면, 여기서 자동으로 md 스캔해서
-            # build 해주는 로직을 추가해도 됨.
-            continue
-
-        store = Chroma(
-            collection_name=collection_name,
-            persist_directory=str(vec_dir),
-            embedding_function=emb,
-        )
-
-        retrievers[folder.name] = store.as_retriever(
-            search_kwargs={"k": ndocs}
-        )
-
-    print(f"[LOAD] semantic retrievers loaded: {list(retrievers.keys())}")
-    return retrievers
+    return load_folder_vector_retrievers(
+        data_root=BASE_DIR / "db" / "cleaned_md",
+        vec_root=BASE_DIR / "db" / "vector_db" / "cleaned_md",
+        prefix="cleaned",
+        level=2,
+        ndocs=ndocs,
+    )

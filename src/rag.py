@@ -1,37 +1,46 @@
 import os
+from langchain_core.messages import BaseMessage
 os.environ["TRANSFORMERS_NO_TF"] = "1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-from models_RAG import ( 
-    BaseExpert, AllExpert, PartialExpert, SqlExpert,
-    RawLlmExpert, AdaptiveExpert, SelfAskExpert
-)
-from typing import Dict, Any
-from retriever import MultiCosineRetriever
-from utils import load_yaml, get_config
-
-from langchain_ollama.llms import OllamaLLM
-from langchain.chains import RetrievalQA
-from transformers import AutoTokenizer
-from typing import Dict, Any, List, Optional, Tuple
-from retriever import load_semantic_retrievers
-from langchain_core.documents import Document
-from retriever import load_semantic_retrievers
-
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True,max_split_size_mb:128,garbage_collection_threshold:0.6"
 
+from typing import Dict, Any
+
+from models_RAG import (
+    BaseExpert, PartialExpert,
+    RawLlmExpert, SelfAskExpert
+)
+
+from retriever import MultiCosineRetriever, load_cleaned_md_level2_retrievers
+from utils import load_yaml, get_config
+
 # --------------------------------------------------
+def normalize_answer(res) -> str:
+    # (1) tuple이면 첫 번째를 답으로 간주
+    if isinstance(res, tuple):
+        res = res[0]
+
+    # (2) LangChain 메시지(AIMessage 등)면 content만 꺼냄
+    if isinstance(res, BaseMessage):
+        return (res.content or "").strip()
+
+    # (3) dict 형태면 흔한 키들 우선 처리
+    if isinstance(res, dict):
+        for key in ("result", "answer", "output_text", "content"):
+            if key in res:
+                return str(res[key]).strip()
+        return str(res).strip()
+
+    # (4) 그 외는 그냥 문자열 처리
+    return str(res).strip()
+
 
 def create_expert_instances(retriever_map: Dict[str, Any], retriever_mode: str) -> Dict[str, BaseExpert]:
     """Factory function to create expert instances"""
     experts = {}
-    experts["all"] = AllExpert(retriever_map, retriever_mode)
     experts["partial"] = PartialExpert(retriever_map, retriever_mode)
-    #experts["adaptive"] = AdaptiveExpert(retriever_map, retriever_mode)
     experts["raw_llm"] = RawLlmExpert(retriever_map, retriever_mode)
     experts["self_ask"] = SelfAskExpert(retriever_map, retriever_mode)
-
-    # (옵션) self_ask_5 같은 변형 처리하려면 여기 확장
     return experts
 
 
@@ -48,7 +57,6 @@ self_ask   | Self-Ask 방식: 충분도 검사→추가질문→답변 집계
 (종료: q)
 """.strip()
 
-# adaptive   | Adaptive gating + RAG (Self-RAG 방식)
 
 if __name__ == "__main__":
     CFG = get_config()
@@ -57,35 +65,25 @@ if __name__ == "__main__":
     try:
         ndocs = 5
 
-        # 기존 csv/pdf/straw 등
-        stores = load_semantic_retrievers(ndocs=ndocs)
+        # ✅ cleaned_md/<L1>/<L2> 폴더별 retriever 로드
+        cleaned_folder_retrievers = load_cleaned_md_level2_retrievers(ndocs=ndocs)
 
-        # 🔹 docs_semantic_md 하위 폴더별 retriever 로드
-        semantic_folder_retrievers = load_semantic_retrievers(ndocs=ndocs)
-
-        # 🔹 폴더별 retriever들을 하나로 묶는 멀티 리트리버 생성
-        semantic_multi = MultiCosineRetriever(
-            retrievers=semantic_folder_retrievers,
+        # ✅ 폴더별 retriever들을 하나로 묶는 멀티 리트리버 생성
+        cleaned_multi = MultiCosineRetriever(
+            retrievers=cleaned_folder_retrievers,
             k_each=10,     # 폴더당 top-10 문서
             top_k=5        # 전체 최종 5개
         )
 
-        # 전체 retriever 맵 구성
+        # ✅ retriever_map 구성 (최소)
         retriever_map = {
-            "semantic_multi": semantic_multi,
-            "straw": stores.get("straw"),
-            "qna": stores.get("qna"),
-            "crop": stores.get("crop"),
-            "soil": stores.get("soil"),
-            "bugs": stores.get("bugs"),
-            "farm": stores.get("farm"),
+            "cleaned_multi": cleaned_multi,
         }
 
-        # 기본 retriever 설정
-        retriever_mode = "semantic_multi"
+        # ✅ 기본 retriever 설정
+        retriever_mode = "cleaned_multi"
         print(f"[DEBUG] retriever_mode: {retriever_mode}")
 
-        # SQL 경로
         expert_instances = create_expert_instances(
             retriever_map,
             retriever_mode,
@@ -110,7 +108,7 @@ if __name__ == "__main__":
 
             try:
                 res = expert.handle(question)
-                answer = res[0] if isinstance(res, tuple) else res
+                answer = normalize_answer(res)
                 print(f"\n[Answer]\n{answer}\n")
             except Exception as e:
                 print(f"\n[오류 발생]: {str(e)}\n")
