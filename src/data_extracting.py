@@ -22,7 +22,7 @@ EMAIL_RE = re.compile(r"(?i)\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 RRN_RE   = re.compile(r"(?<!\d)\d{6}[-\s]?\d{7}(?!\d)")  # 주민번호(단순 패턴)
 
 # 3) 이름(문서 전체에서 모두 마스킹) - 표(|), HTML 태그 등에서도 안정적으로 동작하도록 경계 재정의
-KOR_SURNAMES = "김|이|박|최|정|강|조|윤|장|임|한|오|서|신|권|황|안|송|류|전|홍|고|문|양|손|배|백|허|유|남|심|노"
+KOR_SURNAMES = "김|이|박|최|정|강|조|주|선|윤|장|임|한|오|서|신|권|황|안|송|류|전|홍|고|문|양|손|배|백|허|유|남|심|노|도|예|변|방|단|추|사|엄|어|주|장|임|전|홍|고|문|양|손|배|백|허|유|남|심|노"
 NAME_RE = re.compile(
     rf"(^|[^가-힣])((?:{KOR_SURNAMES})[가-힣]{{1,2}})(?=[^가-힣]|$)"
 )
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     clean_dir = Path("db/cleaned_md/farm_consulting/")
     clean_dir.mkdir(parents=True, exist_ok=True)
 
-    MAX_CHARS = 100  # 스킵 기준(문자 수)
+    MAX_CHARS = 70  # 스킵 기준(문자 수)
     for pdf_path in pdf_files:
         print(f"\nProcessing: {pdf_path}")
 
@@ -103,7 +103,7 @@ if __name__ == "__main__":
             res.save_to_markdown(save_path=clean_path)
             # md로 저장
             cleaned_text = mask_pii_md(md_text)
-            cleaned_md_path = clean_dir / rel_path / f"{rel_path.stem}_{page_idx}.md"
+            cleaned_md_path = clean_path / f"{rel_path.stem}_{page_idx}.md"
             cleaned_md_path.write_text(cleaned_text, encoding="utf-8")
             print(f"Saved page {page_idx} → {cleaned_md_path}")
     ##################################################################################
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     clean_dir = Path("db/cleaned_md/manual_book/")
     clean_dir.mkdir(parents=True, exist_ok=True)
 
-    MAX_CHARS = 100  # 스킵 기준(문자 수)
+    MAX_CHARS = 70  # 스킵 기준(문자 수)
     for pdf_path in pdf_files:
         print(f"\nProcessing: {pdf_path}")
 

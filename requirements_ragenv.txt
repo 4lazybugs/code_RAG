@@ -1,57 +1,58 @@
 ############################################################
 # 1) HuggingFace / SBERT
 ############################################################
-transformers>=4.45.0
-sentence-transformers>=3.0.0
-safetensors>=0.4.3
-accelerate>=0.34.0
-huggingface-hub>=0.24.0
-sentencepiece>=0.1.99
+transformers>=4.45.0,<5.0.0
+sentence-transformers>=3.1.0,<4.0.0
+safetensors>=0.4.3,<0.5.0
+accelerate>=0.34.0,<0.35.0
+huggingface-hub>=0.24.0,<0.30.0
+sentencepiece>=0.1.99,<0.2.0
+sacrebleu
 
 ############################################################
-# 2) LangChain / RAG
+# 2) LangChain / RAG (1.x 라인으로 통일)
 ############################################################
-langchain==0.3.7
-langchain-core>=0.3.15
-langchain-community>=0.3.3
-langchain-ollama>=0.2.0
-langchain-chroma>=0.1.6
-pip install langchain-experimental
-chromadb>=0.5.0
-vllm
-pip install -U langchain-google-genai
+langchain>=1.2.0,<2.0.0
+langchain-openai>=1.1.4,<2.0.0
+langchain-ollama>=1.0.1,<2.0.0
+langchain-chroma>=1.1.0,<2.0.0
+langchain-google-genai>=4.0.0,<5.0.0
+-U langchain-community
+
+# Chroma는 기존 0.5.x 유지 (chromadb 1.x로 올라가면 서버/클라 버전 이슈 생길 수 있음)
+chromadb>=1.3.5,<2.0.0
+
+############################################################
+# 2-1) vLLM
+############################################################
+vllm==0.5.5
 
 ############################################################
 # 3) NLP Metrics & Utils
 ############################################################
-bert-score>=0.3.13
-evaluate>=0.4.3
-rouge-score>=0.1.2
-konlpy>=0.6.0
+bert-score>=0.3.13,<0.4.0
+evaluate>=0.4.3,<0.5.0
+rouge-score>=0.1.2,<0.2.0
+konlpy>=0.6.0,<0.7.0
 
 ############################################################
 # 4) Data / Utils
 ############################################################
-pandas>=2.2.0
-numpy>=1.26.0
-tqdm>=4.66.0
-jsonlines>=3.0.0
+pandas>=2.2.0,<3.0.0
+numpy>=1.26.0,<2.0.0
+tqdm>=4.66.0,<5.0.0
+jsonlines>=3.0.0,<4.0.0
 
 ############################################################
 # 5) PDF / Parsing / DB
 ############################################################
-PyMuPDF>=1.24.0           # import fitz
-PyPDF2>=3.0.0
-SQLAlchemy>=2.0.0
-openai>=1.0.0
-pydantic>=2.0.0
+PyMuPDF>=1.24.0,<1.30.0
+PyPDF2>=3.0.0,<4.0.0
+SQLAlchemy>=2.0.0,<3.0.0
+openai>=1.0.0,<2.0.0
+pydantic>=2.0.0,<3.0.0
 
 ############################################################
 # 6) Tensor/Keras
 ############################################################
 tf-keras
-
-############################################################
-# 7) 주의: 아래는 pip로 설치하지 말고 conda로 설치하세요.
-# conda install -c conda-forge openpyxl
-############################################################

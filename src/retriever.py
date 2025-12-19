@@ -219,7 +219,7 @@ class MultiCosineRetriever(BaseRetriever):
         return self._get_relevant_documents(query, run_manager=None)
 
 
-def load_cleaned_md_level2_retrievers(ndocs: int = 10) -> Dict[str, Any]:
+def load_cleaned_md_level2_retrievers(ndocs: int = 5) -> Dict[str, Any]:
     """
     cleaned_md 하위 2레벨(L1/L2) 폴더별 DB 로드
     - data_root: db/cleaned_md/<L1>/<L2>
