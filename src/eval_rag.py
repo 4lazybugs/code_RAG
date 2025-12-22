@@ -2,34 +2,18 @@ import os
 os.environ["TRANSFORMERS_NO_TF"] = "1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-from rag import PartialExpert, RawLlmExpert, SelfAskExpert
-from rag import MultiCosineRetriever                # ✅ 추가
-from retriever import load_cleaned_md_level2_retrievers
 import json
 import pandas as pd
 import torch
 import time
 import gc
-import openai
 import numpy as np
-from utils import get_config
 from konlpy.tag import Okt
 from rouge_score.tokenizers import Tokenizer
-from models_eval import (
-    Rouge1Evaluator, RougeLEvaluator, BertEvaluator,
-    SbertEvaluator, MoverEvaluator, BleurtEvaluator, BleuEvaluator
-)
-from retriever import (
-    MultiCosineRetriever,               # (기존 semantic 폴더별)
-    load_cleaned_md_level2_retrievers        # ✅ cleaned_md/<L1>/<L2> 폴더별 (당신이 만든 것)
-)
-from pathlib import Path
-# Expert 클래스들
-from rag import PartialExpert, RawLlmExpert, SelfAskExpert
 
-CFG = get_config()
-# store_db 전역 임베딩 모델 주입
-openai.api_key = os.getenv("OPENAI_API_KEY")
+from models_eval import Rouge1Evaluator, RougeLEvaluator, BleuEvaluator
+from models_eval import BertEvaluator, SbertEvaluator, MoverEvaluator
+from pathlib import Path
 
 
 class KoreanTokenizer(Tokenizer):
@@ -43,60 +27,37 @@ class KoreanTokenizer(Tokenizer):
 if __name__ == '__main__':
     start_time = time.time()
 
-    # 1) 파라미터 입력
-    qa_mode = 'cleaned'
-    retriever_mode = 'cleaned_multi'
+    results_dir = (Path(__file__).resolve().parent / ".." / "results").resolve()
+    results_dir.mkdir(parents=True, exist_ok=True)
+    (results_dir / "score").mkdir(parents=True, exist_ok=True)  # ✅ 저장 폴더 보장
 
     selected_modes = ['partial_10', 'raw_llm']
-    selected_metrics = ['rouge1','rougeL','bert','sbert','bleu']
+    selected_metrics = ['rouge1', 'rougeL', 'bert', 'sbert', 'bleu']
+
+    # ✅ 원본 BaseEvaluator 시그니처를 만족시키기 위한 최소 변수(실제로는 cache hit이라 사용 안 됨)
+    qa_mode = "cleaned"
     sample_size = None
+    qa_data_path = {qa_mode: "__unused__"}  # cache 주입 후 get_data가 파일을 안 읽으므로 더미로 OK
 
-    qa_data_path = {'cleaned': 'qa_data/GT/'}
-
-    # --------------------------------------------------
-    # ✅ [추가] GT 폴더(재귀) -> 단일 JSON으로 병합 (Evaluator 수정 없이)
-    # -------------------------------------------------
-    def _load_json_any(fp: Path):
-        data = json.load(open(fp, "r", encoding="utf-8"))
-        if isinstance(data, dict) and "data" in data and isinstance(data["data"], list):
-            return data["data"]
-        if isinstance(data, list):
-            return data
-        return [data]
-
-    gt_root = Path(qa_data_path[qa_mode])
-    merged_items = []
-    for fp in gt_root.rglob("*.json"):          # 필요하면 "*.jsonl"도 추가해서 처리
-        merged_items.extend(_load_json_any(fp))
-
-    merged_path = gt_root.parent / "_merged_gt.json"
-    with open(merged_path, "w", encoding="utf-8") as f:
-        json.dump(merged_items, f, ensure_ascii=False, indent=2)
-
-    qa_data_path[qa_mode] = str(merged_path)    # ✅ 이후 Evaluator는 “단일 파일”로 인식
-    # --------------------------------------------------
-
-    # 2) 초기 retriever 세팅
-    ndocs_init = 10
-    cleaned_folder_retrievers = load_cleaned_md_level2_retrievers(ndocs=ndocs_init)
-    cleaned_multi = MultiCosineRetriever(retrievers=cleaned_folder_retrievers, k_each=10, top_k=3)
-
-    retr_map = {"cleaned_multi": cleaned_multi}
     summary = []
 
     for mode in selected_modes:
-        if mode.startswith("partial_"):
-            expert = PartialExpert(retr_map, retriever_mode)
-        elif mode.startswith("selfask_"):
-            k = int(mode.split("_")[1])
-            expert = SelfAskExpert(retr_map, retriever_mode, max_iter=k)
-        elif mode == "raw_llm":
-            expert = RawLlmExpert(retr_map, retriever_mode)
-        else:
-            raise ValueError(f"Unknown mode: {mode}")
+        # --------------------------------------------------
+        # ✅ results/qag/{mode}.json 로드해서 (q,r,g,id,info) 구성
+        # --------------------------------------------------
+        qag_path = results_dir / "qag" / f"{mode}.json"
+        if not qag_path.exists():
+            raise FileNotFoundError(f"QAG file not found: {qag_path}")
 
-        base_ev = Rouge1Evaluator(expert, qa_data_path=qa_data_path[qa_mode], sample_size=sample_size)
-        questions, references, generated = base_ev.get_data(mode)
+        with open(qag_path, "r", encoding="utf-8") as f:
+            recs_qag = json.load(f)
+
+        questions  = [r["question"] for r in recs_qag]
+        references = [r["reference"] for r in recs_qag]
+        generated  = [r["generated"] for r in recs_qag]
+        qa_id      = [r["id"] for r in recs_qag]
+        infos      = [r.get("info") for r in recs_qag]  # 없으면 None
+        # --------------------------------------------------
 
         for metric in selected_metrics:
             EvCls = {
@@ -108,15 +69,24 @@ if __name__ == '__main__':
                 'bleu':   BleuEvaluator
             }[metric]
 
-            ev = EvCls(expert, qa_data_path[qa_mode], sample_size)
-            ev._cache[mode] = (questions, references, generated)
-            ev._infos[mode] = base_ev._infos.get(mode, [None]*len(questions))
+            # ✅ 평가-only: expert는 사용하지 않으므로 None
+            ev = EvCls(expert=None, qa_data_path=qa_data_path[qa_mode], sample_size=sample_size)
 
-            out_path = f"../results/{mode}_{metric}.json"
-            ev.eval(mode, out_path)
+            # ✅ qag json에서 로드한 값으로 캐시 주입
+            ev._cache[mode] = (questions, references, generated, qa_id)
+            ev._infos[mode] = infos
 
-            recs = json.load(open(out_path, 'r', encoding='utf-8'))
-            values = [r[metric] for r in recs]
+            out_path = results_dir / "score" / f"{mode}_{metric}.json"
+            print(f"[RUN] {mode} {metric} start (score-only)", flush=True)
+
+            # ✅ BaseEvaluator에 구현된 함수 사용 (eval 아님)
+            ev.save_score(mode, str(out_path))
+
+            with open(out_path, "r", encoding="utf-8") as f:
+                recs = json.load(f)
+
+            # 저장 키가 metric과 동일하다는 가정(현재 selected_metrics 기준 OK)
+            values = [row[metric] for row in recs]
             summary.append({
                 'mode': mode,
                 'metric': metric,
@@ -124,7 +94,6 @@ if __name__ == '__main__':
                 'std': float(np.std(values))
             })
 
-        del expert
         torch.cuda.empty_cache()
         gc.collect()
 
@@ -132,11 +101,10 @@ if __name__ == '__main__':
     df_avg = df.pivot(index='mode', columns='metric', values='average')
     df_std = df.pivot(index='mode', columns='metric', values='std')
 
-    os.makedirs('../results', exist_ok=True)
-    with pd.ExcelWriter('../results/summary.xlsx') as writer:
+    with pd.ExcelWriter(results_dir / 'summary.xlsx') as writer:
         df_avg.to_excel(writer, sheet_name='average')
         df_std.to_excel(writer, sheet_name='std')
 
-    print("✅ 모든 평가 완료: ../results/summary.xlsx (average/std 시트 포함)")
+    print(f"✅ 모든 평가 완료: {results_dir / 'summary.xlsx'} (average/std 시트 포함)")
     elapsed = time.time() - start_time
     print(f"⏱ 전체 평가 완료: {elapsed/60:.2f}분")

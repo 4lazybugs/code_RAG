@@ -7,7 +7,9 @@ import json
 import os
 from tqdm import tqdm
 import torch
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+#device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cpu"
 
 class BaseEvaluator(ABC):
     """
@@ -44,7 +46,9 @@ class BaseEvaluator(ABC):
             questions  = [item['question'] for item in dataset]
             references = [str(item['answer']) for item in dataset]
             generated  = self.generate(questions, mode)
-            self._cache[mode] = (questions, references, generated)
+            qa_id = [item['id'] for item in dataset]
+            #breakpoint()
+            self._cache[mode] = (questions, references, generated, qa_id)
         return self._cache[mode]
 
     def generate(self, questions: list, mode: str) -> list:
@@ -56,12 +60,21 @@ class BaseEvaluator(ABC):
                 ans, info = res
             else:
                 ans, info = res, None
+            
+            # ✅ 여기만 추가: ans가 AIMessage 등일 때 문자열로 정규화
+            if hasattr(ans, "content"):          # LangChain AIMessage/BaseMessage
+                ans = ans.content
+            elif isinstance(ans, dict):          # 혹시 dict로 오는 경우
+                ans = ans.get("content") or ans.get("text") or ans.get("answer") or str(ans)
+            ans = "" if ans is None else str(ans)
+
             preds.append(ans)
             infos.append(info)
         self._infos[mode] = infos
         return preds
 
     def save_json(self, mode: str,
+                  qa_ids: list,
                   questions: list,
                   references: list,
                   generated: list,
@@ -72,6 +85,7 @@ class BaseEvaluator(ABC):
         n = len(questions)
         for i in range(n):
             rec = {
+                'id':        qa_ids[i],
                 'question':  questions[i],
                 'reference': references[i],
                 'generated': generated[i],
@@ -91,8 +105,8 @@ class BaseEvaluator(ABC):
     def compute_scores(self, references: list, generated: list) -> list:
         pass
 
-    def eval(self, mode: str, output_path: str):
-        q, r, g = self.get_data(mode)
+    def save_score(self, mode: str, output_path: str):
+        q, r, g, qa_id = self._cache[mode]
         orig = self.__class__.__name__.replace('Evaluator','').lower()
         mapping = {
             'rouge1': 'rouge1',
@@ -107,5 +121,5 @@ class BaseEvaluator(ABC):
         if metric_name is None:
             raise ValueError(f"Unknown evaluator class: {self.__class__.__name__}")
 
-        scores = self.compute_scores(r, g)
-        self.save_json(mode, q, r, g, {metric_name: scores}, output_path)
+        scores = self.compute_scores(r, g) # (references, generated)의 평가지표 점수(bert, sbert 등) 계산
+        self.save_json(mode, qa_id, q, r, g, {metric_name: scores}, output_path)

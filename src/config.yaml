@@ -21,7 +21,7 @@ w_use: 0.5
 ###################
 #model_name: "$MODEL_DIR" # local huggingface model directory, selfrag/llama2_7b를 환경변수로 저장하였음
 #model_name: "yi:34b-chat"
-model_name : "Qwen/Qwen2.5-14B-Instruct"
+model_name : "Qwen/Qwen2.5-32B-Instruct"
 #model_name : "Qwen/Qwen2.5-32B-Instruct"
 #model_name : "qwen2.5:72b-instruct"
 #model_name : 'llama3:70b'
@@ -46,5 +46,5 @@ embedor_model_name: "upskyy/bge-m3-korean"
 sbert_model_name : "snunlp/KR-SBERT-V40K-klueNLI-augSTS"
 #sbert_model_name : "all-MiniLM-L6-v2"
 #bert_model_name : "bert-base-uncased" # 영어 전용
-#bert_model_name : bert-base-multilingual-cased # 다국어 지원
-bert_model_name : xlm-roberta-large # 다국어 지원2 hugging face 모델
+bert_model_name : bert-base-multilingual-cased # 다국어 지원
+#bert_model_name : xlm-roberta-large # 다국어 지원2 hugging face 모델, 근데 에러남

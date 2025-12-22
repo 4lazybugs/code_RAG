@@ -1,9 +1,22 @@
 from .base import BaseEvaluator
 
-def _normalize(text: str) -> str:
+def _normalize(text) -> str:
     if text is None:
         return ""
-    return text.strip()
+
+    # ✅ LangChain 메시지(AIMessage 등) 대응: .content를 문자열로 변환
+    if hasattr(text, "content"):
+        text = text.content
+
+    # ✅ dict 형태 대응(혹시 있을 경우)
+    if isinstance(text, dict):
+        for k in ("content", "text", "answer", "output"):
+            if k in text:
+                text = text[k]
+                break
+
+    # ✅ 최종적으로 문자열 보장
+    return str(text).strip()
 
 class Rouge1Evaluator(BaseEvaluator):
     metric_key = 'rouge1'
