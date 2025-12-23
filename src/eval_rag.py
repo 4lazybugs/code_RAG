@@ -76,7 +76,7 @@ if __name__ == '__main__':
             ev._cache[mode] = (questions, references, generated, qa_id)
             ev._infos[mode] = infos
 
-            out_path = results_dir / "score" / f"{mode}_{metric}.json"
+            out_path = results_dir / "score" / f"score_{mode}_{metric}.json"
             print(f"[RUN] {mode} {metric} start (score-only)", flush=True)
 
             # ✅ BaseEvaluator에 구현된 함수 사용 (eval 아님)

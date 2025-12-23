@@ -1,5 +1,4 @@
 # retriever.py
-
 from typing import Dict, Any, List, Tuple, Optional
 from pathlib import Path
 import math
@@ -208,6 +207,13 @@ class MultiCosineRetriever(BaseRetriever):
 
         candidates.sort(key=key_fn, reverse=True)
         top_docs = [d for d, _ in candidates[: self.top_k]]
+
+        # ✅ rank 저장 (권장)
+        for rank, d in enumerate(top_docs, start=1):
+            md = dict(d.metadata)
+            md["__rank__"] = rank
+            d.metadata = md
+
         return top_docs
 
     async def _aget_relevant_documents(

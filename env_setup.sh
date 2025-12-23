@@ -36,3 +36,5 @@ python -m pip install https://paddle-whl.bj.bcebos.com/nightly/cu126/safetensors
 pip install -r requirements.txt
 # torch 2.6 + CUDA 12.4 설치:
 conda install -c conda-forge openpyxl -y
+
+chmod +x src/eval_pipe.sh

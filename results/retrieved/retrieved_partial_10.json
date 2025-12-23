@@ -1,0 +1,427 @@
+[
+  {
+    "id": 378,
+    "retrieved": [
+      {
+        "rank": 1,
+        "filename": "[text]consulting_2024_p21top40_42.md",
+        "content": []
+      },
+      {
+        "rank": 2,
+        "filename": "[text]consulting_2024_p21top40_16.md",
+        "content": []
+      },
+      {
+        "rank": 3,
+        "filename": "[text]consulting_2024_p21top40_13.md",
+        "content": []
+      },
+      {
+        "rank": 4,
+        "filename": "[text]consulting_2024_p21top40_10.md",
+        "content": []
+      },
+      {
+        "rank": 5,
+        "filename": "[text]consulting_2024_p01top20_90.md",
+        "content": []
+      },
+      {
+        "rank": 6,
+        "filename": "[text]consulting_2024_p21top40_51.md",
+        "content": []
+      },
+      {
+        "rank": 7,
+        "filename": "[text]consulting_2024_p01top20_12.md",
+        "content": []
+      }
+    ]
+  },
+  {
+    "id": 392,
+    "retrieved": [
+      {
+        "rank": 1,
+        "filename": "[text]advanced_strawberry_manual_113.md",
+        "content": []
+      },
+      {
+        "rank": 2,
+        "filename": "[OCR]strawberry_standart_protocl_33.md",
+        "content": [
+          "<tr><td rowspan=\"3\">계산식</td><td style='text-align: center;'>소요된 NaOH(ml) × N NaOH × 산밀리당량(0.064) × 100 × 희석배수</td></tr>",
+          "<tr><td style='text-align: center;'>총부피(ml)</td></tr>",
+          "<tr><td style='text-align: center;'>→ 소요된 NaOH(적정량) ml × 0.32</td></tr>"
+        ]
+      },
+      {
+        "rank": 3,
+        "filename": "[text]consulting_2024_p01top20_5.md",
+        "content": [
+          "<tr><td style='text-align: center;'>분석 [NAME]</td><td style='text-align: center;'>분석 항목</td><td style='text-align: center;'>분석 결과</td><td style='text-align: center;'>[NAME]</td><td style='text-align: center;'>분석 결과</td><td style='text-align: center;'>[NAME]</td></tr>",
+          "<tr><td style='text-align: center;'></td><td style='text-align: center;'>pH</td><td style='text-align: center;'>6.6</td><td style='text-align: center;'></td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'></td><td style='text-align: center;'>전기전도도(EC)</td><td style='text-align: center;'>0.2</td><td style='text-align: center;'>mS/cm</td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td rowspan=\"5\">음이은</td><td style='text-align: center;'>궐산이은(NO3)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>&lt;3</td><td style='text-align: center;'>ppm(NO3-N)</td></tr>",
+          "<tr><td style='text-align: center;'>염소이은(Cl)</td><td style='text-align: center;'>0.4</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>13</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>황(S)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>&lt;6</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>중탄산이은(HCO3)</td><td style='text-align: center;'>1.0</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>61</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>인(P)</td><td style='text-align: center;'>&lt;0.02</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>&lt;1</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td rowspan=\"6\">[NAME]</td><td style='text-align: center;'>암모늄이은(NH4)</td><td style='text-align: center;'>&lt;0.1</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>&lt;1.4</td><td style='text-align: center;'>ppm(NH4-N)</td></tr>",
+          "<tr><td style='text-align: center;'>칼륨(K)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>&lt;8</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>나트륨(Na)</td><td style='text-align: center;'>0.6</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>13</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>칼슘(Ca)</td><td style='text-align: center;'>0.4</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>16</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>마그네슘(Mg)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>&lt;5</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>규소(Si)</td><td style='text-align: center;'>0.42</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>12</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td rowspan=\"6\">미망원소</td><td style='text-align: center;'>월(Fe)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>μ mol/L</td><td style='text-align: center;'>&lt;0.01</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>망간(Mn)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>μ mol/L</td><td style='text-align: center;'>&lt;0.01</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>아연(Zn)</td><td style='text-align: center;'>0.3</td><td style='text-align: center;'>μ mol/L</td><td style='text-align: center;'>0.02</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>봉소(B)</td><td style='text-align: center;'>3.4</td><td style='text-align: center;'>μ mol/L</td><td style='text-align: center;'>0.04</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>구리(Cu)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>μ mol/L</td><td style='text-align: center;'>&lt;0.01</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>몰리브덴(Mo)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>μ mol/L</td><td style='text-align: center;'>&lt;0.02</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'></td><td style='text-align: center;'>비</td><td style='text-align: center;'>표  염</td><td style='text-align: center;'>비  료</td><td colspan=\"3\">100배 돈딱(1000L 담)</td></tr>",
+          "<tr><td rowspan=\"5\">A랭크</td><td style='text-align: center;'>5[Ca(NO3)2·2H2O]NH4NO3</td><td style='text-align: center;'>첨산칼슘10수령</td><td style='text-align: center;'>닥</td><td colspan=\"3\">62 kg</td></tr>",
+          "<tr><td style='text-align: center;'>Ca(NO3)2·4H2O</td><td style='text-align: center;'>(두는) 짚산칼슘 4수령</td><td style='text-align: center;'>잎</td><td colspan=\"3\">( 69 kg)</td></tr>",
+          "<tr><td style='text-align: center;'>KNO3</td><td style='text-align: center;'>짚산칼슘</td><td style='text-align: center;'>1</td><td colspan=\"3\">kg</td></tr>",
+          "<tr><td style='text-align: center;'>Fe-DTPA 6%</td><td style='text-align: center;'>짚러이트층</td><td style='text-align: center;'>1</td><td colspan=\"3\">2513 g = 1933 mL</td></tr>",
+          "<tr><td style='text-align: center;'>Fe-EDTA 13%</td><td style='text-align: center;'>([NAME])</td><td style='text-align: center;'>잎</td><td colspan=\"3\">(1160 g = 892,15 mL)</td></tr>",
+          "<tr><td rowspan=\"10\">B랭크</td><td style='text-align: center;'>KNO3</td><td style='text-align: center;'>짚산칼슘</td><td style='text-align: center;'>23</td><td colspan=\"3\">kg</td></tr>",
+          "<tr><td style='text-align: center;'>MgSO4·7H2O</td><td style='text-align: center;'>황산마그네슘</td><td style='text-align: center;'>18</td><td colspan=\"3\">kg</td></tr>",
+          "<tr><td style='text-align: center;'>K2SO4</td><td style='text-align: center;'>황산칼슘</td><td style='text-align: center;'>8</td><td colspan=\"3\">kg</td></tr>",
+          "<tr><td style='text-align: center;'>Mg(NO3)2·6H2O</td><td style='text-align: center;'>짚산마그네슘</td><td style='text-align: center;'>0 L = 0</td><td colspan=\"3\">kg</td></tr>",
+          "<tr><td style='text-align: center;'>KH2PO4</td><td style='text-align: center;'>제 1인산 짚릉</td><td style='text-align: center;'>14</td><td colspan=\"3\">kg</td></tr>",
+          "<tr><td style='text-align: center;'>MnSO4·H2O</td><td style='text-align: center;'>황산닭값</td><td style='text-align: center;'>308</td><td colspan=\"3\">g</td></tr>",
+          "<tr><td style='text-align: center;'>ZnSO4·7H2O</td><td style='text-align: center;'>황산이면</td><td style='text-align: center;'>162</td><td colspan=\"3\">g</td></tr>",
+          "<tr><td style='text-align: center;'>H3BO3</td><td style='text-align: center;'>[NAME]</td><td colspan=\"4\">63 g = 44 mL</td></tr>",
+          "<tr><td style='text-align: center;'>CuSO4·5H2O</td><td style='text-align: center;'>황산구리</td><td style='text-align: center;'>17</td><td colspan=\"3\">g</td></tr>",
+          "<tr><td style='text-align: center;'>Na2MoO4·2H2O</td><td style='text-align: center;'>끝리브민산나트릉</td><td style='text-align: center;'>10</td><td colspan=\"3\">g</td></tr>",
+          "<tr><td style='text-align: center;'></td><td style='text-align: center;'>비</td><td style='text-align: center;'>료  염</td><td style='text-align: center;'>비</td><td style='text-align: center;'>료</td><td colspan=\"3\">100배 원액(1000L 담)</td></tr>",
+          "<tr><td rowspan=\"5\">A량크</td><td style='text-align: center;'>5[Ca(NO3)2·2H2O]NH4NO3</td><td style='text-align: center;'>철산칼슘10수령</td><td style='text-align: center;'>담</td><td style='text-align: center;'>62</td><td style='text-align: center;'>kg</td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>Ca(NO3)2·4H2O</td><td style='text-align: center;'>(또는) 철산칼슘 4수령</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>(</td><td style='text-align: center;'>69</td><td style='text-align: center;'>kg)</td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>KNO3</td><td style='text-align: center;'>철산칼슘</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>3</td><td style='text-align: center;'>kg</td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>Fe-DTPA 6%</td><td style='text-align: center;'>철산칼슘</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>2513</td><td style='text-align: center;'>g = 1933</td><td style='text-align: center;'>mL</td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>Fe-EDTA 13%</td><td style='text-align: center;'>(또는)</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>(1160</td><td style='text-align: center;'>g = 892.15</td><td style='text-align: center;'>mL)</td><td style='text-align: center;'></td></tr>",
+          "<tr><td rowspan=\"10\">B량크</td><td style='text-align: center;'>KNO3</td><td style='text-align: center;'>철산칼슘</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>26</td><td style='text-align: center;'>kg</td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>MgSO4·7H2O</td><td style='text-align: center;'>철산마그네슘</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>15</td><td style='text-align: center;'>kg</td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>K2SO4</td><td style='text-align: center;'>철산칼슘</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>10</td><td style='text-align: center;'>kg</td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>Mg(NO3)2·8H2O</td><td style='text-align: center;'>철산마그네슘</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>0</td><td style='text-align: center;'>L = 0</td><td style='text-align: center;'>kg</td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>KH2PO4</td><td style='text-align: center;'>지 1인산 칼슘</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>14</td><td style='text-align: center;'>kg</td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>MnSO4·1H2O</td><td style='text-align: center;'>철산망간</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>308</td><td style='text-align: center;'>g</td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>ZnSO4·7H2O</td><td style='text-align: center;'>철산망간</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>162</td><td style='text-align: center;'>g</td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>H3BO3</td><td style='text-align: center;'>왕산</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>63</td><td style='text-align: center;'>g = 44</td><td style='text-align: center;'>mL</td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>CuSO4·5H2O</td><td style='text-align: center;'>철산구리</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>17</td><td style='text-align: center;'>g</td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>Na2MoO4·2H2O</td><td style='text-align: center;'>철산구리</td><td style='text-align: center;'>왕</td><td style='text-align: center;'>10</td><td style='text-align: center;'>g</td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>"
+        ]
+      },
+      {
+        "rank": 4,
+        "filename": "[OCR]strawberry_standart_protocl_31.md",
+        "content": []
+      },
+      {
+        "rank": 5,
+        "filename": "[text]consulting_2024_p21top40_88.md",
+        "content": [
+          "<tr><td style='text-align: center;'>분석 [NAME]</td><td style='text-align: center;'>분석 항목</td><td style='text-align: center;'>분석 결과</td><td style='text-align: center;'>[NAME]</td><td style='text-align: center;'>분석 결과</td><td style='text-align: center;'>[NAME]</td></tr>",
+          "<tr><td style='text-align: center;'></td><td style='text-align: center;'>pH</td><td style='text-align: center;'>7.7</td><td style='text-align: center;'></td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'></td><td style='text-align: center;'>헌기전도도(EC)</td><td style='text-align: center;'>0.2</td><td style='text-align: center;'>mS/cm</td><td style='text-align: center;'></td><td style='text-align: center;'></td></tr>",
+          "<tr><td rowspan=\"5\">음이은</td><td style='text-align: center;'>검산이은(NO3)</td><td style='text-align: center;'>0.6</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>8</td><td style='text-align: center;'>ppm(NO3-N)</td></tr>",
+          "<tr><td style='text-align: center;'>염소이은(Cl)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>&lt;7</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>팔(S)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>&lt;6</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>중턴산이은(HCO3)</td><td style='text-align: center;'>1.5</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>90</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>인(P)</td><td style='text-align: center;'>&lt;0.02</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>&lt;1</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td rowspan=\"6\">[NAME]</td><td style='text-align: center;'>암모늄이은(NH4)</td><td style='text-align: center;'>&lt;0.1</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>&lt;1.4</td><td style='text-align: center;'>ppm(NH4-N)</td></tr>",
+          "<tr><td style='text-align: center;'>잡름(K)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>&lt;8</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>나트륨(Na)</td><td style='text-align: center;'>0.6</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>13</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>잘습(Ca)</td><td style='text-align: center;'>0.5</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>20</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>마그네습(Mg)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>&lt;5</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>규소(Si)</td><td style='text-align: center;'>0.43</td><td style='text-align: center;'>m mol/L</td><td style='text-align: center;'>12</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td rowspan=\"6\">미망원소</td><td style='text-align: center;'>월(Fe)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>μ mol/L</td><td style='text-align: center;'>&lt;0.01</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>망간(Mn)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>μ mol/L</td><td style='text-align: center;'>&lt;0.01</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>아연(Zn)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>μ mol/L</td><td style='text-align: center;'>&lt;0.01</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>봉소(B)</td><td style='text-align: center;'>2.5</td><td style='text-align: center;'>μ mol/L</td><td style='text-align: center;'>0.03</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>구리(Cu)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>μ mol/L</td><td style='text-align: center;'>&lt;0.01</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'>몰리브랜(Mo)</td><td style='text-align: center;'>&lt;0.2</td><td style='text-align: center;'>μ mol/L</td><td style='text-align: center;'>&lt;0.02</td><td style='text-align: center;'>ppm</td></tr>",
+          "<tr><td style='text-align: center;'></td><td style='text-align: center;'>비료명</td><td style='text-align: center;'>비료</td><td colspan=\"2\">100배 원액(1000L 담)</td></tr>",
+          "<tr><td rowspan=\"5\">A량크</td><td style='text-align: center;'>5[Ca(NO3)2·2H2O]NH4NO3</td><td style='text-align: center;'>절산왕숙10수염</td><td style='text-align: center;'>담</td><td style='text-align: center;'>60 kg</td></tr>",
+          "<tr><td style='text-align: center;'>Ca(NO3)2·4H2O</td><td style='text-align: center;'>(또는) 절산왕숙 4수염</td><td style='text-align: center;'>담</td><td style='text-align: center;'>( 67 kg )</td></tr>",
+          "<tr><td style='text-align: center;'>KNO3</td><td style='text-align: center;'>절산왕류</td><td style='text-align: center;'>담</td><td style='text-align: center;'>2 kg</td></tr>",
+          "<tr><td style='text-align: center;'>Fe-OTPA 6%</td><td style='text-align: center;'>절산왕류</td><td style='text-align: center;'>담</td><td style='text-align: center;'>2513 g = 1933 mL</td></tr>",
+          "<tr><td style='text-align: center;'>Fe-EDTA 13%</td><td style='text-align: center;'>(또는)</td><td style='text-align: center;'>담</td><td style='text-align: center;'>(1160 g = 892,15 mL)</td></tr>",
+          "<tr><td rowspan=\"10\">B량크</td><td style='text-align: center;'>KNO3</td><td style='text-align: center;'>절산왕류</td><td colspan=\"2\">19 kg</td></tr>",
+          "<tr><td style='text-align: center;'>MgSO4·7H2O</td><td style='text-align: center;'>총산마그네슘</td><td colspan=\"2\">19 kg</td></tr>",
+          "<tr><td style='text-align: center;'>K2SO4</td><td style='text-align: center;'>총산왕류</td><td colspan=\"2\">11 kg</td></tr>",
+          "<tr><td style='text-align: center;'>Mg(NO3)2·8H2O</td><td style='text-align: center;'>총산마그네슘</td><td colspan=\"2\">0 L = 0 kg</td></tr>",
+          "<tr><td style='text-align: center;'>KH2PO4</td><td style='text-align: center;'>제 1인산 왕류</td><td colspan=\"2\">14 kg</td></tr>",
+          "<tr><td style='text-align: center;'>MnSO4·H2O</td><td style='text-align: center;'>절산왕류</td><td colspan=\"2\">309 g</td></tr>",
+          "<tr><td style='text-align: center;'>ZnSO4·7H2O</td><td style='text-align: center;'>총산마염</td><td colspan=\"2\">172 g</td></tr>",
+          "<tr><td style='text-align: center;'>H3BO3</td><td style='text-align: center;'>높산</td><td colspan=\"2\">68 g = 47 mL</td></tr>",
+          "<tr><td style='text-align: center;'>CuSO4·5H2O</td><td style='text-align: center;'>총산구리</td><td colspan=\"2\">17 g</td></tr>",
+          "<tr><td style='text-align: center;'>Na2MoO4·2H2O</td><td style='text-align: center;'>날리브렌산나트릉</td><td colspan=\"2\">10 g</td></tr>",
+          "<tr><td style='text-align: center;'></td><td style='text-align: center;'>비료 염</td><td style='text-align: center;'>비료</td><td colspan=\"2\">100배 염백(1000L 등)</td></tr>",
+          "<tr><td rowspan=\"5\">A령크</td><td style='text-align: center;'>5[Ca(NO3)2·2H2O]NH4NO3</td><td style='text-align: center;'>절산할숨10수염</td><td style='text-align: center;'>닫</td><td style='text-align: center;'>61 kg</td></tr>",
+          "<tr><td style='text-align: center;'>Ca(NO3)2·4H2O</td><td style='text-align: center;'>(또는) 절산할숨 4수염</td><td style='text-align: center;'>닫</td><td style='text-align: center;'>( 68 kg )</td></tr>",
+          "<tr><td style='text-align: center;'>KNO3</td><td style='text-align: center;'>절산할림</td><td style='text-align: center;'></td><td style='text-align: center;'>4 kg</td></tr>",
+          "<tr><td style='text-align: center;'>Fe-DTPA 6%</td><td style='text-align: center;'>킬레이트절</td><td style='text-align: center;'>닫</td><td style='text-align: center;'>2513 g = 1933 mL</td></tr>",
+          "<tr><td style='text-align: center;'>Fe-EDTA 13%</td><td style='text-align: center;'>(또는)</td><td style='text-align: center;'>닫</td><td style='text-align: center;'>(1160 g = 892.15 mL)</td></tr>",
+          "<tr><td rowspan=\"10\">B령크</td><td style='text-align: center;'>KNO3</td><td style='text-align: center;'>절산할림</td><td style='text-align: center;'></td><td style='text-align: center;'>22 kg</td></tr>",
+          "<tr><td style='text-align: center;'>MgSO4·7H2O</td><td style='text-align: center;'>절산마그니슈</td><td style='text-align: center;'></td><td style='text-align: center;'>16 kg</td></tr>",
+          "<tr><td style='text-align: center;'>K2SO4</td><td style='text-align: center;'>절산말림</td><td style='text-align: center;'></td><td style='text-align: center;'>13 kg</td></tr>",
+          "<tr><td style='text-align: center;'>Mg(NO3)2·6H2O</td><td style='text-align: center;'>절산마그니슈</td><td style='text-align: center;'>0 L = 0 kg</td><td style='text-align: center;'></td></tr>",
+          "<tr><td style='text-align: center;'>KH2PO4</td><td style='text-align: center;'>제 1민산 탈림</td><td style='text-align: center;'></td><td style='text-align: center;'>14 kg</td></tr>",
+          "<tr><td style='text-align: center;'>MnSO4·H2O</td><td style='text-align: center;'>절산말림</td><td style='text-align: center;'></td><td style='text-align: center;'>309 g</td></tr>",
+          "<tr><td style='text-align: center;'>ZnSO4·7H2O</td><td style='text-align: center;'>절산야면</td><td style='text-align: center;'></td><td style='text-align: center;'>172 g</td></tr>",
+          "<tr><td style='text-align: center;'>H3BO3</td><td style='text-align: center;'>닫산</td><td style='text-align: center;'></td><td style='text-align: center;'>68 g = 47 mL</td></tr>",
+          "<tr><td style='text-align: center;'>CuSO4·5H2O</td><td style='text-align: center;'>절산구리</td><td style='text-align: center;'></td><td style='text-align: center;'>17 g</td></tr>",
+          "<tr><td style='text-align: center;'>Na2MoO4·2H2O</td><td style='text-align: center;'>끝리브면산나트림</td><td style='text-align: center;'></td><td style='text-align: center;'>10 g</td></tr>"
+        ]
+      },
+      {
+        "rank": 6,
+        "filename": "[OCR]strawberry_standart_protocl_32.md",
+        "content": []
+      },
+      {
+        "rank": 7,
+        "filename": "[text]advanced_strawberry_manual_97.md",
+        "content": []
+      }
+    ]
+  },
+  {
+    "id": 398,
+    "retrieved": [
+      {
+        "rank": 1,
+        "filename": "[text]consulting_2024_p21top40_42.md",
+        "content": []
+      },
+      {
+        "rank": 2,
+        "filename": "[text]consulting_2024_p21top40_16.md",
+        "content": []
+      },
+      {
+        "rank": 3,
+        "filename": "[text]consulting_2024_p21top40_13.md",
+        "content": []
+      },
+      {
+        "rank": 4,
+        "filename": "[text]consulting_2024_p21top40_10.md",
+        "content": []
+      },
+      {
+        "rank": 5,
+        "filename": "[text]consulting_2024_p01top20_90.md",
+        "content": []
+      },
+      {
+        "rank": 6,
+        "filename": "[text]consulting_2024_p21top40_51.md",
+        "content": []
+      },
+      {
+        "rank": 7,
+        "filename": "[text]consulting_2024_p01top20_12.md",
+        "content": []
+      }
+    ]
+  },
+  {
+    "id": 415,
+    "retrieved": [
+      {
+        "rank": 1,
+        "filename": "[OCR]manual_soil_crops_16pto20p_70pto72p_17.md",
+        "content": [
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"6\">양분 공급량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO3-N 100mg/kg 미만 (EC 2 dS/m 미만)</td><td colspan=\"3\">토양 NO3-N 100~200mg/kg (EC 2~4 dS/m)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 4톤</td><td style='text-align: center;'>3.2</td><td style='text-align: center;'>0.4</td><td style='text-align: center;'>4.4</td><td style='text-align: center;'>1.6</td><td style='text-align: center;'>0.2</td><td style='text-align: center;'>2.2</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 5톤</td><td style='text-align: center;'>4.0</td><td style='text-align: center;'>0.5</td><td style='text-align: center;'>5.5</td><td style='text-align: center;'>2.0</td><td style='text-align: center;'>0.3</td><td style='text-align: center;'>2.8</td></tr>",
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"3\">퇴비 사용량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO_{3}-N 함량(EC 기준)</td></tr>",
+          "<tr><td style='text-align: center;'>100mg/kg 미만 (2 dS/m 미만)</td><td style='text-align: center;'>100~200mg/kg (2~4 dS/m)</td><td style='text-align: center;'>200mg/kg 초과 (4 dS/m 초과)</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 3톤</td><td style='text-align: center;'>200</td><td style='text-align: center;'>100</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 4톤</td><td style='text-align: center;'>267</td><td style='text-align: center;'>133</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 5톤</td><td style='text-align: center;'>333</td><td style='text-align: center;'>167</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td rowspan=\"2\">구분</td><td rowspan=\"2\">생육단계</td><td rowspan=\"2\">주(Week)</td><td rowspan=\"2\">관수량(톤/10a)</td><td colspan=\"3\">필요한 양분함량(g/10a)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td rowspan=\"3\">수량(1톤/10a)</td><td rowspan=\"3\">생육초기</td><td style='text-align: center;'>1</td><td style='text-align: center;'>1.8~2.0</td><td style='text-align: center;'>—</td><td style='text-align: center;'>—</td><td style='text-align: center;'>—</td></tr>",
+          "<tr><td style='text-align: center;'>2</td><td style='text-align: center;'>1.8~2.0</td><td style='text-align: center;'>—</td><td style='text-align: center;'>—</td><td style='text-align: center;'>—</td></tr>",
+          "<tr><td style='text-align: center;'>3</td><td style='text-align: center;'>1.8~2.0</td><td style='text-align: center;'>23.0</td><td style='text-align: center;'>—</td><td style='text-align: center;'>12.0</td></tr>"
+        ]
+      },
+      {
+        "rank": 2,
+        "filename": "[OCR]manual_soil_crops_16pto20p_70pto72p_33.md",
+        "content": [
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"6\">양분 공급량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO3-N 100mg/kg 미만 (EC 2 dS/m 미만)</td><td colspan=\"3\">토양 NO3-N 100~200mg/kg (EC 2~4 dS/m)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 10톤</td><td style='text-align: center;'>5.8</td><td style='text-align: center;'>2.4</td><td style='text-align: center;'>4.2</td><td style='text-align: center;'>2.9</td><td style='text-align: center;'>1.2</td><td style='text-align: center;'>2.1</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 11톤</td><td style='text-align: center;'>6.4</td><td style='text-align: center;'>2.6</td><td style='text-align: center;'>4.6</td><td style='text-align: center;'>3.2</td><td style='text-align: center;'>1.3</td><td style='text-align: center;'>2.3</td></tr>",
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"3\">퇴비 사용량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO_{3}-N 함량(EC 기준)</td></tr>",
+          "<tr><td style='text-align: center;'>100mg/kg 미만 (2 dS/m 미만)</td><td style='text-align: center;'>100~200mg/kg (2~4 dS/m)</td><td style='text-align: center;'>200mg/kg 초과 (4 dS/m 초과)</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 9톤</td><td style='text-align: center;'>434</td><td style='text-align: center;'>217</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 10톤</td><td style='text-align: center;'>482</td><td style='text-align: center;'>241</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 11톤</td><td style='text-align: center;'>530</td><td style='text-align: center;'>265</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td rowspan=\"2\">구분</td><td rowspan=\"2\">생육단계</td><td rowspan=\"2\">주(Week)</td><td rowspan=\"2\">관수량(톤/10a)</td><td colspan=\"3\">필요한 양분함량(g/10a)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td rowspan=\"2\">수량(1톤/10a)</td><td rowspan=\"2\">생육초기</td><td style='text-align: center;'>1</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>2</td><td style='text-align: center;'>0.8~1.2</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td></tr>"
+        ]
+      },
+      {
+        "rank": 3,
+        "filename": "[OCR]manual_soil_crops_16pto20p_70pto72p_48.md",
+        "content": [
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"6\">양분 공급량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO3-N 100mg/kg 미만 (EC 2 dS/m 미만)</td><td colspan=\"3\">토양 NO3-N 100~200mg/kg (EC 2~4 dS/m)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 3톤</td><td style='text-align: center;'>4.2</td><td style='text-align: center;'>0.5</td><td style='text-align: center;'>10.2</td><td style='text-align: center;'>2.1</td><td style='text-align: center;'>0.3</td><td style='text-align: center;'>5.1</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 4톤</td><td style='text-align: center;'>5.6</td><td style='text-align: center;'>0.7</td><td style='text-align: center;'>13.6</td><td style='text-align: center;'>2.8</td><td style='text-align: center;'>0.4</td><td style='text-align: center;'>6.8</td></tr>",
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"3\">퇴비 사용량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO_{3}-N 함량(EC 기준)</td></tr>",
+          "<tr><td style='text-align: center;'>100mg/kg 미만 (2 dS/m 미만)</td><td style='text-align: center;'>100~200mg/kg (2~4 dS/m)</td><td style='text-align: center;'>200mg/kg 초과 (4 dS/m 초과)</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 2톤</td><td style='text-align: center;'>232</td><td style='text-align: center;'>116</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 3톤</td><td style='text-align: center;'>348</td><td style='text-align: center;'>174</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 4톤</td><td style='text-align: center;'>465</td><td style='text-align: center;'>232</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td rowspan=\"2\">구분</td><td rowspan=\"2\">생육단계</td><td rowspan=\"2\">주(Week)</td><td rowspan=\"2\">관수량(톤/10a)</td><td colspan=\"3\">필요한 양분함량(g/10a)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td rowspan=\"2\">수량(1톤/10a)</td><td rowspan=\"2\">영양생장기</td><td style='text-align: center;'>1</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>2</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td></tr>"
+        ]
+      },
+      {
+        "rank": 4,
+        "filename": "[OCR]manual_soil_crops_16pto20p_70pto72p_59.md",
+        "content": [
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"6\">양분 공급량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO3-N 100mg/kg 미만 (EC 2 dS/m 미만)</td><td colspan=\"3\">토양 NO3-N 100~200mg/kg (EC 2~4 dS/m)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 4톤</td><td style='text-align: center;'>1.5</td><td style='text-align: center;'>0.8</td><td style='text-align: center;'>2.9</td><td style='text-align: center;'>0.7</td><td style='text-align: center;'>0.4</td><td style='text-align: center;'>1.4</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 5톤</td><td style='text-align: center;'>1.8</td><td style='text-align: center;'>0.9</td><td style='text-align: center;'>3.6</td><td style='text-align: center;'>0.9</td><td style='text-align: center;'>0.5</td><td style='text-align: center;'>1.8</td></tr>",
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"3\">퇴비 사용량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO_{3}-N 함량(EC 기준)</td></tr>",
+          "<tr><td style='text-align: center;'>100mg/kg 미만 (2 dS/m 미만)</td><td style='text-align: center;'>100~200mg/kg (2~4 dS/m)</td><td style='text-align: center;'>200mg/kg 초과 (4 dS/m 초과)</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 3톤</td><td style='text-align: center;'>92</td><td style='text-align: center;'>46</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 4톤</td><td style='text-align: center;'>123</td><td style='text-align: center;'>61</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 5톤</td><td style='text-align: center;'>153</td><td style='text-align: center;'>77</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td rowspan=\"2\">구분</td><td rowspan=\"2\">생육단계</td><td rowspan=\"2\">주(Week)</td><td rowspan=\"2\">관수량(톤/10a)</td><td colspan=\"3\">필요한 양분함량(g/10a)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td rowspan=\"2\">수량(1톤/10a)</td><td rowspan=\"2\">생육초기</td><td style='text-align: center;'>1</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>2</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td></tr>"
+        ]
+      },
+      {
+        "rank": 5,
+        "filename": "[OCR]manual_soil_crops_16pto20p_70pto72p_43.md",
+        "content": [
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"6\">양분 공급량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO3-N 100mg/kg 미만 (EC 2 dS/m 미만)</td><td colspan=\"3\">토양 NO3-N 100~200mg/kg (EC 2~4 dS/m)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 5톤</td><td style='text-align: center;'>3.7</td><td style='text-align: center;'>0.5</td><td style='text-align: center;'>6.5</td><td style='text-align: center;'>1.9</td><td style='text-align: center;'>0.3</td><td style='text-align: center;'>3.3</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 6톤</td><td style='text-align: center;'>4.4</td><td style='text-align: center;'>0.6</td><td style='text-align: center;'>7.8</td><td style='text-align: center;'>2.2</td><td style='text-align: center;'>0.3</td><td style='text-align: center;'>3.9</td></tr>",
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"3\">퇴비 사용량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO_{3}-N 함량(EC 기준)</td></tr>",
+          "<tr><td style='text-align: center;'>100mg/kg 미만 (2 dS/m 미만)</td><td style='text-align: center;'>100~200mg/kg (2~4 dS/m)</td><td style='text-align: center;'>200mg/kg 초과 (4 dS/m 초과)</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 4톤</td><td style='text-align: center;'>247</td><td style='text-align: center;'>123</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 5톤</td><td style='text-align: center;'>308</td><td style='text-align: center;'>154</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 6톤</td><td style='text-align: center;'>370</td><td style='text-align: center;'>185</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td rowspan=\"2\">구분</td><td rowspan=\"2\">생육단계</td><td rowspan=\"2\">주(Week)</td><td rowspan=\"2\">관수량(톤/10a)</td><td colspan=\"3\">필요한 양분함량(g/10a)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td rowspan=\"3\">수량(1톤/10a)</td><td rowspan=\"3\">생육초기</td><td style='text-align: center;'>1</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>2</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>3</td><td style='text-align: center;'>0.4~0.6</td><td style='text-align: center;'>23.0</td><td style='text-align: center;'>5.2</td><td style='text-align: center;'>33.4</td></tr>"
+        ]
+      },
+      {
+        "rank": 6,
+        "filename": "[OCR]manual_soil_crops_16pto20p_70pto72p_63.md",
+        "content": [
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"6\">양분 공급량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO3-N 100mg/kg 미만 (EC 2 dS/m 미만)</td><td colspan=\"3\">토양 NO3-N 100~200mg/kg (EC 2~4 dS/m)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 4톤</td><td style='text-align: center;'>1.7</td><td style='text-align: center;'>3.1</td><td style='text-align: center;'>6.2</td><td style='text-align: center;'>0.9</td><td style='text-align: center;'>1.6</td><td style='text-align: center;'>3.1</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 5톤</td><td style='text-align: center;'>2.2</td><td style='text-align: center;'>3.9</td><td style='text-align: center;'>7.8</td><td style='text-align: center;'>1.1</td><td style='text-align: center;'>2.0</td><td style='text-align: center;'>3.9</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 6톤</td><td style='text-align: center;'>2.6</td><td style='text-align: center;'>4.7</td><td style='text-align: center;'>9.4</td><td style='text-align: center;'>1.3</td><td style='text-align: center;'>2.3</td><td style='text-align: center;'>4.7</td></tr>",
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"3\">퇴비 사용량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO_{3}-N 함량(EC 기준)</td></tr>",
+          "<tr><td style='text-align: center;'>100mg/kg 미만 (2 dS/m 미만)</td><td style='text-align: center;'>100~200mg/kg (2~4 dS/m)</td><td style='text-align: center;'>200mg/kg 초과 (4 dS/m 초과)</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 4톤</td><td style='text-align: center;'>144</td><td style='text-align: center;'>72</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 5톤</td><td style='text-align: center;'>180</td><td style='text-align: center;'>90</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 6톤</td><td style='text-align: center;'>216</td><td style='text-align: center;'>108</td><td style='text-align: center;'>-</td></tr>"
+        ]
+      },
+      {
+        "rank": 7,
+        "filename": "[OCR]manual_soil_crops_16pto20p_70pto72p_77.md",
+        "content": [
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"6\">양분 공급량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO3-N 100mg/kg 미만 (EC 2 dS/m 미만)</td><td colspan=\"3\">토양 NO3-N 100~200mg/kg (EC 2~4 dS/m)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 6톤</td><td style='text-align: center;'>1.7</td><td style='text-align: center;'>1.2</td><td style='text-align: center;'>4.0</td><td style='text-align: center;'>0.8</td><td style='text-align: center;'>0.6</td><td style='text-align: center;'>2.0</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 7톤</td><td style='text-align: center;'>2.0</td><td style='text-align: center;'>1.4</td><td style='text-align: center;'>4.7</td><td style='text-align: center;'>1.0</td><td style='text-align: center;'>0.7</td><td style='text-align: center;'>2.3</td></tr>",
+          "<tr><td rowspan=\"3\">구분</td><td colspan=\"3\">퇴비 사용량(kg/10a)</td></tr>",
+          "<tr><td colspan=\"3\">토양 NO_{3}-N 함량(EC 기준)</td></tr>",
+          "<tr><td style='text-align: center;'>100mg/kg 미만 (2 dS/m 미만)</td><td style='text-align: center;'>100~200mg/kg (2~4 dS/m)</td><td style='text-align: center;'>200mg/kg 초과 (4 dS/m 초과)</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 5톤</td><td style='text-align: center;'>117</td><td style='text-align: center;'>58</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 6톤</td><td style='text-align: center;'>140</td><td style='text-align: center;'>70</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td style='text-align: center;'>목표수량 7톤</td><td style='text-align: center;'>163</td><td style='text-align: center;'>82</td><td style='text-align: center;'>-</td></tr>",
+          "<tr><td rowspan=\"2\">구분</td><td rowspan=\"2\">생육단계</td><td rowspan=\"2\">주(Week)</td><td rowspan=\"2\">관수량(톤/10a)</td><td colspan=\"3\">필요한 양분합량(g/10a)</td></tr>",
+          "<tr><td style='text-align: center;'>질소</td><td style='text-align: center;'>인산</td><td style='text-align: center;'>칼리</td></tr>",
+          "<tr><td rowspan=\"2\">수량(1톤/10a)</td><td rowspan=\"2\">생육초기</td><td style='text-align: center;'>1</td><td style='text-align: center;'>–</td><td style='text-align: center;'>–</td><td style='text-align: center;'>–</td><td style='text-align: center;'>–</td></tr>",
+          "<tr><td style='text-align: center;'>2</td><td style='text-align: center;'>3.6~3.9</td><td style='text-align: center;'>65</td><td style='text-align: center;'>30</td><td style='text-align: center;'>200</td></tr>"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 433,
+    "retrieved": [
+      {
+        "rank": 1,
+        "filename": "[OCR]strawberry_standart_protocl_33.md",
+        "content": [
+          "<tr><td rowspan=\"3\">계산식</td><td style='text-align: center;'>소요된 NaOH(ml) × N NaOH × 산밀리당량(0.064) × 100 × 희석배수</td></tr>",
+          "<tr><td style='text-align: center;'>총부피(ml)</td></tr>",
+          "<tr><td style='text-align: center;'>→ 소요된 NaOH(적정량) ml × 0.32</td></tr>"
+        ]
+      },
+      {
+        "rank": 2,
+        "filename": "[text]advanced_strawberry_manual_69.md",
+        "content": []
+      },
+      {
+        "rank": 3,
+        "filename": "[text]advanced_strawberry_manual_86.md",
+        "content": []
+      },
+      {
+        "rank": 4,
+        "filename": "[text]consulting_smart_farm_AS_final_report_GreenLabs_217.md",
+        "content": []
+      },
+      {
+        "rank": 5,
+        "filename": "[text]consulting_smart_farm_AS_final_report_GreenLabs_190.md",
+        "content": []
+      },
+      {
+        "rank": 6,
+        "filename": "[text]consulting_smart_farm_AS_final_report_GreenLabs_117.md",
+        "content": []
+      },
+      {
+        "rank": 7,
+        "filename": "[text]consulting_smart_farm_AS_final_report_GreenLabs_176.md",
+        "content": []
+      }
+    ]
+  }
+]

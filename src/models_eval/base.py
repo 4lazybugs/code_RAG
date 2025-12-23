@@ -73,34 +73,6 @@ class BaseEvaluator(ABC):
         self._infos[mode] = infos
         return preds
 
-    def save_json(self, mode: str,
-                  qa_ids: list,
-                  questions: list,
-                  references: list,
-                  generated: list,
-                  metrics: dict,
-                  output_path: str):
-        records = []
-        infos = self._infos.get(mode, [None] * len(questions))
-        n = len(questions)
-        for i in range(n):
-            rec = {
-                'id':        qa_ids[i],
-                'question':  questions[i],
-                'reference': references[i],
-                'generated': generated[i],
-            }
-            for m_name, m_vals in metrics.items():
-                rec[m_name] = float(m_vals[i])
-            if infos[i] is not None:
-                rec['info'] = infos[i]
-            records.append(rec)
-
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(records, f, ensure_ascii=False, indent=2)
-        print(f"[MODE={mode.upper()}] Detailed ../results saved to {output_path}")
-
     @abstractmethod
     def compute_scores(self, references: list, generated: list) -> list:
         pass

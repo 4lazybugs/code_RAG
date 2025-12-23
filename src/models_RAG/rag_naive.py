@@ -42,11 +42,19 @@ class PartialExpert(BaseExpert):
             raise ValueError(f"Unknown retriever_mode: {retriever_mode}")
         self.retriever = self.retriever_map[retriever_mode]
         self.rag_chain = rag_prompt | self.model
+        
 
     def handle(self, question: str) -> str:
         try:
-            # invoke 사용 (langchain-core 0.1.46+)
+            '''
+            BaseRetriever
+            ├─ invoke(query)                ← 사용자가 호출
+            │    └─ _get_relevant_documents ← 내부에서 호출됨 (오버라이딩 대상)
+            └─ _aget_relevant_documents     ← async 버전
+            '''
+            # ✅ invoke(rag_naive.py)호출 -> _get_relevant_documents(retriever.py;오버라이딩)호출
             snippets = self.retriever.invoke(question)
+            self.retrieved_snippets = snippets # ✅ 이번 질문에서 참조한 top-k를 저장
             review = "\n\n".join(d.page_content for d in snippets)
             result = self.rag_chain.invoke({"reviews": review, "question": question})
             return result

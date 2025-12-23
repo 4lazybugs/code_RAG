@@ -21,7 +21,7 @@ w_use: 0.5
 ###################
 #model_name: "$MODEL_DIR" # local huggingface model directory, selfrag/llama2_7b를 환경변수로 저장하였음
 #model_name: "yi:34b-chat"
-model_name : "Qwen/Qwen2.5-32B-Instruct"
+model_name : "Qwen/Qwen2.5-14B-Instruct"
 #model_name : "Qwen/Qwen2.5-32B-Instruct"
 #model_name : "qwen2.5:72b-instruct"
 #model_name : 'llama3:70b'
