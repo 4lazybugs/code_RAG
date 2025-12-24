@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "question": "음이은 중 염소이은(Cl)의 분석 결과는 무엇인가? 단답형으로 답하라.",
+    "reference": "0.4 m mol/L",
+    "generated": "염소이은(Cl)의 분석 결과는 0.4 m mol/L로, ppm 단위로는 13 ppm입니다."
+  },
+  {
+    "id": 2,
+    "question": "음이은 중 중탄산이온(HCO3)의 분석 결과는 무엇인가? 단답형으로 답하라.",
+    "reference": "2.6 m mol/L",
+    "generated": "중탄산이온(HCO3)의 분석 결과는 1.0 m mol/L입니다."
+  },
+  {
+    "id": 3,
+    "question": "[NAME]의 pH 값은 얼마인가? 단답형으로 답하라.",
+    "reference": "5.8 - 6.2",
+    "generated": "측정된 pH 값이 제공되지 않았습니다. 구체적인 pH 값이 필요합니다."
+  },
+  {
+    "id": 4,
+    "question": "[NAME]의 면적은 얼마인가? 단답형으로 답하라.",
+    "reference": "5,500m²",
+    "generated": "3,200m²"
+  }
+]

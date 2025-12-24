@@ -16,7 +16,7 @@ class SbertEvaluator(BaseEvaluator):
             device=device
         )
 
-    def compute_scores(self, references: list, generated: list) -> list:
+    def compute_scores(self, references: list, generated: list, gen_docs: list, ref_docs: list) -> list:
         with torch.no_grad():
             ref_emb = self.sbert_model.encode(
                 references,

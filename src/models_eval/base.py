@@ -74,11 +74,11 @@ class BaseEvaluator(ABC):
         return preds
 
     @abstractmethod
-    def compute_scores(self, references: list, generated: list) -> list:
+    def compute_scores(self, references: list, generated: list, gen_docs: list, ref_docs: list) -> list:
         pass
 
     def save_score(self, mode: str, output_path: str):
-        q, r, g, qa_id = self._cache[mode]
+        q, r, g, qa_id, r_doc, g_doc = self._cache[mode]
         orig = self.__class__.__name__.replace('Evaluator','').lower()
         mapping = {
             'rouge1': 'rouge1',
@@ -88,6 +88,7 @@ class BaseEvaluator(ABC):
             'mover':  'mover', 
             'bleurt': 'bleurt',
             'bleu':   'bleu',
+            'recall': 'recall',
         }
         metric_name = mapping.get(orig)
         if metric_name is None:

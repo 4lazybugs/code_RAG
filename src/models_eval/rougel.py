@@ -31,7 +31,7 @@ class RougeLEvaluator(BaseEvaluator):
         # BaseEvaluator의 다른 기능(캐시, sbert 등) 쓰려면 유지
         super().__init__(expert, qa_data_path, sample_size)
 
-    def compute_scores(self, references: list, generated: list) -> list:
+    def compute_scores(self, references: list, generated: list, gen_docs: list, ref_docs: list) -> list:
         scores = []
         for ref, gen in zip(references, generated):
             ref_norm = _normalize(ref).replace(" ", "")

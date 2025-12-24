@@ -15,22 +15,106 @@ from rag import PartialExpert, RawLlmExpert, SelfAskExpert
 from models_eval.base import BaseEvaluator
 from tqdm import tqdm
 
-def make_pretty(html: str) -> list[str]:
+def make_pretty(text: str,
+                max_block_chars: int = 1200,
+                max_line_len: int = 140) -> list[str]:
     """
-    <tr>...</tr> 블록을 예쁘게 정리해서 반환
+    입력이 HTML/Markdown/plain text 무엇이든 "보기 좋은 블록(list[str])"으로 정리한다.
+    - HTML table(<tr>)이면: <tr> 단위로 블록 생성
+    - 그 외(MD/plain): 헤더/표/리스트/문단 단위로 블록 생성
+    - 너무 긴 블록은 잘라서 "...(truncated)" 처리
     """
-    trs = re.findall(r"<tr.*?>.*?</tr>", html, flags=re.DOTALL)
-    pretty = []
+    s = (text or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    if not s:
+        return []
 
-    for tr in trs:
-        lines = [
-            line.strip()
-            for line in tr.splitlines()
-            if line.strip()
-        ]
-        pretty.append("\n".join(lines))
+    # 1) HTML table row(<tr>) 있으면 <tr> 기준으로 정리
+    trs = re.findall(r"<tr.*?>.*?</tr>", s, flags=re.DOTALL | re.IGNORECASE)
+    if trs:
+        out = []
+        for tr in trs:
+            lines = [ln.strip() for ln in tr.splitlines() if ln.strip()]
+            block = "\n".join(lines).strip()
+            if block:
+                out.append(block[:max_block_chars] + ("\n...(truncated)" if len(block) > max_block_chars else ""))
+        return out
 
-    return pretty
+    # 2) HTML이 아니면(MD/plain) 블록화: 헤더/표/리스트/문단 기준
+    lines = s.splitlines()
+    out, cur = [], []
+    in_table = False
+
+    def flush():
+        nonlocal cur
+        if not cur:
+            return
+        block_lines = []
+        for ln in cur:
+            ln = ln.strip()
+            if not ln:
+                continue
+            # 너무 긴 줄은 보기 좋게 분할
+            if len(ln) > max_line_len:
+                # 단어 경계 기준으로 대충 분할(외부 함수 없이)
+                start = 0
+                while start < len(ln):
+                    cut = min(start + max_line_len, len(ln))
+                    # 중간에서 끊길 때 공백 위치로 당겨오기
+                    if cut < len(ln):
+                        sp = ln.rfind(" ", start, cut)
+                        if sp > start + 20:
+                            cut = sp
+                    block_lines.append(ln[start:cut].rstrip())
+                    start = cut + 1 if cut < len(ln) and ln[cut:cut+1] == " " else cut
+            else:
+                block_lines.append(ln)
+
+        block = "\n".join(block_lines).strip()
+        if block:
+            if len(block) > max_block_chars:
+                block = block[:max_block_chars] + "\n...(truncated)"
+            out.append(block)
+        cur = []
+
+    for raw in lines:
+        ln = raw.rstrip()
+        st = ln.strip()
+
+        # 빈 줄 = 문단 경계
+        if not st:
+            in_table = False
+            flush()
+            continue
+
+        # 헤더(# ...)는 단독 블록
+        if re.match(r"^#{1,6}\s+\S+", st):
+            flush()
+            cur.append(st)
+            flush()
+            continue
+
+        # 마크다운 표 라인(|...| 또는 구분선) 처리
+        is_table_line = (st.startswith("|") and "|" in st) or bool(re.match(r"^\s*\|?[-: ]+\|[-|: ]+\s*$", st))
+        if is_table_line:
+            if not in_table:
+                flush()
+                in_table = True
+            cur.append(st)
+            continue
+        if in_table and not is_table_line:
+            flush()
+            in_table = False
+
+        # 리스트(-,*,+,1.)는 연속되는 동안 하나로 묶기
+        if re.match(r"^(\s*[-*+]\s+|\s*\d+\.\s+)\S+", ln):
+            cur.append(ln)
+            continue
+
+        # 일반 텍스트는 문단으로
+        cur.append(st)
+
+    flush()
+    return out
 
 
 class QagOnly(BaseEvaluator):
@@ -135,56 +219,60 @@ class QagOnly(BaseEvaluator):
         print(f"[MODE={mode.upper()}] Retrieved docs saved to {output_path}")
 
 
-if __name__ == '__main__':
-    start_time = time.time()
-    results_dir = (Path(__file__).resolve().parent / ".." / "results").resolve()
-    results_dir.mkdir(parents=True, exist_ok=True)
+def run_qag_and_save(
+    *,
+    qa_mode: str,
+    retriever_mode: str,
+    selected_modes: list[str],
+    qa_data_path: dict,
+    results_dir: Path,
+    sample_size=None,
+    ndocs_init: int = 10,
+    k_each: int = 10,
+    top_k: int = 7,
+    subdir: str = "",  # 예: "manual_book" 또는 "test" (없으면 루트에 저장)
+):
+    """
+    - qa_data_path[qa_mode]의 GT json을 로드
+    - cleaned retriever 구성
+    - selected_modes 별로 Expert 생성
+    - QagOnly로 QAG 생성 및 results_dir/{qag|retrieved}/... 저장
 
-    # 1) 파라미터 입력
-    qa_mode = 'cleaned'
-    retriever_mode = 'cleaned_multi'
+    저장 위치:
+      results_dir / "qag" / subdir / f"qag_{mode}.json"
+      results_dir / "retrieved" / subdir / f"retrieved_{mode}.json"
+    """
 
-    selected_modes = ['partial_10', 'raw_llm']
-    selected_metrics = ['rouge1','rougeL','bert','sbert','bleu']
-    #selected_metrics = ['sbert']
-    sample_size = None
+    # 1) QA 데이터 로드 (파일 유효성 체크 겸)
+    qa_file = qa_data_path[qa_mode]
+    if not Path(qa_file).exists():
+        raise FileNotFoundError(f"GT file not found: {qa_file}")
 
-    qa_data_path = {'cleaned': 'qa_data/GT/farm_consulting/'}
+    with open(qa_file, "r", encoding="utf-8") as f:
+        _merged_items = json.load(f)  # 지금 코드에서는 실제로 안 쓰지만 유지
 
-    # --------------------------------------------------
-    # ✅ [추가] GT 폴더(재귀) -> 단일 JSON으로 병합 (Evaluator 수정 없이)
-    # -------------------------------------------------
-    def _load_json_any(fp: Path):
-        data = json.load(open(fp, "r", encoding="utf-8"))
-        if isinstance(data, dict) and "data" in data and isinstance(data["data"], list):
-            return data["data"]
-        if isinstance(data, list):
-            return data
-        return [data]
+    # Evaluator가 단일 JSON 파일로 인식하도록 유지 (원 코드 그대로 의미 보존)
+    qa_data_path[qa_mode] = qa_file
 
-    gt_root = Path(qa_data_path[qa_mode])
-    merged_items = []
-    for fp in gt_root.rglob("*.json"):          # 필요하면 "*.jsonl"도 추가해서 처리
-        merged_items.extend(_load_json_any(fp))
-
-    # ✅ id(숫자) 기준으로 정렬
-    merged_items.sort(key=lambda x: x["id"])
-
-    merged_path = gt_root.parent / "_merged_gt.json"
-    with open(merged_path, "w", encoding="utf-8") as f:
-        json.dump(merged_items, f, ensure_ascii=False, indent=2)
-
-    qa_data_path[qa_mode] = str(merged_path)    # ✅ 이후 Evaluator는 “단일 파일”로 인식
-    # --------------------------------------------------
-
-    # 2) 초기 retriever 세팅
-    ndocs_init = 10
+    # 2) retriever 세팅
     cleaned_folder_retrievers = load_cleaned_md_level2_retrievers(ndocs=ndocs_init)
-    cleaned_multi = MultiCosineRetriever(retrievers=cleaned_folder_retrievers, k_each=10, top_k=7)
-
+    cleaned_multi = MultiCosineRetriever(
+        retrievers=cleaned_folder_retrievers,
+        k_each=k_each,
+        top_k=top_k
+    )
     retr_map = {"cleaned_multi": cleaned_multi}
-    summary = []
 
+    # 3) 저장 폴더 준비
+    qag_dir = results_dir / "qag"
+    ret_dir = results_dir / "retrieved"
+    if subdir:
+        qag_dir = qag_dir / subdir
+        ret_dir = ret_dir / subdir
+    qag_dir.mkdir(parents=True, exist_ok=True)
+    ret_dir.mkdir(parents=True, exist_ok=True)
+
+    # 4) 모드별 실행
     for mode in selected_modes:
         if mode.startswith("partial_"):
             expert = PartialExpert(retr_map, retriever_mode)
@@ -195,16 +283,73 @@ if __name__ == '__main__':
             expert = RawLlmExpert(retr_map, retriever_mode)
         else:
             raise ValueError(f"Unknown mode: {mode}")
-            
+
         qag = QagOnly(expert, qa_data_path=qa_data_path[qa_mode], sample_size=sample_size)
-        # ✅ get_data(infer.py)호출 -> generate(base.py)호출 -> handle(base.py)호출 -> invoke(rag_naive.py)호출
+
+        # ✅ get_data(infer.py) -> generate(base.py) -> handle(base.py) -> invoke(rag_naive.py)
         questions, references, generated, qa_id = qag.get_data(mode)
 
-        out_path = results_dir / "qag" / f"qag_{mode}.json"
+        out_path = qag_dir / f"qag_{mode}.json"
         qag.save_qag(mode, qa_id, questions, references, generated, {}, str(out_path))
 
-        retr_path = results_dir / "retrieved" / f"retrieved_{mode}.json"
+        retr_path = ret_dir / f"retrieved_{mode}.json"
         qag.save_retrieved(mode, qa_id, str(retr_path))
 
+
+if __name__ == '__main__':
+    start_time = time.time()
+    results_dir = (Path(__file__).resolve().parent / ".." / "results").resolve()
+    results_dir.mkdir(parents=True, exist_ok=True)
+
+    qa_mode = "cleaned"
+    retriever_mode = "cleaned_multi"
+    selected_modes = ["partial_10", "raw_llm"]
+    sample_size = None
+
+    qa_data_path = {
+        "cleaned": "qa_data/GT/manual_book/gt_merged_manual_book.json"
+    }
+
+    run_qag_and_save(
+        qa_mode=qa_mode,
+        retriever_mode=retriever_mode,
+        selected_modes=selected_modes,
+        qa_data_path=qa_data_path,
+        results_dir=results_dir,
+        sample_size=sample_size,
+        subdir="",  # manual_book을 루트에 쓰고 싶으면 "", 아니면 "manual_book"
+    )
+
+    qa_data_path = {
+        "cleaned": "qa_data/GT/farm_consulting/gt_merged_farm_consulting.json"
+    }
+
+    run_qag_and_save(
+        qa_mode=qa_mode,
+        retriever_mode=retriever_mode,
+        selected_modes=selected_modes,
+        qa_data_path=qa_data_path,
+        results_dir=results_dir,
+        sample_size=sample_size,
+        subdir="",  # manual_book을 루트에 쓰고 싶으면 "", 아니면 "manual_book"
+    )
+    
+    '''
+    # test
+    qa_data_path = {
+        "cleaned": "qa_data/GT/test/gt_merged_test.json"
+    }
+
+    run_qag_and_save(
+        qa_mode=qa_mode,
+        retriever_mode=retriever_mode,
+        selected_modes=selected_modes,
+        qa_data_path=qa_data_path,
+        results_dir=results_dir,
+        sample_size=sample_size,
+        subdir="",  # manual_book을 루트에 쓰고 싶으면 "", 아니면 "manual_book"
+    )
+    '''
+    
     elapsed = time.time() - start_time
     print(f"⏱ 전체 추론 완료: {elapsed/60:.2f}분")

@@ -15,7 +15,7 @@ def _clean_for_bert(x: str, max_chars: int = 3000) -> str:
 class BertEvaluator(BaseEvaluator):
     metric_key = "bert"
 
-    def compute_scores(self, references: list, generated: list) -> list:
+    def compute_scores(self, references: list, generated: list, gen_docs: list, ref_docs: list) -> list:
         references = [_clean_for_bert(t) for t in references]
         generated  = [_clean_for_bert(t) for t in generated]
 

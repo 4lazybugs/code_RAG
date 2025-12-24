@@ -9,11 +9,6 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from utils import get_config
 from dotenv import load_dotenv
-from langchain_community.chat_models import ChatOllama  # 가장 호환성 높음
-
-def batch_md_files(md_files, batch_size=3):
-    for i in range(0, len(md_files), batch_size):
-        yield md_files[i:i+batch_size]
 
 CFG = get_config()
 embedor_model_name = CFG.embedor_model_name
@@ -81,6 +76,52 @@ qa_prompt = ChatPromptTemplate.from_template(
 """
 )
 
+def gen_GT(md_root: Path, qa_root: Path, chain):
+    md_root = Path(md_root)
+    md_files = list(md_root.rglob("*.md"))
+    print(f"[INFO] md 파일: {len(md_files)} ({md_root})")
+
+    qa_root = Path(qa_root)
+    qa_root.mkdir(parents=True, exist_ok=True)
+
+    qa_id = 1  # 전체 QA에 대해 유니크 id
+
+    for md_path in md_files:
+        # 1) pdf 이름 = 상위 폴더 이름
+        pdf_name = md_path.parent.name
+
+        # 2) chunk 이름
+        chunk_name = md_path.stem
+
+        # 3) 저장 위치
+        pdf_out_dir = qa_root / pdf_name
+        pdf_out_dir.mkdir(parents=True, exist_ok=True)
+
+        qa_file = pdf_out_dir / f"{chunk_name}.json"
+
+        # md 내용 → QA 생성
+        text = md_path.read_text(encoding="utf-8")
+        raw_qas = gen_qas(text, chain)
+
+        qas_with_id = []
+        for qa in raw_qas:
+            if "question" not in qa or "answer" not in qa:
+                continue
+
+            qas_with_id.append({
+                "id": qa_id,
+                "question": qa["question"],
+                "answer": qa["answer"],
+                "reference_docs": [md_path.name],
+            })
+            qa_id += 1
+
+        with qa_file.open("w", encoding="utf-8") as f:
+            json.dump(qas_with_id, f, ensure_ascii=False, indent=2)
+
+        print(f"[DONE] 저장: {qa_file}")
+
+
 def gen_qas(text: str, chain) -> List[dict]:
     resp = chain.invoke({"context": text})
     try:
@@ -88,6 +129,25 @@ def gen_qas(text: str, chain) -> List[dict]:
         return arr
     except:
         return []
+
+
+def merge_gt_by_id(gt_root: Path, out_path: Path):
+    gt_root = Path(gt_root)
+    out_path = Path(out_path)
+
+    merged = []
+    for fp in sorted(gt_root.rglob("*.json")):
+        with open(fp, "r", encoding="utf-8") as f:
+            merged.extend(json.load(f))   # gen_GT가 list로 저장한다는 전제
+
+    merged.sort(key=lambda x: x["id"])
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(merged, f, ensure_ascii=False, indent=2)
+
+    print(f"[DONE] 저장됨: {out_path}")
+
 
 
 # ===== Main =====
@@ -98,104 +158,43 @@ if __name__ == "__main__":
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     chain = qa_prompt | llm
     
-    # md 파일들 읽기
-    md_root = Path("db/cleaned_md/manual_book/")
-    md_files = list(md_root.rglob("*.md"))
-    print("[INFO] md 파일:", len(md_files))
+    # manual_book
+    gen_GT(
+        md_root=Path("db/cleaned_md/manual_book/"),
+        qa_root=Path("qa_data/GT/"),
+        chain=chain
+    )
 
-    qa_root = Path("qa_data/GT/manual_book/")
-    qa_root.mkdir(parents=True, exist_ok=True)
+    merge_gt_by_id(
+        gt_root=Path("qa_data/GT/manual_book"),
+        out_path=Path("qa_data/GT/manual_book/gt_merged_manual_book.json")
+    )
 
-    qa_id = 1  # 전체 QA에 대해 유니크 id 부여 (원하면 pdf별로 리셋해도 됨)
+    # farm_consulting
+    gen_GT(
+        md_root=Path("db/cleaned_md/farm_consulting/"),
+        qa_root=Path("qa_data/GT/"),
+        chain=chain
+    )
+    
+    merge_gt_by_id(
+        gt_root=Path("qa_data/GT/farm_consulting"),
+        out_path=Path("qa_data/GT/farm_consulting/gt_merged_farm_consulting.json")
+    )
 
-    for md_path in md_files:
-        # 1) pdf 이름: 상위 폴더 이름을 pdf 폴더로 사용한다고 가정
-        #    예: db/raw_db_extracted/dfdf.pdf/a.md -> pdf_name = "dfdf.pdf"
-        pdf_name = md_path.parent.name
+    '''
+    # test
+    gen_GT(
+        md_root=Path("db/cleaned_md/test/"),
+        qa_root=Path("qa_data/"),
+        chain=chain
+    )
 
-        # 2) chunk 이름: 파일 이름에서 .md 제거
-        #    예: a.md -> a
-        chunk_name = md_path.stem
-
-        # 3) GT 저장 위치: qa_data/GT/dfdf.pdf/a.json
-        pdf_out_dir = qa_root / pdf_name
-        pdf_out_dir.mkdir(parents=True, exist_ok=True)
-
-        qa_file = pdf_out_dir / f"{chunk_name}.json"
-
-        # 이 md 파일만 context로 사용
-        text = md_path.read_text(encoding="utf-8")
-        raw_qas = gen_qas(text, chain)
-
-        # id 포함해서 JSON 배열 형태로 저장
-        qas_with_id = []
-        for qa in raw_qas:
-            # question / answer 키 없으면 skip
-            if "question" not in qa or "answer" not in qa:
-                continue
-                    
-            qas_with_id.append({
-                "id": qa_id,
-                "question": qa["question"],
-                "answer": qa["answer"],
-            })
-            qa_id += 1
-
-        # a.json, b.json 안에는 하나의 JSON 배열로 저장
-        with qa_file.open("w", encoding="utf-8") as f:
-            json.dump(qas_with_id, f, ensure_ascii=False, indent=2)
-
-        print(f"[DONE] 저장: {qa_file}")
-
-        # md 파일들 읽기
-    md_root = Path("db/cleaned_md/farm_consulting/")
-    md_files = list(md_root.rglob("*.md"))
-    print("[INFO] md 파일:", len(md_files))
-
-    qa_root = Path("qa_data/GT/farm_consulting/")
-    qa_root.mkdir(parents=True, exist_ok=True)
-
-    qa_id = 1  # 전체 QA에 대해 유니크 id 부여 (원하면 pdf별로 리셋해도 됨)
-
-    for md_path in md_files:
-        # 1) pdf 이름: 상위 폴더 이름을 pdf 폴더로 사용한다고 가정
-        #    예: db/raw_db_extracted/dfdf.pdf/a.md -> pdf_name = "dfdf.pdf"
-        pdf_name = md_path.parent.name
-
-        # 2) chunk 이름: 파일 이름에서 .md 제거
-        #    예: a.md -> a
-        chunk_name = md_path.stem
-
-        # 3) GT 저장 위치: qa_data/GT/dfdf.pdf/a.json
-        pdf_out_dir = qa_root / pdf_name
-        pdf_out_dir.mkdir(parents=True, exist_ok=True)
-
-        qa_file = pdf_out_dir / f"{chunk_name}.json"
-
-        # 이 md 파일만 context로 사용
-        text = md_path.read_text(encoding="utf-8")
-        raw_qas = gen_qas(text, chain)
-
-        # id 포함해서 JSON 배열 형태로 저장
-        qas_with_id = []
-        for qa in raw_qas:
-            # question / answer 키 없으면 skip
-            if "question" not in qa or "answer" not in qa:
-                continue
-                    
-            qas_with_id.append({
-                "id": qa_id,
-                "question": qa["question"],
-                "answer": qa["answer"],
-            })
-            qa_id += 1
-
-        # a.json, b.json 안에는 하나의 JSON 배열로 저장
-        with qa_file.open("w", encoding="utf-8") as f:
-            json.dump(qas_with_id, f, ensure_ascii=False, indent=2)
-
-        print(f"[DONE] 저장: {qa_file}")    
-
+    merge_gt_by_id(
+        gt_root=Path("qa_data/test"),
+        out_path=Path("qa_data/test/gt_merged_test.json")
+    )
+    '''
 
     end = time.time()
     elapsed = end - start

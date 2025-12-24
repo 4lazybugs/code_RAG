@@ -11,10 +11,12 @@ import numpy as np
 from konlpy.tag import Okt
 from rouge_score.tokenizers import Tokenizer
 
-from models_eval import Rouge1Evaluator, RougeLEvaluator, BleuEvaluator
-from models_eval import BertEvaluator, SbertEvaluator, MoverEvaluator
+from models_eval import Rouge1Evaluator, RougeLEvaluator
+from models_eval import BertEvaluator, SbertEvaluator
+from models_eval import RecallEvaluator, MRREvaluator
+from models_eval import GroundEvaluator, CorrectnessEvaluator
 from pathlib import Path
-
+from tqdm import tqdm
 
 class KoreanTokenizer(Tokenizer):
     def __init__(self):
@@ -23,88 +25,166 @@ class KoreanTokenizer(Tokenizer):
     def tokenize(self, text):
         return self.okt.morphs(text)
 
+def run_eval_and_save(
+    *,
+    selected_modes: list[str],
+    selected_metrics: list[str],
+    dataset_tag: str,  # "manual_book" or "test"
+    gt_path: str,      # e.g., "qa_data/GT/manual_book/gt_merged_manual_book.json"
+    results_root: str = "results",
+    qa_mode: str = "cleaned",
+    sample_size=None,
+    summary_xlsx_path: str = "results/summary.xlsx",
+):
+    """
+    - GT(QA) / QAG / retrieved json을 로드
+    - metric별로 evaluator 실행
+    - results/score/{dataset_tag}/{mode}_{metric}.json 저장
+    - results/summary.xlsx(average/std) 저장
+    """
+
+    # BaseEvaluator 시그니처 맞추기용 더미 (현 구조 유지)
+    qa_data_path = {qa_mode: "__unused__"}
+
+    # Evaluator 클래스 매핑
+    ev_map = {
+        "rouge1": Rouge1Evaluator,
+        "rougeL": RougeLEvaluator,
+        "bert": BertEvaluator,
+        "sbert": SbertEvaluator,
+        "recall": RecallEvaluator,
+        "mrr": MRREvaluator,
+        "ground": GroundEvaluator,
+        "correctness": CorrectnessEvaluator,
+    }
+
+    summary = []
+
+    gt_pth = Path(gt_path)
+    if not gt_pth.exists():
+        raise FileNotFoundError(f"GT file not found: {gt_pth}")
+
+    # GT는 mode마다 동일하므로 mode loop 밖에서 한 번만 로드해도 되지만,
+    # 원 코드 흐름을 보존하려면 mode loop 안에 둬도 됩니다.
+    with open(gt_pth, "r", encoding="utf-8") as f:
+        gt_json = json.load(f)
+
+    questions = [r["question"] for r in gt_json]
+    gt_ans = [r["answer"] for r in gt_json]
+    qa_id = [r["id"] for r in gt_json]
+    ref_doc = [r["reference_docs"] for r in gt_json]
+
+    results_root = Path(results_root)
+
+    for mode in selected_modes:
+        print(f"\n[MODE START] {mode}", flush=True)
+
+        # ---------- generated(QAG) 로드 ----------
+        gen_pth = results_root / "qag" / dataset_tag / f"qag_{mode}.json"
+        if not gen_pth.exists():
+            raise FileNotFoundError(f"QAG file not found: {gen_pth}")
+        with open(gen_pth, "r", encoding="utf-8") as f:
+            gen_json = json.load(f)
+        gen_ans = [r["generated"] for r in gen_json]
+
+        # ---------- retrieved 로드 ----------
+        ret_pth = results_root / "retrieved" / dataset_tag / f"retrieved_{mode}.json"
+        if not ret_pth.exists():
+            raise FileNotFoundError(f"Retrieved file not found: {ret_pth}")
+        with open(ret_pth, "r", encoding="utf-8") as f:
+            retr_json = json.load(f)
+        gen_docs = [r["retrieved"] for r in retr_json]
+
+        # ---------- metric별 평가 ----------
+        for metric in selected_metrics:
+            if metric not in ev_map:
+                raise ValueError(f"Unknown metric: {metric}")
+
+            print(f"  [METRIC] {metric}", flush=True)
+            EvCls = ev_map[metric]
+
+            ev = EvCls(expert=None, qa_data_path=qa_data_path[qa_mode], sample_size=sample_size)
+
+            rows = []
+            for i in tqdm(range(len(qa_id)), desc=f"{mode}-{metric}", leave=False):
+                score = ev.compute_scores([gt_ans[i]], [gen_ans[i]], gen_docs[i], ref_doc[i])[0]
+
+                rows.append({
+                    "id": qa_id[i],
+                    "question": questions[i],
+                    "reference": gt_ans[i],
+                    "generated": gen_ans[i],
+                    "gen_docs_num": len(gen_docs[i]),
+                    metric: float(score),
+                })
+
+            out_path = results_root / "score" / dataset_tag / f"{mode}_{metric}.json"
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(rows, f, ensure_ascii=False, indent=2)
+
+            values = [r[metric] for r in rows]
+            summary.append({
+                "mode": mode,
+                "metric": metric,
+                "average": float(np.mean(values)),
+                "std": float(np.std(values)),
+            })
+
+            torch.cuda.empty_cache()
+            gc.collect()
+            print(f"  [DONE] {mode}-{metric} saved ({len(rows)})", flush=True)
+
+    # ---------- summary.xlsx 저장 ----------
+    print("  [SUMMARY] Saving summary...", flush=True)
+    df = pd.DataFrame(summary)
+    df_avg = df.pivot(index="mode", columns="metric", values="average")
+    df_std = df.pivot(index="mode", columns="metric", values="std")
+
+    summary_xlsx_path = Path(summary_xlsx_path)
+    summary_xlsx_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with pd.ExcelWriter(summary_xlsx_path) as writer:
+        df_avg.to_excel(writer, sheet_name="average")
+        df_std.to_excel(writer, sheet_name="std")
+
+    print(f"✅ 모든 평가 완료: {summary_xlsx_path} (average/std 시트 포함)")
+
 
 if __name__ == '__main__':
     start_time = time.time()
 
-    results_dir = (Path(__file__).resolve().parent / ".." / "results").resolve()
-    results_dir.mkdir(parents=True, exist_ok=True)
-    (results_dir / "score").mkdir(parents=True, exist_ok=True)  # ✅ 저장 폴더 보장
-
     selected_modes = ['partial_10', 'raw_llm']
-    selected_metrics = ['rouge1', 'rougeL', 'bert', 'sbert', 'bleu']
+    selected_metrics = ['rouge1', 'rougeL', 'bert', 'sbert', 'recall', 'mrr', 'ground', 'correctness']
 
-    # ✅ 원본 BaseEvaluator 시그니처를 만족시키기 위한 최소 변수(실제로는 cache hit이라 사용 안 됨)
-    qa_mode = "cleaned"
-    sample_size = None
-    qa_data_path = {qa_mode: "__unused__"}  # cache 주입 후 get_data가 파일을 안 읽으므로 더미로 OK
+    run_eval_and_save(
+        selected_modes=selected_modes,
+        selected_metrics=selected_metrics,
+        dataset_tag="manual_book",
+        gt_path="qa_data/GT/manual_book/gt_merged_manual_book.json",
+        results_root="results",
+        summary_xlsx_path="results/manual_book/summary.xlsx",
+    )
 
-    summary = []
+    run_eval_and_save(
+        selected_modes=selected_modes,
+        selected_metrics=selected_metrics,
+        dataset_tag="farm_consulting",
+        gt_path="qa_data/GT/farm_consulting/gt_merged_farm_consulting.json",
+        results_root="results",
+        summary_xlsx_path="results/farm_consulting/summary.xlsx",
+    )
 
-    for mode in selected_modes:
-        # --------------------------------------------------
-        # ✅ results/qag/{mode}.json 로드해서 (q,r,g,id,info) 구성
-        # --------------------------------------------------
-        qag_path = results_dir / "qag" / f"{mode}.json"
-        if not qag_path.exists():
-            raise FileNotFoundError(f"QAG file not found: {qag_path}")
+    '''
+    run_eval_and_save(
+        selected_modes=selected_modes,
+        selected_metrics=selected_metrics,
+        dataset_tag="test",
+        gt_path="qa_data/test/gt_merged_test.json",
+        results_root="results",
+        summary_xlsx_path="results/test/summary.xlsx",
+    )
+    '''
 
-        with open(qag_path, "r", encoding="utf-8") as f:
-            recs_qag = json.load(f)
-
-        questions  = [r["question"] for r in recs_qag]
-        references = [r["reference"] for r in recs_qag]
-        generated  = [r["generated"] for r in recs_qag]
-        qa_id      = [r["id"] for r in recs_qag]
-        infos      = [r.get("info") for r in recs_qag]  # 없으면 None
-        # --------------------------------------------------
-
-        for metric in selected_metrics:
-            EvCls = {
-                'rouge1': Rouge1Evaluator,
-                'rougeL': RougeLEvaluator,
-                'bert':   BertEvaluator,
-                'sbert':  SbertEvaluator,
-                'mover':  MoverEvaluator,
-                'bleu':   BleuEvaluator
-            }[metric]
-
-            # ✅ 평가-only: expert는 사용하지 않으므로 None
-            ev = EvCls(expert=None, qa_data_path=qa_data_path[qa_mode], sample_size=sample_size)
-
-            # ✅ qag json에서 로드한 값으로 캐시 주입
-            ev._cache[mode] = (questions, references, generated, qa_id)
-            ev._infos[mode] = infos
-
-            out_path = results_dir / "score" / f"score_{mode}_{metric}.json"
-            print(f"[RUN] {mode} {metric} start (score-only)", flush=True)
-
-            # ✅ BaseEvaluator에 구현된 함수 사용 (eval 아님)
-            ev.save_score(mode, str(out_path))
-
-            with open(out_path, "r", encoding="utf-8") as f:
-                recs = json.load(f)
-
-            # 저장 키가 metric과 동일하다는 가정(현재 selected_metrics 기준 OK)
-            values = [row[metric] for row in recs]
-            summary.append({
-                'mode': mode,
-                'metric': metric,
-                'average': float(np.mean(values)),
-                'std': float(np.std(values))
-            })
-
-        torch.cuda.empty_cache()
-        gc.collect()
-
-    df = pd.DataFrame(summary)
-    df_avg = df.pivot(index='mode', columns='metric', values='average')
-    df_std = df.pivot(index='mode', columns='metric', values='std')
-
-    with pd.ExcelWriter(results_dir / 'summary.xlsx') as writer:
-        df_avg.to_excel(writer, sheet_name='average')
-        df_std.to_excel(writer, sheet_name='std')
-
-    print(f"✅ 모든 평가 완료: {results_dir / 'summary.xlsx'} (average/std 시트 포함)")
     elapsed = time.time() - start_time
     print(f"⏱ 전체 평가 완료: {elapsed/60:.2f}분")
