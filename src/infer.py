@@ -305,7 +305,7 @@ if __name__ == '__main__':
     retriever_mode = "cleaned_multi"
     selected_modes = ["partial_10", "raw_llm"]
     sample_size = None
-
+    
     qa_data_path = {
         "cleaned": "qa_data/GT/manual_book/gt_merged_manual_book.json"
     }
@@ -317,7 +317,7 @@ if __name__ == '__main__':
         qa_data_path=qa_data_path,
         results_dir=results_dir,
         sample_size=sample_size,
-        subdir="",  # manual_book을 루트에 쓰고 싶으면 "", 아니면 "manual_book"
+        subdir="manual_book",  # manual_book을 루트에 쓰고 싶으면 "", 아니면 "manual_book"
     )
 
     qa_data_path = {
@@ -331,13 +331,13 @@ if __name__ == '__main__':
         qa_data_path=qa_data_path,
         results_dir=results_dir,
         sample_size=sample_size,
-        subdir="",  # manual_book을 루트에 쓰고 싶으면 "", 아니면 "manual_book"
+        subdir="farm_consulting",  # farm_consulting을 루트에 쓰고 싶으면 "", 아니면 "farm_consulting"
     )
-    
+
     '''
     # test
     qa_data_path = {
-        "cleaned": "qa_data/GT/test/gt_merged_test.json"
+        "cleaned": "qa_data/test/gt_merged_test.json"
     }
 
     run_qag_and_save(
@@ -347,7 +347,7 @@ if __name__ == '__main__':
         qa_data_path=qa_data_path,
         results_dir=results_dir,
         sample_size=sample_size,
-        subdir="",  # manual_book을 루트에 쓰고 싶으면 "", 아니면 "manual_book"
+        subdir="test",  # manual_book을 루트에 쓰고 싶으면 "", 아니면 "manual_book"
     )
     '''
     

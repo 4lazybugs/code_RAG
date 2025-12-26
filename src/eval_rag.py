@@ -163,7 +163,7 @@ if __name__ == '__main__':
         dataset_tag="manual_book",
         gt_path="qa_data/GT/manual_book/gt_merged_manual_book.json",
         results_root="results",
-        summary_xlsx_path="results/manual_book/summary.xlsx",
+        summary_xlsx_path="results/score/manual_book/summary.xlsx",
     )
 
     run_eval_and_save(
@@ -172,7 +172,7 @@ if __name__ == '__main__':
         dataset_tag="farm_consulting",
         gt_path="qa_data/GT/farm_consulting/gt_merged_farm_consulting.json",
         results_root="results",
-        summary_xlsx_path="results/farm_consulting/summary.xlsx",
+        summary_xlsx_path="results/score/farm_consulting/summary.xlsx",
     )
 
     '''
@@ -182,7 +182,7 @@ if __name__ == '__main__':
         dataset_tag="test",
         gt_path="qa_data/test/gt_merged_test.json",
         results_root="results",
-        summary_xlsx_path="results/test/summary.xlsx",
+        summary_xlsx_path="results/score/test/summary.xlsx",
     )
     '''
 

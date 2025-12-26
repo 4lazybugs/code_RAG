@@ -1,15 +1,15 @@
 [
   {
     "id": 1,
-    "question": "음이은 중 염소이은(Cl)의 분석 결과는 무엇인가? 단답형으로 답하라.",
+    "question": "칼슘(Ca)의 분석 결과는 무엇인가? 단답형으로 답하라.",
     "reference": "0.4 m mol/L",
-    "generated": "염소이은(Cl)의 분석 결과는 0.4 m mol/L로, ppm 단위로는 13 ppm입니다."
+    "generated": "칼슘(Ca) 결핍이 확인되었습니다."
   },
   {
     "id": 2,
-    "question": "음이은 중 중탄산이온(HCO3)의 분석 결과는 무엇인가? 단답형으로 답하라.",
-    "reference": "2.6 m mol/L",
-    "generated": "중탄산이온(HCO3)의 분석 결과는 1.0 m mol/L입니다."
+    "question": "음이은의 절산이온(NO3)의 분석 결과는 무엇인가? 단답형으로 답하라.",
+    "reference": "<0.2",
+    "generated": "음이은의 절산이온(NO3)의 분석 결과는 &lt;0.2 m mol/L 이다."
   },
   {
     "id": 3,
@@ -19,8 +19,8 @@
   },
   {
     "id": 4,
-    "question": "[NAME]의 면적은 얼마인가? 단답형으로 답하라.",
-    "reference": "5,500m²",
-    "generated": "3,200m²"
+    "question": "농가명 [NAME]의 품목은 무엇인가? 단답형으로 답하라.",
+    "reference": "딸기",
+    "generated": "딸기"
   }
 ]
