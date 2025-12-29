@@ -3,7 +3,18 @@ from langchain_ollama.llms import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from utils import get_config
+from typing import Optional, Sequence
 # --------------------------------------------------
+
+def _format_options(options: Optional[Sequence[str]]) -> str:
+    """
+    options가 있으면 프롬프트에 들어갈 블록 문자열로 변환.
+    없으면 빈 문자열 반환.
+    """
+    if not options:
+        return ""  # 프롬프트의 {options} 자리에 아무것도 안 나오게
+    # 프롬프트에서 {options} 자리에 그대로 들어갈 텍스트
+    return "[선택지]\n" + "\n".join(options)
 
 # RAG prompts for all/partial modes
 rag_prompt = ChatPromptTemplate.from_template("""
@@ -11,10 +22,12 @@ rag_prompt = ChatPromptTemplate.from_template("""
 
 **답변 작성 규칙:**
 1. 참고 자료의 내용을 **이해하고 재구성**하여 자연스럽고 명확하게 설명하세요
-2. 답변은 **핵심 정보만 간결하게**, 불필요한 배경설명·문장 반복을 피하세요  
-3. 문장은 **짧고 직관적**으로 작성하고, 장문·장황한 서술을 하지 마세요
-4. 원문을 그대로 복사하거나 표/목록 형식을 그대로 옮기지 마세요
-5. 문서 출처, 페이지 번호, 파일명 등은 언급하지 마세요
+2. 답변은 **핵심 정보만 간결하게**, 불필요한 배경설명·문장 반복을 피하세요
+3. 문장은 **짧고 직관적**으로 작성하세요
+4. 원문을 그대로 복사하지 마세요
+5. 문서 출처, 페이지 번호, 파일명은 언급하지 마세요
+6. **선택지가 주어진 경우**, 그중에서 가장 적절한 하나를 골라 **정답 번호만** 답하세요
+7. **선택지가 없는 경우**, 단답형으로 답변하세요
 
 ---
 [참고 자료]
@@ -23,6 +36,9 @@ rag_prompt = ChatPromptTemplate.from_template("""
 ---
 [질문]
 {question}
+
+[선택지]
+{options}
 
 [답변]
 """)
@@ -44,7 +60,7 @@ class PartialExpert(BaseExpert):
         self.rag_chain = rag_prompt | self.model
         
 
-    def handle(self, question: str) -> str:
+    def handle(self, question: str, options: Optional[Sequence[str]] = None) -> str:
         try:
             '''
             BaseRetriever
@@ -56,7 +72,9 @@ class PartialExpert(BaseExpert):
             snippets = self.retriever.invoke(question)
             self.retrieved_snippets = snippets # ✅ 이번 질문에서 참조한 top-k를 저장
             review = "\n\n".join(d.page_content for d in snippets)
-            result = self.rag_chain.invoke({"reviews": review, "question": question})
-            return result
+
+            options_block = _format_options(options)
+            result = self.rag_chain.invoke({"reviews": review, "question": question, "options": options_block})
+            return result.content if hasattr(result, "content") else str(result)
         except Exception as e:
             return f"[오류]: {str(e)}"

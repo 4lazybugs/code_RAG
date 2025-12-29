@@ -6,7 +6,7 @@ from rag import PartialExpert, RawLlmExpert, SelfAskExpert
 import json
 import time
 from retriever import MultiCosineRetriever  # (기존 semantic 폴더별)
-from retriever import load_cleaned_md_level2_retrievers  # ✅ cleaned_md/<L1>/<L2> 폴더별 (당신이 만든 것)
+from retriever import load_retrievers  # ✅ cleaned_md/<L1>/<L2> 폴더별 (당신이 만든 것)
 from pathlib import Path
 import re
 
@@ -15,6 +15,7 @@ from rag import PartialExpert, RawLlmExpert, SelfAskExpert
 from models_eval.base import BaseEvaluator
 from tqdm import tqdm
 
+##### make_pretty 함수 정의 #########################################################
 def make_pretty(text: str,
                 max_block_chars: int = 1200,
                 max_line_len: int = 140) -> list[str]:
@@ -116,7 +117,7 @@ def make_pretty(text: str,
     flush()
     return out
 
-
+##### QagOnly 클래스 정의 #########################################################
 class QagOnly(BaseEvaluator):
     metric_key = "qag_only"
 
@@ -255,7 +256,7 @@ def run_qag_and_save(
     qa_data_path[qa_mode] = qa_file
 
     # 2) retriever 세팅
-    cleaned_folder_retrievers = load_cleaned_md_level2_retrievers(ndocs=ndocs_init)
+    cleaned_folder_retrievers = load_retrievers(ndocs=ndocs_init)
     cleaned_multi = MultiCosineRetriever(
         retrievers=cleaned_folder_retrievers,
         k_each=k_each,
@@ -307,7 +308,7 @@ if __name__ == '__main__':
     sample_size = None
     
     qa_data_path = {
-        "cleaned": "qa_data/GT/manual_book/gt_merged_manual_book.json"
+        "cleaned": "qa_data/GT/manual_book/mcq/gt_merged_manual_book.json"
     }
 
     run_qag_and_save(
@@ -317,9 +318,10 @@ if __name__ == '__main__':
         qa_data_path=qa_data_path,
         results_dir=results_dir,
         sample_size=sample_size,
-        subdir="manual_book",  # manual_book을 루트에 쓰고 싶으면 "", 아니면 "manual_book"
+        subdir="manual_book/mcq",  # manual_book을 루트에 쓰고 싶으면 "", 아니면 "manual_book"
     )
 
+    '''
     qa_data_path = {
         "cleaned": "qa_data/GT/farm_consulting/gt_merged_farm_consulting.json"
     }
@@ -334,7 +336,7 @@ if __name__ == '__main__':
         subdir="farm_consulting",  # farm_consulting을 루트에 쓰고 싶으면 "", 아니면 "farm_consulting"
     )
 
-    '''
+    
     # test
     qa_data_path = {
         "cleaned": "qa_data/test/gt_merged_test.json"

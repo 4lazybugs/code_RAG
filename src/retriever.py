@@ -77,71 +77,6 @@ def make_collection_name(folder_key: str, prefix: str) -> str:
     return name
 
 
-# =========================
-# 범용 벡터DB 로더
-# =========================
-def load_folder_vector_retrievers(
-    *,
-    data_root: Path,
-    vec_root: Path,
-    prefix: str,
-    level: int = 1,
-    ndocs: int = 5,
-) -> Dict[str, Any]:
-    """
-    data_root 하위의 level-depth 폴더들을 순회하며
-    vec_root/<rel_path> 에서 Chroma를 로드해 retriever dict로 반환.
-
-    - 반환 key: rel_path (예: "straw" 또는 "A/subA")
-    - collection: make_collection_name(rel_path, prefix)
-    - persist_directory: vec_root/rel_path
-
-    level 의미:
-      level=1 => data_root/* (하위 1레벨 폴더가 DB 단위)
-      level=2 => data_root/*/* (하위 2레벨 폴더가 DB 단위)
-    """
-    data_root = data_root.resolve()
-    vec_root = vec_root.resolve()
-
-    if not data_root.exists():
-        raise FileNotFoundError(f"data_root not found: {data_root}")
-    if not vec_root.exists():
-        raise FileNotFoundError(f"vec_root not found: {vec_root}")
-
-    emb = SentenceTransformerEmbeddings()
-    retrievers: Dict[str, Any] = {}
-
-    # level-depth 폴더들 수집
-    # level=1 -> "*/"
-    # level=2 -> "*/*/"
-    pattern = ("*/" * level).rstrip("/")
-    candidates = [p for p in data_root.glob(pattern) if p.is_dir()]
-
-    if not candidates:
-        print(f"[WARN] no folders under {data_root} at level={level}")
-        return retrievers
-
-    for folder in candidates:
-        rel = folder.relative_to(data_root).as_posix()  # 예: "straw" or "A/subA"
-        vec_dir = vec_root / rel
-
-        if not vec_dir.exists():
-            print(f"[WARN] vec DB not found: {vec_dir}")
-            continue
-
-        collection_name = make_collection_name(rel, prefix=prefix)
-
-        store = Chroma(
-            collection_name=collection_name,
-            persist_directory=str(vec_dir),
-            embedding_function=emb,
-        )
-        retrievers[rel] = store.as_retriever(search_kwargs={"k": ndocs})
-
-    print(f"[LOAD] loaded {len(retrievers)} retrievers (prefix={prefix}, level={level})")
-    return retrievers
-
-
 # ---------------------------------------------
 # 여러 retriever를 돌려서 cosine score(유사도) 기준으로
 # 전역 top-k 문서를 돌려주는 멀티 리트리버
@@ -225,17 +160,50 @@ class MultiCosineRetriever(BaseRetriever):
         return self._get_relevant_documents(query, run_manager=None)
 
 
-def load_cleaned_md_level2_retrievers(ndocs: int = 5) -> Dict[str, Any]:
+def load_retrievers(ndocs: int = 5) -> Dict[str, Any]:
     """
-    cleaned_md 하위 2레벨(L1/L2) 폴더별 DB 로드
-    - data_root: db/cleaned_md/<L1>/<L2>
-    - vec_root : db/vector_db/cleaned_md/<L1>/<L2>
-    - collection: cleaned_<L1>_<L2> (safe)
+    cleaned_md 하위에서 '직접 .md 파일을 포함하는 폴더(leaf)'를 DB 단위로 간주하고,
+    vec_root/<rel_path> 의 Chroma를 로드한다.
     """
-    return load_folder_vector_retrievers(
-        data_root=BASE_DIR / "db" / "cleaned_md",
-        vec_root=BASE_DIR / "db" / "vector_db" / "cleaned_md",
-        prefix="cleaned",
-        level=2,
-        ndocs=ndocs,
-    )
+    data_root = (BASE_DIR / "db" / "cleaned_md").resolve()
+    vec_root  = (BASE_DIR / "db" / "vector_db" / "cleaned_md").resolve()
+
+    if not data_root.exists():
+        raise FileNotFoundError(f"data_root not found: {data_root}")
+    if not vec_root.exists():
+        raise FileNotFoundError(f"vec_root not found: {vec_root}")
+
+    emb = SentenceTransformerEmbeddings()
+    retrievers: Dict[str, Any] = {}
+
+    # ✅ vector_utils.py와 동일한 collection name 규칙으로 맞춤
+    def _cleaned_collection_name(rel: str) -> str:
+        safe_rel = re.sub(r"[^a-zA-Z0-9_-]+", "_", rel).strip("_")
+        return f"cleaned_{safe_rel}"[:63].strip("_-.")
+
+    # ✅ leaf 폴더: ".md 파일의 parent 디렉터리"가 곧 DB 단위
+    leaf_dirs = sorted({p.parent for p in data_root.rglob("*.md")})
+
+    if not leaf_dirs:
+        print(f"[WARN] no .md files under {data_root}")
+        return retrievers
+
+    for folder in leaf_dirs:
+        rel = folder.relative_to(data_root).as_posix()
+        vec_dir = vec_root / rel
+
+        if not vec_dir.exists():
+            print(f"[WARN] vec DB not found: {vec_dir}")
+            continue
+
+        collection_name = _cleaned_collection_name(rel)
+
+        store = Chroma(
+            collection_name=collection_name,
+            persist_directory=str(vec_dir),
+            embedding_function=emb,
+        )
+        retrievers[rel] = store.as_retriever(search_kwargs={"k": ndocs})
+
+    print(f"[LOAD] loaded {len(retrievers)} leaf retrievers (prefix=cleaned, leaf=.md parent dirs)")
+    return retrievers

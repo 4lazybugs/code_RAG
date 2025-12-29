@@ -126,19 +126,17 @@ if __name__ == "__main__":
     cleaned_root = BASE_DIR / "db" / "cleaned_md"
     vec_root = VEC_ROOT / "cleaned_md"
 
-    # cleaned_md/<L1>/<L2> 폴더만 대상으로 삼음
-    level2_folders = []
-    for l1 in [d for d in cleaned_root.iterdir() if d.is_dir()]:
-        for l2 in [d for d in l1.iterdir() if d.is_dir()]:
-            level2_folders.append(l2)
+    # cleaned_md 이하에서 .md를 포함한 모든 하위 디렉터리를 색인 대상으로 수집
+    md_files = list(cleaned_root.rglob("*.md"))
+    level_folders = sorted({p.parent for p in md_files})
 
-    for folder in level2_folders:
+    for folder in level_folders:
         # folder.relative_to(cleaned_root) = "<L1>/<L2>"
         rel = folder.relative_to(cleaned_root).as_posix()  # 예: "A/subA"
 
         # 컬렉션 이름 안전화 (Chroma 제약 대응)
         safe_rel = re.sub(r"[^a-zA-Z0-9_-]+", "_", rel).strip("_")
-        collection = f"cleaned_{safe_rel}"[:63]
+        collection = f"cleaned_{safe_rel}"[:63].strip("_-.")
 
         # persist도 L1/L2 구조 유지 (충돌 방지 + 디버깅 용이)
         vec_dir = (vec_root / folder.relative_to(cleaned_root)).resolve()
