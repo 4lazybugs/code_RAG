@@ -27,9 +27,9 @@ def _lcs_len(a: str, b: str) -> int:
 class RougeLEvaluator(BaseEvaluator):
     metric_key = 'rougeL'
 
-    def __init__(self, expert, qa_data_path, sample_size=None):
+    def __init__(self):
         # BaseEvaluator의 다른 기능(캐시, sbert 등) 쓰려면 유지
-        super().__init__(expert, qa_data_path, sample_size)
+        super().__init__()
 
     def compute_scores(self, references: list, generated: list, gen_docs: list, ref_docs: list) -> list:
         scores = []

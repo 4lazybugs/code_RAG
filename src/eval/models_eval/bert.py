@@ -2,6 +2,9 @@ from .base import BaseEvaluator
 from bert_score import score as bert_score
 import re
 import torch
+from load_params import get_config
+
+CFG = get_config()
 
 #device = "cuda" if torch.cuda.is_available() else "cpu"
 device = "cpu"
@@ -23,7 +26,7 @@ class BertEvaluator(BaseEvaluator):
             P, R, F1 = bert_score(
                 generated, references,
                 lang="ko",
-                model_type=self.args.bert_model_name,
+                model_type=CFG.bert_model_name,
                 device=device,
                 batch_size=1,                  # ✅ 16 -> 1
                 rescale_with_baseline=False,   # ✅ True -> False (아래 설명)

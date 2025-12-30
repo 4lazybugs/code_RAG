@@ -38,13 +38,3 @@ model_name : "Qwen/Qwen2.5-14B-Instruct"
 #embedor_model_name: 'mixedbread-ai/mxbai-embed-large-v1' # 영어 embedor
 #embedor_model_name: "dragonkue/BGE-m3-ko" # 한국어 전용 embedor
 embedor_model_name: "upskyy/bge-m3-korean"
-
-
-##################
-## 평가 지표 설정 ###
-##################
-sbert_model_name : "snunlp/KR-SBERT-V40K-klueNLI-augSTS"
-#sbert_model_name : "all-MiniLM-L6-v2"
-#bert_model_name : "bert-base-uncased" # 영어 전용
-bert_model_name : bert-base-multilingual-cased # 다국어 지원
-#bert_model_name : xlm-roberta-large # 다국어 지원2 hugging face 모델, 근데 에러남

@@ -28,5 +28,5 @@ pip install -r requirements_paddleenv.txt
 #   --host 127.0.0.1 \
 #   --port 8000 \
 #   --model Qwen/Qwen2.5-14B-Instruct \
-#   --max-model-len 12288 \
-#   --gpu-memory-utilization 0.20
+#   --max-model-len 32768 \
+#   --gpu-memory-utilization 0.4

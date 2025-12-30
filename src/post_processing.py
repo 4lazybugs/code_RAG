@@ -2,7 +2,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from pathlib import Path
 from langchain_google_genai import ChatGoogleGenerativeAI  # ✅ 추가
 import re, time, os
-from utils import get_config
+from load_params import get_config
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI 
 

@@ -11,7 +11,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from sentence_transformers import SentenceTransformer
 
-from utils import get_config
+from load_params import get_config
 
 
 # ================== 공통 설정 ==================

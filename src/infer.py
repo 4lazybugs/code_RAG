@@ -12,7 +12,7 @@ import re
 
 # Expert 클래스들
 from rag import PartialExpert, RawLlmExpert, SelfAskExpert
-from models_eval.base import BaseEvaluator
+from eval.models_eval.base import BaseEvaluator
 from tqdm import tqdm
 
 ##### make_pretty 함수 정의 #########################################################
@@ -129,13 +129,13 @@ class QagOnly(BaseEvaluator):
         # QAG만 만들 거라 점수 계산은 사용하지 않음 
         return []
 
-    def generate(self, questions: list, mode: str) -> list:
+    def generate(self, questions: list, options: list, mode: str) -> list:
         preds = []
         infos = []
         retrieved_all = []  # ✅ 질문별 retrieved 저장 (핵심)
 
-        for q in tqdm(questions, desc=f"Generating ({mode})"):
-            res = self.expert.handle(q)
+        for q, opts in tqdm(list(zip(questions, options)), desc=f"Generating ({mode})"):
+            res = self.expert.handle(q, options=opts)  # ✅ options 전달
 
             # ---- retrieved 수집 (질문 1개 끝날 때마다) ----
             docs = getattr(self.expert, "retrieved_snippets", None)
@@ -265,7 +265,7 @@ def run_qag_and_save(
     retr_map = {"cleaned_multi": cleaned_multi}
 
     # 3) 저장 폴더 준비
-    qag_dir = results_dir / "qag"
+    qag_dir = results_dir / "inferenced"
     ret_dir = results_dir / "retrieved"
     if subdir:
         qag_dir = qag_dir / subdir
@@ -287,8 +287,8 @@ def run_qag_and_save(
 
         qag = QagOnly(expert, qa_data_path=qa_data_path[qa_mode], sample_size=sample_size)
 
-        # ✅ get_data(infer.py) -> generate(base.py) -> handle(base.py) -> invoke(rag_naive.py)
-        questions, references, generated, qa_id = qag.get_data(mode)
+        # ✅ get_data(models_eval/base.py) -> generate -> handle -> invoke(models_RAG/rag_naive.py)
+        questions, options, references, generated, qa_id = qag.get_data(mode)
 
         out_path = qag_dir / f"qag_{mode}.json"
         qag.save_qag(mode, qa_id, questions, references, generated, {}, str(out_path))
@@ -307,10 +307,11 @@ if __name__ == '__main__':
     selected_modes = ["partial_10", "raw_llm"]
     sample_size = None
     
+    '''
     qa_data_path = {
         "cleaned": "qa_data/GT/manual_book/mcq/gt_merged_manual_book.json"
     }
-
+    
     run_qag_and_save(
         qa_mode=qa_mode,
         retriever_mode=retriever_mode,
@@ -320,7 +321,7 @@ if __name__ == '__main__':
         sample_size=sample_size,
         subdir="manual_book/mcq",  # manual_book을 루트에 쓰고 싶으면 "", 아니면 "manual_book"
     )
-
+    '''
     '''
     qa_data_path = {
         "cleaned": "qa_data/GT/farm_consulting/gt_merged_farm_consulting.json"
@@ -335,7 +336,8 @@ if __name__ == '__main__':
         sample_size=sample_size,
         subdir="farm_consulting",  # farm_consulting을 루트에 쓰고 싶으면 "", 아니면 "farm_consulting"
     )
-
+    '''
+    
     
     # test
     qa_data_path = {
@@ -351,7 +353,7 @@ if __name__ == '__main__':
         sample_size=sample_size,
         subdir="test",  # manual_book을 루트에 쓰고 싶으면 "", 아니면 "manual_book"
     )
-    '''
+    
     
     elapsed = time.time() - start_time
     print(f"⏱ 전체 추론 완료: {elapsed/60:.2f}분")

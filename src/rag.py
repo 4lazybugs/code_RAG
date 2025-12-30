@@ -11,8 +11,8 @@ from models_RAG import (
     RawLlmExpert, SelfAskExpert
 )
 
-from retriever import MultiCosineRetriever, load_cleaned_md_level2_retrievers
-from utils import load_yaml, get_config
+from retriever import MultiCosineRetriever, load_retrievers
+from load_params import load_yaml, get_config
 
 # --------------------------------------------------
 def normalize_answer(res) -> str:
@@ -66,7 +66,7 @@ if __name__ == "__main__":
         ndocs = 5
 
         # ✅ cleaned_md/<L1>/<L2> 폴더별 retriever 로드
-        cleaned_folder_retrievers = load_cleaned_md_level2_retrievers(ndocs=ndocs)
+        cleaned_folder_retrievers = load_retrievers(ndocs=ndocs)
 
         # ✅ 폴더별 retriever들을 하나로 묶는 멀티 리트리버 생성
         cleaned_multi = MultiCosineRetriever(

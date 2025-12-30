@@ -9,9 +9,8 @@ from langchain_core.prompts import ChatPromptTemplate
 class GroundEvaluator(BaseEvaluator):
     metric_key = "ground"  # groundedness/faithfulness 점수
 
-    def __init__(self, expert, qa_data_path=None, sample_size=None, k=5,
-                 max_context_chars=12000, max_doc_chars=4000):
-        super().__init__(expert, qa_data_path=qa_data_path, sample_size=sample_size)
+    def __init__(self, k=5, max_context_chars=12000, max_doc_chars=4000):
+        super().__init__()
 
         self.k = k
         self.max_context_chars = max_context_chars

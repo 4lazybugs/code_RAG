@@ -3,8 +3,8 @@ from .base import BaseEvaluator
 class RecallEvaluator(BaseEvaluator):
     metric_key = "recall"
 
-    def __init__(self, expert, qa_data_path=None, sample_size=None):
-        super().__init__(expert, qa_data_path=qa_data_path, sample_size=sample_size)
+    def __init__(self):
+        super().__init__()
 
     @staticmethod
     def _canon(name: str) -> str:

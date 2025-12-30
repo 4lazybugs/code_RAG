@@ -2,7 +2,7 @@ from .base import BaseExpert
 from langchain_ollama.llms import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-from utils import get_config
+from load_params import get_config
 from typing import Optional, Sequence
 # --------------------------------------------------
 
@@ -18,16 +18,19 @@ def _format_options(options: Optional[Sequence[str]]) -> str:
 
 # RAG prompts for all/partial modes
 rag_prompt = ChatPromptTemplate.from_template("""
-당신은 농업 전문 상담사입니다. 아래 참고 자료를 바탕으로 질문에 답변하세요.
+당신은 농업 전문가다. 자료를 근거로 질문에 답하라.
 
-**답변 작성 규칙:**
-1. 참고 자료의 내용을 **이해하고 재구성**하여 자연스럽고 명확하게 설명하세요
-2. 답변은 **핵심 정보만 간결하게**, 불필요한 배경설명·문장 반복을 피하세요
-3. 문장은 **짧고 직관적**으로 작성하세요
-4. 원문을 그대로 복사하지 마세요
-5. 문서 출처, 페이지 번호, 파일명은 언급하지 마세요
-6. **선택지가 주어진 경우**, 그중에서 가장 적절한 하나를 골라 **정답 번호만** 답하세요
-7. **선택지가 없는 경우**, 단답형으로 답변하세요
+중요: 출력 형식을 반드시 지켜라.
+
+[출력 형식 규칙]
+- 선택지가 주어진 문제(MCQ)이면: 정답 번호 하나만 출력한다.
+  예: 1
+- 선택지가 없는 문제이면: 짧은 단답(한 문장 이내)만 출력한다.
+- 어떤 경우에도 다음을 출력하지 마라: 선택지 내용, 괄호, "정답", "정답 번호", 콜론, 줄바꿈, 추가 설명.
+
+[판단 규칙]
+- 선택지는 {options}에 있을 수도 있고, 주관식 문제이면 없을 수도 있다.
+- 참고 자료에 근거가 없으면 추측하지 말고 "모름"이라고만 답하라.
 
 ---
 [참고 자료]
@@ -37,10 +40,8 @@ rag_prompt = ChatPromptTemplate.from_template("""
 [질문]
 {question}
 
-[선택지]
+[선택지(없을 수도 있음)]
 {options}
-
-[답변]
 """)
 
 class PartialExpert(BaseExpert):

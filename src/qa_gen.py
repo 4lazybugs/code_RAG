@@ -7,7 +7,7 @@ from sentence_transformers import SentenceTransformer
 from langchain_core.embeddings.embeddings import Embeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-from utils import get_config
+from load_params import get_config
 from dotenv import load_dotenv
 
 CFG = get_config()
@@ -245,16 +245,16 @@ if __name__ == "__main__":
     chain = mcq_prompt | llm # multiple choice question
     #chain = saq_prompt | llm # short answer question
     
-    
+    '''
     # manual_book
     gen_GT(
         md_root=Path("db/cleaned_md/manual_book/"),
         qa_root=Path("qa_data/GT/manual_book/mcq"),
         chain=chain
     )
-
+    '''
     merge_gt_by_id(
-        gt_root=Path("qa_data/GT/manual_book"),
+        gt_root=Path("qa_data/GT/manual_book/mcq"),
         out_path=Path("qa_data/GT/manual_book/mcq/gt_merged_manual_book.json")
     )
 

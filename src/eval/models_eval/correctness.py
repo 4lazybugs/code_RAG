@@ -11,8 +11,8 @@ from langchain_core.prompts import ChatPromptTemplate
 class CorrectnessEvaluator(BaseEvaluator):
     metric_key = "correctness"
 
-    def __init__(self, expert, qa_data_path=None, sample_size=None):
-        super().__init__(expert, qa_data_path=qa_data_path, sample_size=sample_size)
+    def __init__(self):
+        super().__init__()
 
         load_dotenv()
         api_key = os.getenv("OPENAI_API_KEY")

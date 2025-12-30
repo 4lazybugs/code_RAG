@@ -21,8 +21,8 @@ def _normalize(text) -> str:
 class Rouge1Evaluator(BaseEvaluator):
     metric_key = 'rouge1'
 
-    def __init__(self, expert, qa_data_path, sample_size=None):
-        super().__init__(expert, qa_data_path, sample_size)
+    def __init__(self):
+        super().__init__()
 
     def compute_scores(self, references: list, generated: list, gen_docs: list, ref_docs: list) -> list:
         scores = []

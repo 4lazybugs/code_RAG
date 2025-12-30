@@ -12,3 +12,4 @@ from .recall import RecallEvaluator
 from .mrr import MRREvaluator
 from .groundness import GroundEvaluator
 from .correctness import CorrectnessEvaluator
+from .em import ExactMatchEvaluator

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Union, Tuple
-from utils import get_config
+from load_params import get_config
 
 class BaseExpert(ABC):
     def __init__(self, retriever_map: Dict[str, Any], retriever_mode: str):

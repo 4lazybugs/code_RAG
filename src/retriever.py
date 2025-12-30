@@ -14,7 +14,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_chroma import Chroma
 from sentence_transformers import SentenceTransformer
 
-from utils import get_config
+from load_params import get_config
 
 # =========================
 # 공통 설정 / 임베딩 래퍼
