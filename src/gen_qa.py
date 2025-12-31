@@ -240,7 +240,6 @@ def merge_gt_by_id(gt_root: Path, out_path: Path):
 if __name__ == "__main__":
     start = time.time()
     load_dotenv()
-    api_key = os.getenv("OPENAI_API_KEY")
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     chain = mcq_prompt | llm # multiple choice question
     #chain = saq_prompt | llm # short answer question

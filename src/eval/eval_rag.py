@@ -121,7 +121,7 @@ class EvaluatorFactory:
 
 ################## Score saving: markdown ####################################################
 def write_metric_json(*, md_results_path: Path, mode: str, metric: str, rows: list[dict]):
-    score_dir = md_results_path.parent
+    score_dir = md_results_path
     score_dir.mkdir(parents=True, exist_ok=True)
 
     out_path = score_dir / f"{mode}_{metric}.json"
@@ -166,6 +166,7 @@ class EvalRunner:
             }
 
     def run(self, *, mode: str, metrics: list[str]) -> list[dict]: 
+        print(f"Running {mode} evaluation...")
         # load once
         self.gt_repo.load()
         self.qag_repo.load()
@@ -213,6 +214,7 @@ class EvalRunner:
         torch.cuda.empty_cache()
         gc.collect()
 
+        print(f"Evaluation completed for {mode}")
         return summary_rows
 
 ################## save concatenated results: excel ####################################################
@@ -235,45 +237,52 @@ if __name__ == "__main__":
 
     metrics = ["mrr", "recall", "ground", "correctness", "em","rouge1", "rougeL", "bert", "sbert"]
     
+    cfg_hotpot = EvalConfig(
+        qa_gt_path=Path("qa_data/GT/hotpotqa_test/gt_merged_hotpotqa_test.json"),
+        retr_path=Path("results/hotpotqa_test/retrieved_multihop.json"),
+        qag_path=Path("results/inferenced/hotpotqa_test/qag_multihop.json"),
+        md_results_path=Path("results/eval_score/hotpotqa_test/"),
+    )
+
     cfg_mcq_rag = EvalConfig(
         qa_gt_path=Path("qa_data/GT/manual_book/mcq/gt_merged_manual_book.json"),
         retr_path=Path("results/retrieved/manual_book/mcq/retrieved_partial_10.json"),
         qag_path=Path("results/inferenced/manual_book/mcq/qag_partial_10.json"),
-        md_results_path=Path("results/eval_score/mcq_rag.xlsx"),
+        md_results_path=Path("results/eval_score/mcq/"),
     )
 
     cfg_mcq_llm = EvalConfig(
         qa_gt_path=Path("qa_data/GT/manual_book/mcq/gt_merged_manual_book.json"),
         retr_path=Path("results/retrieved/manual_book/mcq/retrieved_raw_llm.json"),
         qag_path=Path("results/inferenced/manual_book/mcq/qag_raw_llm.json"),
-        md_results_path=Path("results/eval_score/mcq_llm.xlsx"),
+        md_results_path=Path("results/eval_score/mcq/"),
     )
 
-    # cfg_test_rag = EvalConfig(
-    #     qa_gt_path=Path("qa_data/test/gt_merged_test.json"),
-    #     retr_path=Path("results/retrieved/test/retrieved_partial_10.json"),
-    #     qag_path=Path("results/inferenced/test/qag_partial_10.json"),
-    #     md_results_path=Path("results/eval_score/test_rag.xlsx"),
-    # )
+    cfg_test_rag = EvalConfig(
+        qa_gt_path=Path("qa_data/test/gt_merged_test.json"),
+        retr_path=Path("results/retrieved/test/retrieved_partial_10.json"),
+        qag_path=Path("results/inferenced/test/qag_partial_10.json"),
+        md_results_path=Path("results/eval_score/test_rag.xlsx"),
+    )
 
-    # cfg_test_llm = EvalConfig(
-    #     qa_gt_path=Path("qa_data/test/gt_merged_test.json"),
-    #     retr_path=Path("results/retrieved/test/retrieved_raw_llm.json"),
-    #     qag_path=Path("results/inferenced/test/qag_raw_llm.json"),
-    #     md_results_path=Path("results/eval_score/test_llm.xlsx"),
-    # )
+    cfg_test_llm = EvalConfig(
+        qa_gt_path=Path("qa_data/test/gt_merged_test.json"),
+        retr_path=Path("results/retrieved/test/retrieved_raw_llm.json"),
+        qag_path=Path("results/inferenced/test/qag_raw_llm.json"),
+        md_results_path=Path("results/eval_score/test_llm.xlsx"),
+    )
 
-    # runner_test_rag = EvalRunner(cfg_test_rag)
-    # runner_test_llm = EvalRunner(cfg_test_llm)
+    runner_test_rag = EvalRunner(cfg_test_rag)
+    runner_test_llm = EvalRunner(cfg_test_llm)
     runner_mcq_rag = EvalRunner(cfg_mcq_rag)
     runner_mcq_llm = EvalRunner(cfg_mcq_llm)
 
     all_summary_rows: list[dict] = []
 
-    # results_test_rag = runner_test_rag.run(mode="RAG", metrics=metrics)
-    # all_summary_rows.extend(results_test_rag)
-    # results_test_llm = runner_test_llm.run(mode="naive_LLM", metrics=metrics)
-    # all_summary_rows.extend(results_test_llm)
+    results_test_rag = runner_test_rag.run(mode="RAG", metrics=metrics)
+    all_summary_rows.extend(results_test_rag)
+    results_test_llm = runner_test_llm.run(mode="naive_LLM", metrics=metrics)
+    all_summary_rows.extend(results_test_llm)
     results_mcq_rag = runner_mcq_rag.run(mode="RAG", metrics=metrics)
     all_summary_rows.extend(results_mcq_rag)
     results_mcq_llm = runner_mcq_llm.run(mode="naive_LLM", metrics=metrics)
