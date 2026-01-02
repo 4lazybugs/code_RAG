@@ -1,4 +1,4 @@
-from .base import BaseEvaluator
+from .base import Evaluator
 
 def _normalize(text) -> str:
     if text is None:
@@ -18,7 +18,7 @@ def _normalize(text) -> str:
     # ✅ 최종적으로 문자열 보장
     return str(text).strip()
 
-class Rouge1Evaluator(BaseEvaluator):
+class Rouge1Evaluator(Evaluator):
     metric_key = 'rouge1'
 
     def __init__(self):

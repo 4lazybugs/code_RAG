@@ -1,4 +1,4 @@
-from .base import BaseEvaluator
+from .base import Evaluator
 
 def _normalize(text: str) -> str:
     if text is None:
@@ -24,11 +24,11 @@ def _lcs_len(a: str, b: str) -> int:
                 dp[i][j] = max(dp[i-1][j], dp[i][j-1])
     return dp[la][lb]
 
-class RougeLEvaluator(BaseEvaluator):
+class RougeLEvaluator(Evaluator):
     metric_key = 'rougeL'
 
     def __init__(self):
-        # BaseEvaluator의 다른 기능(캐시, sbert 등) 쓰려면 유지
+        # Evaluator의 다른 기능(캐시, sbert 등) 쓰려면 유지
         super().__init__()
 
     def compute_scores(self, references: list, generated: list, gen_docs: list, ref_docs: list) -> list:

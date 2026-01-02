@@ -3,7 +3,7 @@ from .bluert import BleurtEvaluator
 from .movescore import MoverEvaluator
 from .bleu import BleuEvaluator
 '''
-from .base import BaseEvaluator
+from .base import Evaluator
 from .rouge1 import Rouge1Evaluator
 from .rougel import RougeLEvaluator
 from .bert import BertEvaluator

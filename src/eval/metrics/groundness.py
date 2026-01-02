@@ -1,4 +1,4 @@
-from .base import BaseEvaluator
+from .base import Evaluator
 from dotenv import load_dotenv
 import os
 import json
@@ -6,7 +6,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 
-class GroundEvaluator(BaseEvaluator):
+class GroundEvaluator(Evaluator):
     metric_key = "ground"  # groundedness/faithfulness 점수
 
     def __init__(self, k=5, max_context_chars=12000, max_doc_chars=4000):

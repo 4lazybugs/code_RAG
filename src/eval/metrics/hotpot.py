@@ -1,5 +1,5 @@
 import re
-from .base import BaseEvaluator
+from .base import Evaluator
 
 def _normalize(text) -> str:
     if text is None:
@@ -13,7 +13,7 @@ def _normalize(text) -> str:
                 break
     return str(text).strip()
 
-class SupportingEMEvaluator(BaseEvaluator):
+class SupportingEMEvaluator(Evaluator):
     """
     supporting_fact_gen이 supporting_fact_ref 또는 supporting_fact_comp에
     포함되는지(부분문자열) 체크하는 metric.

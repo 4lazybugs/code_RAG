@@ -1,5 +1,5 @@
 import re
-from .base import BaseEvaluator
+from .base import Evaluator
 
 def _normalize(text) -> str:
     if text is None:
@@ -35,7 +35,7 @@ def _leading_number(text: str):
     return m.group(1) if m else None
 
 
-class ExactMatchEvaluator(BaseEvaluator):
+class ExactMatchEvaluator(Evaluator):
     metric_key = "exact_match"
 
     def __init__(self, remove_spaces=True, mcq=True):

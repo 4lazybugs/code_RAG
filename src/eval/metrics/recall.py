@@ -1,6 +1,6 @@
-from .base import BaseEvaluator
+from .base import Evaluator
 
-class RecallEvaluator(BaseEvaluator):
+class RecallEvaluator(Evaluator):
     metric_key = "recall"
 
     def __init__(self):

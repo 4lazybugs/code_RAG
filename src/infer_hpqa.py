@@ -8,6 +8,11 @@ from tqdm import tqdm
 from retriever import MultiCosineRetriever, load_retrievers
 from models_RAG import HotpotExpert  # ✅ Hotpot 전용
 
+# ✅ naive expert import (네 프로젝트 실제 경로에 맞게 수정)
+# 예시1) from experts.raw_llm import RawLlmExpert
+# 예시2) from models_RAG.raw_llm_expert import RawLlmExpert
+from models_RAG import RawLlmExpert
+
 
 # =============================================================================
 # 0) Utils
@@ -31,6 +36,16 @@ def make_pretty(text: str, max_block_chars: int = 1200) -> list[str]:
             b = b[:max_block_chars] + "\n...(truncated)"
         out.append(b)
     return out
+
+def to_plain_text(x: Any) -> str:
+    """LLM/체인 응답을 문자열로 안전 변환."""
+    if x is None:
+        return ""
+    if hasattr(x, "content"):
+        return "" if x.content is None else str(x.content)
+    if isinstance(x, dict):
+        return str(x.get("content") or x.get("text") or x.get("answer") or x.get("output") or "")
+    return str(x)
 
 
 # =============================================================================
@@ -82,41 +97,44 @@ def load_hotpot_gt(path: str, sample_size: Optional[int] = None) -> dict[str, li
     if sample_size is not None:
         items = items[: int(sample_size)]
 
-    # ✅ answer 키가 항상 있다고 가정하되, 혹시 몰라 fallback도 둠
     def _get_answer(it: dict) -> str:
         if "answer" in it:
             return it.get("answer", "") or ""
-        # 과거 포맷 호환
         return it.get("reference", "") or ""
 
     return {
         "qa_ids": [it.get("id") for it in items],
         "questions": [it.get("question", "") for it in items],
-        "references": [_get_answer(it) for it in items],  # ✅ 평가 코드에서 reference로 씀
-        "options": [[] for _ in items],                   # ✅ hotpot 기본: options 없음
+        "references": [_get_answer(it) for it in items],
+        "options": [[] for _ in items],  # ✅ hotpot 기본: options 없음
     }
 
 
 # =============================================================================
-# 3) Hotpot-only Runner
+# 3) Hotpot Runner (multihop + naive)
 # =============================================================================
 
 def run_hotpot(cfg: Cfg, results_dir: Path, bus: Optional[EventBus] = None) -> None:
     bus = bus or EventBus()
 
-    # (1) retriever 구축
+    # (1) retriever 구축 (multihop 전용)
     bus.emit("stage", msg="[BUILD] loading retrievers...")
     leaf = load_retrievers(ndocs=cfg.ndocs_init)
     retr = MultiCosineRetriever(retrievers=leaf, k_each=cfg.k_each, top_k=cfg.top_k)
     retr_map = {cfg.retriever_mode: retr}
 
-    # (2) GT 로드
+    # (2) GT 로드 (multihop/naive 공통)
     gt = load_hotpot_gt(cfg.gt_path, cfg.sample_size)
     qa_ids, questions, references, options = gt["qa_ids"], gt["questions"], gt["references"], gt["options"]
     bus.emit("stage", msg=f"[DATA] loaded Hotpot GT: n={len(qa_ids)}")
 
-    # (3) HotpotExpert (mode 고정)
-    expert = HotpotExpert(retr_map, cfg.retriever_mode)
+    # (3) Experts
+    # 3-1) multihop expert
+    mh_expert = HotpotExpert(retr_map, cfg.retriever_mode)
+
+    # 3-2) naive expert (retrieval 없이)
+    naive_expert = RawLlmExpert(retriever_map={}, retriever_mode="naive")
+    naive_expert.setup(retriever_mode="naive")
 
     # (4) output dir
     qag_root = results_dir / "inferenced" / cfg.subdir
@@ -124,62 +142,86 @@ def run_hotpot(cfg: Cfg, results_dir: Path, bus: Optional[EventBus] = None) -> N
     qag_root.mkdir(parents=True, exist_ok=True)
     ret_root.mkdir(parents=True, exist_ok=True)
 
-    # ✅ 평가 코드와 파일명 호환: qag_multihop.json / retrieved_multihop.json
-    qag_out = qag_root / "qag_multihop.json"
-    ret_out = ret_root / "retrieved_multihop.json"
+    # ✅ 평가 코드와 파일명/경로 호환
+    qag_out_multihop = qag_root / "qag_multihop.json"
+    ret_out_multihop = ret_root / "retrieved_multihop.json"
+    qag_out_naive = qag_root / "qag_naive.json"
 
-    bus.emit("stage", msg="[RUN] multihop start")
+    bus.emit("stage", msg="[RUN] multihop + naive start")
 
-    qag_records = []
-    ret_records = []
+    qag_mh_records = []
+    ret_mh_records = []
+    qag_naive_records = []
 
     for qid, q, opts, ref in tqdm(
         list(zip(qa_ids, questions, options, references)),
-        desc="Generating(multihop)"
+        desc="Generating(multihop+naive)"
     ):
         bus.emit("q", msg=f"[QID={qid}] ...")
 
-        res = expert.handle(q, options=opts)
+        # ------------------------------------------------------------
+        # (A) multihop 추론
+        # ------------------------------------------------------------
+        res = mh_expert.handle(q, options=opts)
 
-        # generated + info
         if isinstance(res, tuple):
-            ans, info = res
+            ans_mh, info_mh = res
         else:
-            ans, info = res, None
+            ans_mh, info_mh = res, None
 
-        if hasattr(ans, "content"):
-            ans = ans.content
-        elif isinstance(ans, dict):
-            ans = ans.get("content") or ans.get("text") or ans.get("answer") or str(ans)
-        ans = "" if ans is None else str(ans)
+        ans_mh = to_plain_text(ans_mh)
 
-        # ✅ 평가 코드(QAGRepo)와 호환: id/question/reference/generated/info
-        qag_records.append({
+        qag_mh_records.append({
             "id": qid,
             "question": q,
-            "reference": ref,   # GT answer를 그대로 넣어 둠(평가에서 사용하진 않아도 디버깅에 좋음)
-            "generated": ans,
-            "info": info or {},
+            "reference": ref,
+            "generated": ans_mh,
+            "info": info_mh or {},
         })
 
-        # retrieved
-        docs = getattr(expert, "retrieved_snippets", None) or getattr(expert, "last_retrieved_docs", [])
+        # retrieved(multihop만)
+        docs = getattr(mh_expert, "retrieved_snippets", None) or getattr(mh_expert, "last_retrieved_docs", [])
         retrieved_list = []
-        for d in (docs or []):
+        for rank, d in enumerate(docs or [], start=1):
+            md = getattr(d, "metadata", {}) or {}
             retrieved_list.append({
-                "rank": d.metadata.get("__rank__"),
-                "filename": d.metadata.get("filename"),
-                "content": make_pretty(d.page_content),
+                "rank": md.get("__rank__", rank),   # rank 없으면 enumerate로 보정
+                "filename": md.get("filename"),
+                "content": make_pretty(getattr(d, "page_content", "")),
             })
-        ret_records.append({"id": qid, "retrieved": retrieved_list})
+        ret_mh_records.append({"id": qid, "retrieved": retrieved_list})
+
+        # ------------------------------------------------------------
+        # (B) naive 추론 (GT 동일, question만 사용)
+        # ------------------------------------------------------------
+        ans_nv = naive_expert.handle(q, options=None)
+        ans_nv = to_plain_text(ans_nv)
+
+        qag_naive_records.append({
+            "id": qid,
+            "question": q,
+            "reference": ref,
+            "generated": ans_nv,
+            "info": {},  # naive는 supporting/link_word 없음
+        })
 
     # save
-    with open(qag_out, "w", encoding="utf-8") as f:
-        json.dump(qag_records, f, ensure_ascii=False, indent=2)
-    with open(ret_out, "w", encoding="utf-8") as f:
-        json.dump(ret_records, f, ensure_ascii=False, indent=2)
+    with open(qag_out_multihop, "w", encoding="utf-8") as f:
+        json.dump(qag_mh_records, f, ensure_ascii=False, indent=2)
+    with open(ret_out_multihop, "w", encoding="utf-8") as f:
+        json.dump(ret_mh_records, f, ensure_ascii=False, indent=2)
+    with open(qag_out_naive, "w", encoding="utf-8") as f:
+        json.dump(qag_naive_records, f, ensure_ascii=False, indent=2)
 
-    bus.emit("stage", msg=f"[RUN] saved -> {qag_out} / {ret_out}")
+    bus.emit(
+        "stage",
+        msg=(
+            "[RUN] saved ->\n"
+            f"- {qag_out_multihop}\n"
+            f"- {ret_out_multihop}\n"
+            f"- {qag_out_naive}"
+        )
+    )
 
 
 # =============================================================================
@@ -194,14 +236,15 @@ if __name__ == "__main__":
     results_dir = (Path(__file__).resolve().parent / ".." / "results").resolve()
     results_dir.mkdir(parents=True, exist_ok=True)
 
+    # ✅ gt_path는 multihop/naive 공통으로 동일 파일 사용
     cfg = Cfg(
-        gt_path="qa_data/GT/hotpotqa_test/gt_merged_hotpotqa_test.json",  # ✅ 확장자 포함
+        gt_path="qa_data/GT/hotpotqa_test/gt_merged_hotpotqa_test.json",
         retriever_mode="cleaned_multi",
         ndocs_init=10,
         k_each=10,
         top_k=7,
         sample_size=None,
-        subdir="hotpotqa_test",  # ✅ 평가 cfg_hotpot의 경로와 맞추는 걸 추천
+        subdir="hotpotqa_test",
     )
 
     start = time.time()

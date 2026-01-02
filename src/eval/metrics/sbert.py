@@ -1,4 +1,4 @@
-from .base import BaseEvaluator
+from .base import Evaluator
 from sentence_transformers import util, SentenceTransformer
 import torch
 from load_params import get_config
@@ -7,13 +7,13 @@ CFG = get_config()
 
 device = "cuda" if torch.cuda.is_available() else "cpu"   # 원하시면 cpu로 고정해도 됨
 
-class SbertEvaluator(BaseEvaluator):
+class SbertEvaluator(Evaluator):
     metric_key = "sbert"
 
     def __init__(self):
         super().__init__()
 
-        # ✅ config에서 읽힌 args를 BaseEvaluator가 보관한다고 가정(self.args)
+        # ✅ config에서 읽힌 args를 Evaluator가 보관한다고 가정(self.args)
         self.sbert_model = SentenceTransformer(
             CFG.sbert_model_name,
             device=device

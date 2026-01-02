@@ -1,4 +1,4 @@
-from .base import BaseEvaluator
+from .base import Evaluator
 from bert_score import score as bert_score
 import re
 import torch
@@ -15,7 +15,7 @@ def _clean_for_bert(x: str, max_chars: int = 3000) -> str:
     return str(x).strip()[:max_chars]
 
 
-class BertEvaluator(BaseEvaluator):
+class BertEvaluator(Evaluator):
     metric_key = "bert"
 
     def compute_scores(self, references: list, generated: list, gen_docs: list, ref_docs: list) -> list:

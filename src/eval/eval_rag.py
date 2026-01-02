@@ -8,12 +8,7 @@ import gc
 import time
 from tqdm import tqdm
 from functools import partial
-
-from models_eval import Rouge1Evaluator, RougeLEvaluator
-from models_eval import BertEvaluator, SbertEvaluator
-from models_eval import RecallEvaluator, MRREvaluator
-from models_eval import GroundEvaluator, CorrectnessEvaluator
-from models_eval import ExactMatchEvaluator
+import metrics
 
 
 ######## Config ##########
@@ -99,15 +94,15 @@ class RetrievedRepository:
 ################## Evaluator Factory ####################################################
 class EvaluatorFactory:
     ev_map = {
-        "rouge1": Rouge1Evaluator,
-        "rougeL": RougeLEvaluator,
-        "bert": BertEvaluator,
-        "sbert": SbertEvaluator,
-        "recall": RecallEvaluator,
-        "mrr": MRREvaluator,
-        "ground": GroundEvaluator,
-        "correctness": CorrectnessEvaluator,
-        "em": ExactMatchEvaluator,
+        "rouge1": metrics.Rouge1Evaluator,
+        "rougeL": metrics.RougeLEvaluator,
+        "bert": metrics.BertEvaluator,
+        "sbert": metrics.SbertEvaluator,
+        "recall": metrics.RecallEvaluator,
+        "mrr": metrics.MRREvaluator,
+        "ground": metrics.GroundEvaluator,
+        "correctness": metrics.CorrectnessEvaluator,
+        "em": metrics.ExactMatchEvaluator,
     }
 
     @classmethod

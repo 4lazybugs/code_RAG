@@ -1,6 +1,6 @@
-from .base import BaseEvaluator
+from .base import Evaluator
 
-class MRREvaluator(BaseEvaluator):
+class MRREvaluator(Evaluator):
     metric_key = "mrr"
 
     def __init__(self):

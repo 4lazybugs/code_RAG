@@ -34,6 +34,7 @@ def _normalize(text) -> str:
                 break
     return str(text).strip()
 
+
 class SupportingGenContainEvaluator(BaseEvaluator):
     """
     supporting_fact_gen이 supporting_fact_ref 또는 supporting_fact_comp에 포함되는지 체크.
@@ -87,10 +88,10 @@ class SupportingGenContainEvaluator(BaseEvaluator):
 
 @dataclass(frozen=True)
 class HotpotEvalCfg:
-    gt_path: Path          # Hotpot GT json
-    qag_path: Path         # inferenced qag json
-    retr_path: Path        # retrieved json
-    out_dir: Path          # per-metric json 저장 폴더
+    gt_path: Path                 # Hotpot GT json
+    qag_path: Path                # inferenced qag json
+    retr_path: Optional[Path]     # ✅ naive면 None 허용
+    out_dir: Path                 # per-metric json 저장 폴더
     summary_xlsx: Optional[Path] = None  # 요약 엑셀(optional)
 
 
@@ -170,7 +171,7 @@ class EvaluatorFactory:
         "correctness": CorrectnessEvaluator,
         "em": ExactMatchEvaluator,
 
-        # ✅ NEW supporting metric
+        # ✅ supporting metric
         "supporting_gen_contain": SupportingGenContainEvaluator,
     }
 
@@ -191,6 +192,7 @@ class EvaluatorFactory:
 def write_json(path: Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+
 
 def write_summary_xlsx(path: Path, summary_rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -218,7 +220,14 @@ class HotpotEvalRunner:
         self.cfg = cfg
         self.gt_repo = gt_repo or HotpotGTRepo(cfg.gt_path)
         self.qag_repo = qag_repo or QAGRepo(cfg.qag_path)
-        self.ret_repo = ret_repo or RetrievedRepo(cfg.retr_path)
+
+        # ✅ retr_path가 None이면 ret_repo 자체를 None으로 둔다(naive용)
+        if ret_repo is not None:
+            self.ret_repo = ret_repo
+        elif cfg.retr_path is not None:
+            self.ret_repo = RetrievedRepo(cfg.retr_path)
+        else:
+            self.ret_repo = None
 
     def _index_by_id(self, items: list[dict]) -> dict[Any, dict]:
         out = {}
@@ -230,10 +239,15 @@ class HotpotEvalRunner:
         # 1) load
         self.gt_repo.load()
         self.qag_repo.load()
-        self.ret_repo.load()
 
         qag_map = self._index_by_id(self.qag_repo.items)
-        ret_map = self._index_by_id(self.ret_repo.items)
+
+        # ✅ naive면 retrieved 로드/인덱싱 생략
+        if self.ret_repo is not None:
+            self.ret_repo.load()
+            ret_map = self._index_by_id(self.ret_repo.items)
+        else:
+            ret_map = {}
 
         # 2) evaluators
         evaluators = EvaluatorFactory.build(metrics)
@@ -244,7 +258,7 @@ class HotpotEvalRunner:
         for gt in tqdm(self.gt_repo.items, total=total, desc=f"Eval({mode})", leave=True):
             qid = gt.get("id")
             qag = qag_map.get(qid, {})
-            ret = ret_map.get(qid, {})
+            ret = ret_map.get(qid, {})  # naive면 {}
 
             question = gt.get("question", "")
             answer = gt.get("answer", "")
@@ -262,8 +276,9 @@ class HotpotEvalRunner:
             gen_sf_gen = info.get("supporting_fact_gen", "")
             gen_link = info.get("link_word", "")
 
-            retrieved = ret.get("retrieved", []) or []
-            ref_docs = gt.get("reference_docs", [])  # 없으면 []
+            # ✅ naive면 retrieved는 []
+            retrieved = (ret.get("retrieved", []) or []) if ret else []
+            ref_docs = gt.get("reference_docs", []) or []
 
             base = {
                 "id": qid,
@@ -284,10 +299,10 @@ class HotpotEvalRunner:
 
             # metric 계산
             for m, ev in evaluators.items():
-                # ✅ supporting metric은 generated에 "info dict"를 넣어줌
+                # supporting metric은 generated에 "info dict"를 넣어줌
                 if getattr(ev, "metric_key", "") == "supporting_gen_contain":
-                    ref_in = [""]          # not used
-                    gen_in = [info]        # dict 전달
+                    ref_in = [""]       # not used
+                    gen_in = [info]     # dict 전달
                 else:
                     ref_in = [answer]
                     gen_in = [generated]
@@ -337,21 +352,43 @@ class HotpotEvalRunner:
 if __name__ == "__main__":
     start = time.time()
 
-    # ✅ 기존 metric + supporting metric 추가
-    metrics = ["mrr", "recall", "ground", "correctness", "em",
-               "rouge1", "rougeL", "bert", "sbert",
-               "supporting_gen_contain"]
+    # 1) multihop 평가
+    multihop_metrics = [
+        "mrr", "recall", "ground", "correctness", "em",
+        "rouge1", "rougeL", "bert", "sbert",
+        "supporting_gen_contain",
+    ]
 
-    cfg = HotpotEvalCfg(
+    cfg_multihop = HotpotEvalCfg(
         gt_path=Path("qa_data/GT/hotpotqa_test/gt_merged_hotpotqa_test.json"),
         qag_path=Path("results/inferenced/hotpotqa_test/qag_multihop.json"),
         retr_path=Path("results/retrieved/hotpotqa_test/retrieved_multihop.json"),
-        out_dir=Path("results/eval_score/hotpotqa_test/"),
-        summary_xlsx=Path("results/eval_score/hotpotqa_test/summary.xlsx"),
+        out_dir=Path("results/eval_score/hotpotqa_test/multihop/"),
+        summary_xlsx=Path("results/eval_score/hotpotqa_test/multihop/summary.xlsx"),
     )
 
-    runner = HotpotEvalRunner(cfg)
-    summary = runner.run(mode="multihop", metrics=metrics)
+    runner_multihop = HotpotEvalRunner(cfg_multihop)
+    summary_multihop = runner_multihop.run(mode="multihop", metrics=multihop_metrics)
 
-    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    # 2) naive 평가 (supporting + retrieval 기반 metric 제외)
+    naive_metrics = [
+        "correctness", "em",
+        "rouge1", "rougeL", "bert", "sbert",
+    ]
+
+    cfg_naive = HotpotEvalCfg(
+        gt_path=Path("qa_data/GT/hotpotqa_test/gt_merged_hotpotqa_test.json"),
+        qag_path=Path("results/inferenced/hotpotqa_test/qag_naive.json"),
+        retr_path=None,  # ✅ naive는 retrieval json 없음
+        out_dir=Path("results/eval_score/hotpotqa_test/naive/"),
+        summary_xlsx=Path("results/eval_score/hotpotqa_test/naive/summary.xlsx"),
+    )
+
+    runner_naive = HotpotEvalRunner(cfg_naive)
+    summary_naive = runner_naive.run(mode="naive", metrics=naive_metrics)
+
+    print(json.dumps(
+        {"multihop": summary_multihop, "naive": summary_naive},
+        ensure_ascii=False, indent=2
+    ))
     print(f"⏱ 전체 평가 완료: {(time.time()-start)/60:.2f}분")
