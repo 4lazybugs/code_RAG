@@ -4,8 +4,7 @@ from typing import Dict, Any
 
 import torch
 from bert_score import score as bert_score
-from .base import Evaluator, add_metric_key
-from load_params import get_config
+from .base import Evaluator, add_metric_key, get_config
 
 CFG = get_config()
 

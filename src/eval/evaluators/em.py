@@ -1,6 +1,6 @@
 import re
 from typing import Any, Dict
-from .base import Evaluator, add_metric_key
+from .base import Evaluator, add_metric_key, get_config
 
 _LEADING_CHOICE_RE = re.compile(r"^\s*(\d+)\s*(?:[).]|:)?")  # "1)", "1.", "1 :", "1" 등
 

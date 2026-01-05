@@ -1,7 +1,6 @@
-from .base import Evaluator, add_metric_key
+from .base import Evaluator, add_metric_key, get_config
 from sentence_transformers import util, SentenceTransformer
 import torch
-from load_params import get_config
 
 CFG = get_config()
 device = "cuda" if torch.cuda.is_available() else "cpu"

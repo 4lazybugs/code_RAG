@@ -1,6 +1,34 @@
 from abc import ABC, abstractmethod
 from typing import Type, Dict, List
 from tqdm.auto import tqdm
+import argparse
+import yaml
+import os
+
+def load_yaml(path='src/eval/config.yaml'):
+    with open(path, 'r') as f:
+        raw_config = yaml.safe_load(f)
+
+    # 환경 변수 치환 처리
+    config = {}
+    for k, v in raw_config.items():
+        if isinstance(v, str):
+            config[k] = os.path.expandvars(v)
+        else:
+            config[k] = v
+
+    return config
+
+def get_config():
+    default_cfg = load_yaml()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sbert_model_name", type=str, default=default_cfg.get('sbert_model_name'))
+    parser.add_argument("--bert_model_name", type=str, default=default_cfg.get('bert_model_name'))
+
+    args = parser.parse_args()
+    return args
+
 
 metric_dict: Dict[str, Type["Evaluator"]] = {}
 

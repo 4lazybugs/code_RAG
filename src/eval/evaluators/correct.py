@@ -1,4 +1,4 @@
-from .base import Evaluator, add_metric_key
+from .base import Evaluator, add_metric_key, get_config
 from dotenv import load_dotenv
 import os
 import json
