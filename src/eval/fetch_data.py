@@ -92,14 +92,27 @@ class FetchData:
             "ref_docs":   [s.get("ref_docs") for s in self.data],
         }
 
-    @add_fetch_key("hotpot")
-    def fetch_recall(self) -> Dict[str, List[Any]]:
+    @add_fetch_key("supfact")
+    def fetch_supfact(self) -> Dict[str, List[Any]]:
+        """
+        SupportingEMEvaluator가 요구하는 supporting_fact_* 키를 만들어서 공급.
+        - 데이터에 info가 있으면 info에서 꺼내고
+        - 없으면 최상단 키에서 직접 꺼내본다(둘 중 하나라도 지원)
+        """
+        def pick(s: dict, key: str) -> Any:
+            info = s.get("info") or {}
+            return info.get(key, s.get(key, ""))
+
         return {
+            "supporting_fact_gen":  [pick(s, "supporting_fact_gen") for s in self.data],
+            "supporting_fact_ref":  [pick(s, "supporting_fact_ref") for s in self.data],
+            "supporting_fact_comp": [pick(s, "supporting_fact_comp") for s in self.data],
+
+            # (선택) 저장 json에 reference/generated도 같이 남기고 싶으면 포함
             "reference": [s.get("reference") for s in self.data],
             "generated":  [s.get("generated") for s in self.data],
-            "gen_docs":   [s.get("gen_docs") for s in self.data],
-            "ref_docs":   [s.get("ref_docs") for s in self.data],
         }
+
 
     def _to_rows(self, cols):
         if not cols:
