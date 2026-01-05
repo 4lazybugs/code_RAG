@@ -16,7 +16,6 @@ db/*
 .env
 src/eval.py
 .gitattributes
-src/eval/models_eval/not_used(쓸려면 여기서 다 꺼내)/*
+src/eval/evaluators/not_used(쓸려면 여기서 다 꺼내)/*
 results/*
-src/eval/eval.py
 src/eval/results/*

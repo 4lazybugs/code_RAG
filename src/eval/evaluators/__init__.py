@@ -10,7 +10,7 @@ from .bert import BertEvaluator
 from .sbert import SbertEvaluator
 from .recall import RecallEvaluator
 from .mrr import MRREvaluator
-from .groundness import GroundEvaluator
-from .correctness import CorrectnessEvaluator
+from .ground import GroundEvaluator
+from .correct import CorrectnessEvaluator
 from .em import ExactMatchEvaluator
 from .hotpot import SupportingEMEvaluator

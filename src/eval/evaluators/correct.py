@@ -1,4 +1,4 @@
-from .base import Evaluator
+from .base import Evaluator, add_metric_key
 from dotenv import load_dotenv
 import os
 import json
@@ -8,14 +8,17 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 
+@add_metric_key("correct")
 class CorrectnessEvaluator(Evaluator):
-    metric_key = "correctness"
 
     def __init__(self):
         super().__init__()
 
         load_dotenv()
         api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise RuntimeError("OPENAI_API_KEY가 환경변수에 설정되어 있지 않습니다.")
+
         self.llm = ChatOpenAI(model="gpt-4o-mini", api_key=api_key, temperature=0)
 
         self.prompt = ChatPromptTemplate.from_messages(
@@ -72,18 +75,20 @@ class CorrectnessEvaluator(Evaluator):
         s = max(0.0, min(1.0, s))
         return min(allowed, key=lambda a: abs(a - s))
 
-    def compute_scores(self, references: list, generated: list, gen_docs: list, ref_docs: list) -> list:
+    def score_once(self, data: Dict[str, Any]) -> float:
         """
-        메인에서 항상 한 샘플씩 들어오는 전제:
-          references == [gt_answer]
-          generated  == [gen_answer]
+        data에서 꺼내 사용:
+          - reference: GT 답변
+          - generated: 모델 답변
+          - question: (옵션) 있으면 사용, 없으면 ""
         """
-        ref = "" if not references or references[0] is None else str(references[0])
-        gen = "" if not generated or generated[0] is None else str(generated[0])
+        ref = self._normalize(data.get("reference"))
+        gen = self._normalize(data.get("generated"))
+        q = self._normalize(data.get("question"))  # 없으면 ""
 
         res = self.chain.invoke(
             {
-                "question": "",   # 질문을 넣고 싶으면 메인에서 전달 구조를 바꿔야 함
+                "question": q,
                 "reference": ref,
                 "generated": gen,
             }
@@ -94,5 +99,4 @@ class CorrectnessEvaluator(Evaluator):
             content = str(res)
 
         obj = self._safe_parse_json(content)
-        score = self._normalize_score(obj.get("score", 0.0))
-        return [score]
+        return self._normalize_score(obj.get("score", 0.0))
