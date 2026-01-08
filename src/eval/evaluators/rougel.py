@@ -38,8 +38,8 @@ class RougeLEvaluator(Evaluator):
     """
 
     def score_once(self, data: Dict[str, Any]) -> float:
-        ref_text = self._normalize(data.get("reference"))
-        gen_text = self._normalize(data.get("generated"))
+        ref_text = self._normalize(self._get_field(data, "reference", "answer"))
+        gen_text = self._normalize(self._get_field(data, "generated", "gen_answer"))
 
         ref_tokens = [t for t in ref_text.split() if t]
         gen_tokens = [t for t in gen_text.split() if t]

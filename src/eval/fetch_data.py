@@ -26,70 +26,84 @@ class FetchData:
     @add_fetch_key("rouge1")
     def fetch_rouge1(self) -> Dict[str, List[Any]]:
         return {
-            "reference": [s.get("reference") for s in self.data],
-            "generated":  [s.get("generated") for s in self.data],
+            "id": [s.get("id") for s in self.data],
+            "question": [s.get("question") for s in self.data],
+            "reference": [s.get("reference") or s.get("answer") for s in self.data],
+            "generated":  [s.get("generated") or s.get("gen_answer") for s in self.data],
         }
     
     @add_fetch_key("rougel")
     def fetch_rougel(self) -> Dict[str, List[Any]]:
         return {
-            "reference": [s.get("reference") for s in self.data],
-            "generated":  [s.get("generated") for s in self.data],
+            "id": [s.get("id") for s in self.data],
+            "question": [s.get("question") for s in self.data],
+            "reference": [s.get("reference") or s.get("answer") for s in self.data],
+            "generated":  [s.get("generated") or s.get("gen_answer") for s in self.data],
         }
     
     @add_fetch_key("em")
     def fetch_em(self) -> Dict[str, List[Any]]:
         return {
-            "reference": [s.get("reference") for s in self.data],
-            "generated":  [s.get("generated") for s in self.data],
+            "id": [s.get("id") for s in self.data],
+            "question": [s.get("question") for s in self.data],
+            "reference": [s.get("reference") or s.get("answer") for s in self.data],
+            "generated":  [s.get("generated") or s.get("gen_answer") for s in self.data],
         }
     
     @add_fetch_key("bert")
     def fetch_bert(self) -> Dict[str, List[Any]]:
         return {
-            "reference": [s.get("reference") for s in self.data],
-            "generated":  [s.get("generated") for s in self.data],
+            "id": [s.get("id") for s in self.data],
+            "question": [s.get("question") for s in self.data],
+            "reference": [s.get("reference") or s.get("answer") for s in self.data],
+            "generated":  [s.get("generated") or s.get("gen_answer") for s in self.data],
         }
 
     @add_fetch_key("sbert")
     def fetch_sbert(self) -> Dict[str, List[Any]]:
         return {
-            "reference": [s.get("reference") for s in self.data],
-            "generated":  [s.get("generated") for s in self.data],
-        }
-    
-    @add_fetch_key("mrr")
-    def fetch_mrr(self) -> Dict[str, List[Any]]:
-        return {
-            "reference": [s.get("reference") for s in self.data],
-            "generated":  [s.get("generated") for s in self.data],
-            "gen_docs":   [s.get("gen_docs") for s in self.data],
-            "ref_docs":   [s.get("ref_docs") for s in self.data],
-        }
-    
-    @add_fetch_key("ground")
-    def fetch_ground(self) -> Dict[str, List[Any]]:
-        return {
-            "reference": [s.get("reference") for s in self.data],
-            "generated":  [s.get("generated") for s in self.data],
-            "gen_docs":   [s.get("gen_docs") for s in self.data],
-            "ref_docs":   [s.get("ref_docs") for s in self.data],
-        }
-    
-    @add_fetch_key("correct")
-    def fetch_correctness(self) -> Dict[str, List[Any]]:
-        return {
-            "reference": [s.get("reference") for s in self.data],
-            "generated":  [s.get("generated") for s in self.data],
+            "id": [s.get("id") for s in self.data],
+            "question": [s.get("question") for s in self.data],
+            "reference": [s.get("reference") or s.get("answer") for s in self.data],
+            "generated":  [s.get("generated") or s.get("gen_answer") for s in self.data],
         }
     
     @add_fetch_key("recall")
     def fetch_recall(self) -> Dict[str, List[Any]]:
         return {
-            "reference": [s.get("reference") for s in self.data],
-            "generated":  [s.get("generated") for s in self.data],
-            "gen_docs":   [s.get("gen_docs") for s in self.data],
-            "ref_docs":   [s.get("ref_docs") for s in self.data],
+            "id": [s.get("id") for s in self.data],
+            "question": [s.get("question") for s in self.data],
+            "ref_docs": [s.get("reference_docs") for s in self.data],
+            "gen_docs": [s.get("retrieved") for s in self.data],
+        }
+
+    @add_fetch_key("mrr")
+    def fetch_mrr(self) -> Dict[str, List[Any]]:
+        return {
+            "id": [s.get("id") for s in self.data],
+            "question": [s.get("question") for s in self.data],
+            "ref_docs": [s.get("reference_docs") for s in self.data],
+            "gen_docs": [s.get("retrieved") for s in self.data],
+        }
+    
+    @add_fetch_key("ground")
+    def fetch_ground(self) -> Dict[str, List[Any]]:
+        return {
+            "id": [s.get("id") for s in self.data],
+            "question": [s.get("question") for s in self.data],
+            "reference": [s.get("reference") or s.get("answer") for s in self.data],
+            "generated":  [s.get("generated") or s.get("gen_answer") for s in self.data],
+            "gen_docs":   [s.get("gen_docs") or s.get("retrieved") for s in self.data],
+            "ref_docs":   [s.get("ref_docs") or s.get("reference_docs") for s in self.data],
+        }
+    
+    @add_fetch_key("correct")
+    def fetch_correctness(self) -> Dict[str, List[Any]]:
+        return {
+            "id": [s.get("id") for s in self.data],
+            "question": [s.get("question") for s in self.data],
+            "reference": [s.get("reference") or s.get("answer") for s in self.data],
+            "generated":  [s.get("generated") or s.get("gen_answer") for s in self.data],
         }
 
     @add_fetch_key("supfact")
@@ -104,6 +118,8 @@ class FetchData:
             return info.get(key, s.get(key, ""))
 
         return {
+            "id": [s.get("id") for s in self.data],
+            "question": [s.get("question") for s in self.data],
             "supporting_fact_gen":  [pick(s, "supporting_fact_gen") for s in self.data],
             "supporting_fact_ref":  [pick(s, "supporting_fact_ref") for s in self.data],
             "supporting_fact_comp": [pick(s, "supporting_fact_comp") for s in self.data],

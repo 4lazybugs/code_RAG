@@ -1,4 +1,4 @@
-from .base import Evaluator, add_metric_key, get_config
+from .base import Evaluator, add_metric_key
 from dotenv import load_dotenv
 import os
 import json
@@ -82,9 +82,9 @@ class CorrectnessEvaluator(Evaluator):
           - generated: 모델 답변
           - question: (옵션) 있으면 사용, 없으면 ""
         """
-        ref = self._normalize(data.get("reference"))
-        gen = self._normalize(data.get("generated"))
-        q = self._normalize(data.get("question"))  # 없으면 ""
+        ref = self._normalize(self._get_field(data, "reference", "answer"))
+        gen = self._normalize(self._get_field(data, "generated", "gen_answer"))
+        q = self._normalize(data.get("question", ""))  # 없으면 ""
 
         res = self.chain.invoke(
             {

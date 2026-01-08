@@ -18,21 +18,21 @@ class MRREvaluator(Evaluator):
           - top-k에 정답 없으면 0.0
           - top-k에서 처음 등장한 위치가 idx(1-based)면 1.0/idx
         """
-        gen_docs = data.get("gen_docs")
-        ref_docs = data.get("ref_docs")
+        ref_doc_name = data.get("ref_docs")
+        ret_docs = data.get("gen_docs")
 
         # 1) GT 문서 set 정규화
-        if isinstance(ref_docs, str):
-            gt_set = {self._canon(ref_docs)}
+        if isinstance(ref_doc_name, str):
+            gt_set = {self._canon(ref_doc_name)}
         else:
-            gt_set = {self._canon(x) for x in (ref_docs or [])}
+            gt_set = {self._canon(x) for x in (ref_doc_name or [])}
 
         # 2) retrieved 정렬
-        retrieved_sorted = sorted(gen_docs or [], key=lambda x: x.get("rank", 10**9))
+        retrieved_sorted = sorted(ret_docs or [], key=lambda x: x.get("rank", 10**9))
 
         # 3) 첫 정답 위치(1-based) 찾아 역수 반환
         for idx, item in enumerate(retrieved_sorted, start=1):
-            name = self._canon(item.get("filename", ""))
+            name = self._canon(item.get("filename") or item.get("rel_path", ""))
             if name in gt_set:
                 return 1.0 / idx
 

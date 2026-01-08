@@ -19,3 +19,6 @@ src/eval.py
 src/eval/evaluators/not_used(쓸려면 여기서 다 꺼내)/*
 results/*
 src/eval/results/*
+src/inference/models_RAG/models_not_using
+
+hotpot_os/*

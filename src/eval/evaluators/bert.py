@@ -22,8 +22,8 @@ def _clean_for_bert(x: str, max_chars: int = 3000) -> str:
 class BertEvaluator(Evaluator):
 
     def score_once(self, data: Dict[str, Any]) -> float:
-        reference = _clean_for_bert(self._normalize(data.get("reference")))
-        generated = _clean_for_bert(self._normalize(data.get("generated")))
+        reference = _clean_for_bert(self._normalize(self._get_field(data, "reference", "answer")))
+        generated = _clean_for_bert(self._normalize(self._get_field(data, "generated", "gen_answer")))
 
         # 둘 다 비어 있으면 완벽 일치로 처리(정책은 상황에 맞게 변경 가능)
         if not reference and not generated:

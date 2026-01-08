@@ -1,18 +1,54 @@
-import os
+import os, argparse, yaml
 from langchain_core.messages import BaseMessage
 os.environ["TRANSFORMERS_NO_TF"] = "1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True,max_split_size_mb:128,garbage_collection_threshold:0.6"
 
 from typing import Dict, Any
-
-from models_RAG import (
-    BaseExpert, PartialExpert,
-    RawLlmExpert, SelfAskExpert
-)
-
+from inference.models_RAG import BaseExpert, PartialExpert, RawLlmExpert
 from retriever import MultiCosineRetriever, load_retrievers
 from load_params import load_yaml, get_config
+
+##################################
+##### load config.yaml ###########
+##################################
+def load_yaml(path='src/config.yaml'):
+    with open(path, 'r') as f:
+        raw_config = yaml.safe_load(f)
+
+    # 환경 변수 치환 처리
+    config = {}
+    for k, v in raw_config.items():
+        if isinstance(v, str):
+            config[k] = os.path.expandvars(v)
+        else:
+            config[k] = v
+
+    return config
+
+def get_config():
+    default_cfg = load_yaml()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_name", type=str, default=default_cfg.get('model_name'))
+    parser.add_argument("--sbert_model_name", type=str, default=default_cfg.get('sbert_model_name'))
+    parser.add_argument("--bert_model_name", type=str, default=default_cfg.get('bert_model_name'))
+    parser.add_argument("--embedor_model_name", type=str, default=default_cfg.get('embedor_model_name'))
+    
+    
+    parser.add_argument("--input_file", type=str, default=default_cfg.get('input_file'))
+    parser.add_argument("--output_file", type=str, default=default_cfg.get('output_file'))
+    parser.add_argument("--task", type=str, default=default_cfg.get('task'))
+    parser.add_argument("--ndocs", type=int, default=default_cfg.get('ndocs'))
+    parser.add_argument("--max_new_tokens", type=int, default=default_cfg.get('max_new_tokens'))
+    parser.add_argument("--threshold", type=float, default=default_cfg.get('threshold'))
+    parser.add_argument("--w_rel", type=float, default=default_cfg.get('w_rel'))
+    parser.add_argument("--w_sup", type=float, default=default_cfg.get('w_sup'))
+    parser.add_argument("--w_use", type=float, default=default_cfg.get('w_use'))
+
+
+    args = parser.parse_args()
+    return args
 
 # --------------------------------------------------
 def normalize_answer(res) -> str:
@@ -40,7 +76,7 @@ def create_expert_instances(retriever_map: Dict[str, Any], retriever_mode: str) 
     experts = {}
     experts["partial"] = PartialExpert(retriever_map, retriever_mode)
     experts["raw_llm"] = RawLlmExpert(retriever_map, retriever_mode)
-    experts["self_ask"] = SelfAskExpert(retriever_map, retriever_mode)
+    #experts["self_ask"] = SelfAskExpert(retriever_map, retriever_mode)
     return experts
 
 

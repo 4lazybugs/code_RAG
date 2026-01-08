@@ -25,8 +25,8 @@ class ExactMatchEvaluator(Evaluator):
         return s.replace(" ", "") if self.remove_spaces else s
 
     def score_once(self, data: Dict[str, Any]) -> float:
-        ref_norm = self._prep(data.get("reference"))
-        gen_norm = self._prep(data.get("generated"))
+        ref_norm = self._prep(self._get_field(data, "reference", "answer"))
+        gen_norm = self._prep(self._get_field(data, "generated", "gen_answer"))
 
         # 둘 다 비어있으면 정답 처리
         if not ref_norm and not gen_norm:

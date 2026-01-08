@@ -5,8 +5,8 @@ from collections import Counter
 class Rouge1Evaluator(Evaluator):
 
     def score_once(self, data: dict) -> float:
-        ref = self._normalize(data.get("reference")).replace(" ", "")
-        gen = self._normalize(data.get("generated")).replace(" ", "")
+        ref = self._normalize(self._get_field(data, "reference", "answer")).replace(" ", "")
+        gen = self._normalize(self._get_field(data, "generated", "gen_answer")).replace(" ", "")
 
         if not ref and not gen:
             return 1.0

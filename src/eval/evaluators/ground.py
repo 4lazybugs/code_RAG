@@ -69,12 +69,15 @@ class GroundEvaluator(Evaluator):
         parts = []
         total = 0
         for item in topk:
-            fn = self._canon(item.get("filename", ""))
+            fn = self._canon(item.get("filename") or item.get("rel_path", ""))
             content = item.get("content", None)
 
             if content is None:
                 block = f"[DOC: {fn}]\n(NO_CONTENT)\n"
             else:
+                # content가 배열이면 문자열로 변환
+                if isinstance(content, list):
+                    content = "\n".join(str(line) for line in content if line)
                 content = self._canon(str(content))[: self.max_doc_chars]
                 block = f"[DOC: {fn}]\n{content}\n"
 
@@ -119,8 +122,8 @@ class GroundEvaluator(Evaluator):
 
         반환: score (0~1) float
         """
-        answer = self._normalize_answer(data.get("generated"))
-        gen_docs = data.get("gen_docs") or []  # 없으면 빈 리스트
+        answer = self._normalize_answer(self._get_field(data, "generated", "gen_answer"))
+        gen_docs = data.get("gen_docs") or data.get("retrieved") or []  # 없으면 빈 리스트
 
         context = self._build_context(gen_docs)
 

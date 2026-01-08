@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Type, Dict, List
+from typing import Type, Dict, Any
 from tqdm.auto import tqdm
 import argparse
 import yaml
 import os
 
-def load_yaml(path='src/eval/config.yaml'):
+def load_yaml(path='src/eval/config_eval.yaml'):
     with open(path, 'r') as f:
         raw_config = yaml.safe_load(f)
 
@@ -70,10 +70,21 @@ class Evaluator(ABC):
                 if k in text:
                     text = text[k]
                     break
+        if isinstance(text, list):
+            # content 배열을 문자열로 변환
+            text = "\n".join(str(item) for item in text if item)
         return str(text).strip()
+    
+    @staticmethod
+    def _get_field(data: dict, *keys) -> Any:
+        """여러 가능한 키 중 첫 번째로 존재하는 값을 반환"""
+        for key in keys:
+            if key in data and data[key] is not None:
+                return data[key]
+        return None
 
     @abstractmethod # 상속받은 자식 클래스에서 반드시 구현해야 함
-    def score_once(self, data: dict) -> list:
+    def score_once(self, data: dict) -> float:
         """
         단일 샘플 평가
         """

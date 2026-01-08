@@ -20,8 +20,8 @@ class SbertEvaluator(Evaluator):
         raise NotImplementedError("SBERT는 배치 평가를 사용. score_all()을 호출.")
 
     def score_all(self, batch_data: list[dict]) -> list[float]:
-        references = [_clean(s.get("reference")) for s in batch_data]
-        generated  = [_clean(s.get("generated")) for s in batch_data]
+        references = [_clean(self._get_field(s, "reference", "answer")) for s in batch_data]
+        generated  = [_clean(self._get_field(s, "generated", "gen_answer")) for s in batch_data]
 
         with torch.no_grad():
             ref_emb = self.sbert_model.encode(
