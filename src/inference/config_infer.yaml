@@ -1,0 +1,46 @@
+####################
+## LLM 모델 설정 ####
+###################
+#model_name: "$MODEL_DIR" # local huggingface model directory, selfrag/llama2_7b를 환경변수로 저장하였음
+#model_name: "yi:34b-chat"
+#model_name : "Qwen/Qwen2.5-14B-Instruct"
+model_name : "Qwen/Qwen2.5-32B-Instruct"
+#model_name : "qwen2.5:72b-instruct"
+#model_name : 'llama3:70b'
+#model_name : 'qwen3:32b' # 얘는 말이 너무 많음
+#model_name : 'exaone3.5:32b' # 한국어 최적화 국산 모델
+#model_name : 'qwq:32b'
+#model_name : 'mistral-nemo' # 12b 로컬용
+#model_name : 'falcon:40b-instruct-q5_1' # 영어 최적화
+
+temperature: 0.0
+
+
+####################
+## Retriever ####
+###################
+k_each: 10
+top_k: 5
+embedor_model_name: "upskyy/bge-m3-korean"
+
+####################
+## RAG Type ####
+###################
+rag_type: "naive_rag"
+#rag_type: "naive_llm"
+
+#####################################
+## QAmode, DataPath, Output Path ####
+#####################################
+runs:
+  - name: "saq_rag"
+    rag_type: "naive_rag"
+    qa_mode: "saq"
+    data_path: "qa_data/GT/manual_book/saq/gt_merged_manual_book.json"
+    output_path: "results/inferenced/manual_book/saq/naive_rag.json"
+
+  - name: "saq_llm"
+    rag_type: "naive_llm"
+    qa_mode: "saq"
+    data_path: "qa_data/GT/manual_book/saq/gt_merged_manual_book.json"
+    output_path: "results/inferenced/manual_book/saq/naive_llm.json"
