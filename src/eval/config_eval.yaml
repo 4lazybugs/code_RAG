@@ -7,25 +7,29 @@ sbert_model_name : "snunlp/KR-SBERT-V40K-klueNLI-augSTS"
 bert_model_name : bert-base-multilingual-cased # 다국어 지원
 #bert_model_name : xlm-roberta-large # 다국어 지원2 hugging face 모델, 근데 에러남
 
-
+##################
+## 평가 지표 설정 ###
+##################
+metrics: ["em", "mrr", "recall"] 
 
 ####################
 ## DataPath ####
 ###################
 # 각 모드별로 data_path와 json_dir 지정
+###### LLM: qwen #####
 mode_list:
   naive_rag_saq:
-    data_path: "results/inferenced/manual_book/saq/naive_rag.json"
-    json_dir: "results/eval_score/saq/"
+    data_path: "results/inferenced/manual_book/saq/naive_llm_filtered_sbert_0.7_qwen.json"
+    json_dir: "results/eval_score/saq/filtered/"
   naive_llm_saq:
-    data_path: "results/inferenced/manual_book/saq/naive_llm.json"
-    json_dir: "results/eval_score/saq/"
-  naive_rag_mcq:
-    data_path: "results/inferenced/manual_book/mcq/naive_rag.json"
-    json_dir: "results/eval_score/mcq/"
-  naive_llm_mcq:
-    data_path: "results/inferenced/manual_book/mcq/naive_llm.json"
-    json_dir: "results/eval_score/mcq/"
+    data_path: "results/inferenced/manual_book/saq/naive_rag_filtered_sbert_0.7_qwen.json"
+    json_dir: "results/eval_score/saq/filtered/"
+  # naive_rag_mcq:
+  #   data_path: "qa_data/mcq_filtered_em_rag.json"
+  #   json_dir: "results/eval_score/mcq/qwen/"
+  # naive_llm_mcq:
+  #   data_path: "results/inferenced/manual_book/mcq/naive_llm_filtered_em_qwen.json"
+  #   json_dir: "results/eval_score/mcq/qwen/"
 
 # 전체 모드의 요약 결과를 저장할 xlsx 경로
-xlsx_path: "results/eval_score/mcq/summary.xlsx"
+xlsx_path: "results/eval_score/summary.xlsx"

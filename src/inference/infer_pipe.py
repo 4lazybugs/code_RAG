@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import models_RAG.qa_mode as qa
 from pathlib import Path
 from copy import deepcopy
+from dotenv import load_dotenv
 
 def load_yaml(path='src/inference/config_infer.yaml'):
     with open(path, 'r') as f:
@@ -88,6 +89,7 @@ def run_once(cfg):
 
 
 if __name__ == "__main__":
+    load_dotenv()
     CFG = get_config()
     start_time = time.time()
 

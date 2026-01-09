@@ -28,6 +28,7 @@ def get_config():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", type=str, default=default_cfg.get('model_name'))
+    parser.add_argument("--metrics", type=str, default=",".join(default_cfg.get("metrics", [])))
 
     args, _ = parser.parse_known_args()
 
@@ -66,13 +67,15 @@ if __name__ == "__main__":
     base_xlsx_path = Path(CFG.xlsx_path)
     summary_rows: List[Dict[str, Any]] = []
 
+    selected_metrics = [m.strip() for m in CFG.metrics.split(",") if m.strip()]
     for mode, mode_cfg in mode_configs.items():
         data_path = Path(mode_cfg["data_path"])
         json_dir = Path(mode_cfg["json_dir"])
         
         fetcher = FetchData(data_path)
         
-        for metric, EvCls in metric_dict.items():
+        for metric in selected_metrics:
+            EvCls = metric_dict[metric]
             batch = fetcher.fetch(metric)
             scores = EvCls().score_all(batch)
 
