@@ -1,9 +1,12 @@
 import time
 import json
-import models_RAG
 import argparse, os, yaml
 from types import SimpleNamespace
-import models_RAG.qa_mode as qa
+
+from inference import NaiveLLM, build_agent
+from inference.qa_mode import build_qa_mode
+from inference.retriever import load_retrievers, MultiCosineRetriever
+
 from pathlib import Path
 from copy import deepcopy
 from dotenv import load_dotenv
@@ -41,7 +44,7 @@ def save_predictions_json(out_path: Path, payloads, results, qa_mode, model):
 
     # NaiveRag는 (id, question, answer, retrieved) 튜플 반환
     # NaiveLLM은 answer 문자열만 반환
-    is_not_rag = isinstance(model, models_RAG.NaiveLLM)
+    is_not_rag = isinstance(model, NaiveLLM)
     
     if is_not_rag: # NaiveLLM: results는 list[str] (answer만)
         rows = [
@@ -68,15 +71,25 @@ def save_predictions_json(out_path: Path, payloads, results, qa_mode, model):
 
 
 def run_once(cfg):
-    qa_type = qa.build_qa_mode(cfg.qa_mode)
+    qa_type = build_qa_mode(cfg.qa_mode)
 
-    model = models_RAG.build_model(
-        cfg.rag_type,
+    # 기본 인자
+    kwargs = dict(
         cfg=cfg,
         qa_mode=qa_type,
-        k_each=cfg.k_each,
-        top_k=cfg.top_k,
     )
+
+    # ✅ RAG 계열일 때만 retriever를 로드/생성해서 주입
+    # (rag_type 문자열은 본인 레지스트리 키에 맞춰 조정)
+    if cfg.rag_type != "naive_llm":
+        single = load_retrievers(ndocs=cfg.k_each)
+        kwargs["retriever"] = MultiCosineRetriever(
+            retrievers=single,
+            k_each=cfg.k_each,
+            top_k=cfg.top_k,
+        )
+
+    model = build_agent(cfg.rag_type, **kwargs)
 
     json_path = Path(cfg.data_path)
     with open(json_path, "r", encoding="utf-8") as f:

@@ -7,7 +7,7 @@ from langchain_core.runnables import RunnableLambda
 # 모델 등록 및 빌드 함수 (RAG 타입 레지스트리)
 MODEL_REGISTRY: Dict[str, Callable[..., Any]] = {}
 
-def register_model(key: str):
+def register_agent(key: str):
     def deco(factory: Callable[..., Any]) -> Callable[..., Any]:
         k = key.strip()
         if k in MODEL_REGISTRY:
@@ -16,7 +16,7 @@ def register_model(key: str):
         return factory
     return deco
 
-def build_model(key: str, **kwargs) -> Any: # key는 RAG Type을 말함 ex) naive_rag, naive_llm 등등
+def build_agent(key: str, **kwargs) -> Any: # key는 RAG Type을 말함 ex) naive_rag, naive_llm 등등
     k = key.strip()
     try:
         factory = MODEL_REGISTRY[k]

@@ -1,6 +1,7 @@
-from models_RAG.base import BaseModel
+from .base import BaseModel
 from typing import Any, Dict
-from models_RAG.qa_mode.base import QAMode
+from ..qa_mode.base import QAMode
+from .base import build_agent, register_agent  # re-export build_model for external use
 
 class NaiveLLM(BaseModel):
     """
@@ -25,3 +26,7 @@ class NaiveLLM(BaseModel):
 
     def answer_all(self, payloads: list[Dict[str, Any]]) -> list[str]:
         return [self.answer_once(p) for p in payloads]
+
+@register_agent("naive_llm")
+def make_naive_llm(*, cfg, qa_mode, **_):
+    return NaiveLLM(cfg=cfg, qa_mode=qa_mode)

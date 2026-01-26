@@ -2,7 +2,10 @@
 from typing import Dict, Any, List, Tuple, Optional
 from pathlib import Path
 import math
-import re, argparse, yaml, os
+import re
+import argparse
+import yaml
+import os
 
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.documents import Document
@@ -17,8 +20,8 @@ from sentence_transformers import SentenceTransformer
 ##################################
 ##### load config.yaml ###########
 ##################################
-def load_yaml(path='src/inference/config_infer.yaml'):
-    with open(path, 'r') as f:
+def load_yaml(path="src/inference/config_infer.yaml"):
+    with open(path, "r") as f:
         raw_config = yaml.safe_load(f)
 
     # 환경 변수 치환 처리
@@ -31,14 +34,16 @@ def load_yaml(path='src/inference/config_infer.yaml'):
 
     return config
 
+
 def get_config():
     default_cfg = load_yaml()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--embedor_model_name", type=str, default=default_cfg.get('embedor_model_name'))
+    parser.add_argument("--embedor_model_name", type=str, default=default_cfg.get("embedor_model_name"))
 
     args = parser.parse_args()
     return args
+
 
 # =========================
 # 공통 설정 / 임베딩 래퍼
@@ -69,13 +74,14 @@ class SentenceTransformerEmbeddings(Embeddings):
         )[0].tolist()
 
 
-# 프로젝트 루트 기준 경로
-BASE_DIR = Path(__file__).resolve().parents[2]
-'''
-parents[0] = .../src/inference
-parents[1] = .../src
-parents[2] = .../(프로젝트 루트) ✅
-'''
+# ==========================================================
+# 절대 경로 설정 (여기만 본인 환경에 맞게 수정하면 됨)
+# ==========================================================
+BASE_DIR = Path("/home/jwkim/[code]생성형과제_server").resolve()
+
+DATA_ROOT = (BASE_DIR / "db" / "cleaned_md").resolve()
+VEC_ROOT  = (BASE_DIR / "db" / "vector_db" / "cleaned_md").resolve()
+
 
 # =========================
 # 컬렉션 이름 생성 (범용)
@@ -126,9 +132,7 @@ class MultiCosineRetriever(BaseRetriever):
 
         if vs is not None and hasattr(vs, "similarity_search_with_relevance_scores"):
             try:
-                results = vs.similarity_search_with_relevance_scores(
-                    query, k=self.k_each
-                )
+                results = vs.similarity_search_with_relevance_scores(query, k=self.k_each)
                 return results  # List[Tuple[Document, float]]
             except Exception as e:
                 print(f"[WARN] similarity_search_with_relevance_scores 실패 ({name}): {e}")
@@ -171,7 +175,7 @@ class MultiCosineRetriever(BaseRetriever):
         candidates.sort(key=key_fn, reverse=True)
         top_docs = [d for d, _ in candidates[: self.top_k]]
 
-        # ✅ rank 저장 (권장)
+        # rank 저장
         for rank, d in enumerate(top_docs, start=1):
             md = dict(d.metadata)
             md["__rank__"] = rank
@@ -193,8 +197,8 @@ def load_retrievers(ndocs: int = 5) -> Dict[str, Any]:
     cleaned_md 하위에서 '직접 .md 파일을 포함하는 폴더(leaf)'를 DB 단위로 간주하고,
     vec_root/<rel_path> 의 Chroma를 로드한다.
     """
-    data_root = (BASE_DIR / "db" / "cleaned_md").resolve()
-    vec_root  = (BASE_DIR / "db" / "vector_db" / "cleaned_md").resolve()
+    data_root = DATA_ROOT
+    vec_root = VEC_ROOT
 
     if not data_root.exists():
         raise FileNotFoundError(f"data_root not found: {data_root}")
@@ -204,12 +208,10 @@ def load_retrievers(ndocs: int = 5) -> Dict[str, Any]:
     emb = SentenceTransformerEmbeddings()
     retrievers: Dict[str, Any] = {}
 
-    # ✅ vector_utils.py와 동일한 collection name 규칙으로 맞춤
     def _cleaned_collection_name(rel: str) -> str:
         safe_rel = re.sub(r"[^a-zA-Z0-9_-]+", "_", rel).strip("_")
         return f"cleaned_{safe_rel}"[:63].strip("_-.")
 
-    # ✅ leaf 폴더: ".md 파일의 parent 디렉터리"가 곧 DB 단위
     leaf_dirs = sorted({p.parent for p in data_root.rglob("*.md")})
 
     if not leaf_dirs:
