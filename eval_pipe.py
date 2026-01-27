@@ -6,8 +6,8 @@ import pandas as pd
 import argparse, os, yaml
 from types import SimpleNamespace
 
-from eval.fetch_data import FetchData
-from eval.evaluators.base import metric_dict
+from src.eval.fetch_data import FetchData
+from src.eval.evaluators.base import metric_dict
 
 def load_yaml(path='src/eval/config_eval.yaml'):
     with open(path, 'r') as f:

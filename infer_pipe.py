@@ -3,9 +3,9 @@ import json
 import argparse, os, yaml
 from types import SimpleNamespace
 
-from inference import NaiveLLM, build_agent
-from inference.qa_mode import build_qa_mode
-from inference.retriever import load_retrievers, MultiCosineRetriever
+from src.inference import NaiveLLM, build_agent
+from src.inference.qa_mode import build_qa_mode
+from src.inference.retriever import load_retrievers, MultiCosineRetriever
 
 from pathlib import Path
 from copy import deepcopy

@@ -11,9 +11,9 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128,garbage_collection_threshold:0.6"
 
 
-from inference import NaiveLLM, build_agent  # 또는 build_model(이름을 그걸로 유지한다면)
-from inference.qa_mode import build_qa_mode
-from inference.retriever import load_retrievers, MultiCosineRetriever
+from src.inference import NaiveLLM, build_agent  # 또는 build_model(이름을 그걸로 유지한다면)
+from src.inference.qa_mode import build_qa_mode
+from src.inference.retriever import load_retrievers, MultiCosineRetriever
 
 # -----------------------------
 # Config
@@ -66,7 +66,7 @@ def build_qa_mode(mode: str, cfg: Any):
     - MCQ
     - SAQ
     """
-    base = "inference.qa_mode"
+    base = "src.inference.qa_mode"
     mode = mode.lower()
 
     if mode in ("hotpot", "hotpotmode"):
