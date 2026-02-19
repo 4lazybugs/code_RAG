@@ -76,7 +76,7 @@ runs:
   - name: "mcq_llm_filtered_em"
     rag_type: "naive_llm"
     qa_mode: "mcq"
-    data_path: "qa_data/mcq_filtered_em.json"
+    data_path: "db/qa_data/mcq_filtered_em.json"
     output_path: "results/inferenced/manual_book/mcq/naive_llm_filtered_em_qwen.json"
 
   #<<mcq-filtered-exaone>>#

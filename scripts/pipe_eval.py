@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from src.eval.fetch_data import FetchData
 from src.eval.evaluators.base import metric_dict
 
-def load_yaml(path='src/eval/config_eval.yaml'):
+def load_yaml(path='configs/config_eval.yaml'):
     with open(path, 'r') as f:
         raw_config = yaml.safe_load(f)
 

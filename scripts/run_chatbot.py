@@ -11,14 +11,14 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128,garbage_collection_threshold:0.6"
 
 
-from src.inference import NaiveLLM, build_agent  # 또는 build_model(이름을 그걸로 유지한다면)
-from src.inference.qa_mode import build_qa_mode
-from src.inference.retriever import load_retrievers, MultiCosineRetriever
+from src.infer import NaiveLLM, build_agent  # 또는 build_model(이름을 그걸로 유지한다면)
+from src.infer.qa_mode import build_qa_mode
+from src.retrieval.retriever import load_retrievers, MultiCosineRetriever
 
 # -----------------------------
 # Config
 # -----------------------------
-def load_yaml(path: str = "src/inference/config_infer.yaml") -> Dict[str, Any]:
+def load_yaml(path: str = "configs/config_infer.yaml") -> Dict[str, Any]:
     with open(path, "r") as f:
         raw = yaml.safe_load(f) or {}
     return {k: os.path.expandvars(v) if isinstance(v, str) else v for k, v in raw.items()}
@@ -66,7 +66,7 @@ def build_qa_mode(mode: str, cfg: Any):
     - MCQ
     - SAQ
     """
-    base = "src.inference.qa_mode"
+    base = "src.infer.qa_mode"
     mode = mode.lower()
 
     if mode in ("hotpot", "hotpotmode"):
@@ -106,6 +106,9 @@ def main() -> None:
     K_EACH = 5
     TOP_K = 5
 
+    single = load_retrievers(ndocs=K_EACH)
+    retriever = MultiCosineRetriever(retrievers=single, k_each=K_EACH, top_k=TOP_K)
+
     print(get_help_text())
 
     while True:
@@ -123,9 +126,6 @@ def main() -> None:
             break
 
         if mode == "rag":
-            single = load_retrievers(ndocs=K_EACH)
-            retriever = MultiCosineRetriever(retrievers=single, k_each=K_EACH, top_k=TOP_K)
-
             expert = build_agent(
                 "naive_rag",
                 cfg=cfg,

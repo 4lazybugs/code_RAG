@@ -1,0 +1,16 @@
+###################
+## 필수 arguments ##
+###################
+input_file: "qa_data/input.json"
+output_file: "results/output.json"
+task: "asqa"
+
+###################
+## 선택 arguments ##
+###################
+ndocs: 3
+max_new_tokens: 50
+threshold: 0.4
+w_rel: 1.0
+w_sup: 2.0
+w_use: 0.5

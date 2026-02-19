@@ -3,15 +3,15 @@ import json
 import argparse, os, yaml
 from types import SimpleNamespace
 
-from src.inference import NaiveLLM, build_agent
-from src.inference.qa_mode import build_qa_mode
-from src.inference.retriever import load_retrievers, MultiCosineRetriever
+from src.infer.agents import NaiveLLM, build_agent
+from src.infer.qa_mode import build_qa_mode
+from src.retr.retriever import load_retrievers, MultiCosineRetriever
 
 from pathlib import Path
 from copy import deepcopy
 from dotenv import load_dotenv
 
-def load_yaml(path='src/inference/config_infer.yaml'):
+def load_yaml(path='configs/config_infer.yaml'):
     with open(path, 'r') as f:
         raw_config = yaml.safe_load(f)
 
@@ -121,4 +121,4 @@ if __name__ == "__main__":
             print(f"\n[RUN] {cfg_run.name} | qa={cfg_run.qa_mode} rag={cfg_run.rag_type}")
             run_once(cfg_run)
 
-print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")
+    print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")

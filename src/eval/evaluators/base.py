@@ -5,7 +5,7 @@ import argparse
 import yaml
 import os
 
-def load_yaml(path='src/eval/config_eval.yaml'):
+def load_yaml(path='configs/config_eval.yaml'):
     with open(path, 'r') as f:
         raw_config = yaml.safe_load(f)
 

@@ -70,6 +70,7 @@ def extract_n_save(
         print(f"\nProcessing: {pdf_path}")
 
         output = pipeline.predict(str(pdf_path))
+        breakpoint()
 
         for page_idx, res in enumerate(output):
             # 원본 코드 유지: rel_path / out_path 구성
@@ -78,6 +79,7 @@ def extract_n_save(
             out_path = save_dir / rel_path
             out_path.parent.mkdir(parents=True, exist_ok=True)
 
+            #breakpoint()
             # PaddleOCRVL 결과를 md로 저장(페이지 파일 생성)
             res.save_to_markdown(save_path=out_path)
             print(f"Saved page {page_idx} → {out_path}")
@@ -121,7 +123,7 @@ if __name__ == "__main__":
     # -------- farm_consulting --------
     extract_n_save(
         pipeline=pipeline,
-        input_dir=Path("db/raw_db/farm_consulting/"),
+        input_dir=Path("db/raw_db/test_db/"),
         save_dir=Path("db/raw_db_extracted/farm_consulting/"),
         clean_dir=Path("db/cleaned_md/farm_consulting/not_filtered/"),
         do_filter=False,     # 여기서 옵션으로 제어
