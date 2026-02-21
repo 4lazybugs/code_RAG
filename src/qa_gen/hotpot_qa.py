@@ -37,19 +37,15 @@ hotpot_prompt = ChatPromptTemplate.from_template(
 1) 반드시 서로 다른 두 문단(A, B)을 사용해야 하며,
    질문은 A와 B를 모두 읽어야만 답할 수 있어야 한다.
 
-2) link_word는 A와 B에 동시에 등장하는 동일 표기의 단어/구(bridge entity)여야 한다.
-   두 문단에 공통 등장하지 않으면 실패다.
-
-3) supporting_fact_a:
+2) supporting_fact_a:
    - 문단 A에서 답에 필요한 핵심 근거 1개를 원문 그대로 발췌
    - 문맥상 단독 이해 가능할 만큼 충분히 길 것 (약 200 tokens 이상 권장)
 
-4) supporting_fact_b:
+3) supporting_fact_b:
    - 문단 B에서 답에 필요한 핵심 근거 1개를 원문 그대로 발췌
    - 문단 A 내용 포함 금지
 
-5) 질문 규칙:
-   - 고유 식별자 포함
+4) 질문 규칙:
    - 지시어/모호한 일반명사 금지
    - 답은 context에 명시된 단일 값
 
@@ -59,7 +55,6 @@ hotpot_prompt = ChatPromptTemplate.from_template(
 [
   {{
     "id": {id},
-    "link_word": "...",
     "question": "...",
     "answer": "...",
     "supporting_fact_a": "...",
@@ -73,7 +68,7 @@ hotpot_prompt = ChatPromptTemplate.from_template(
 """
 )
 
-def hotpot(dir_path: Path, params: Params) -> List[Dict[str, Any]]:
+def hotpot_gen(dir_path: Path, params: Params) -> List[Dict[str, Any]]:
     llm = params.get_llm("llm")  # ✅ llm은 global_에서
     min_len = params.get_params("hotpot", "min_len", 300)
     start_id = int(params.get_params("hotpot", "start_id", 0))
@@ -137,7 +132,6 @@ def hotpot(dir_path: Path, params: Params) -> List[Dict[str, Any]]:
         for j, item in enumerate(arr):
             qas_list.append({
                 "id": cur_id + j, #✅ j도입 이유: 여러 샘플을 한 번에 만들 경우 id 중복 발생 가능
-                "link_word": item["link_word"],
                 "question": item["question"],
                 "answer": item["answer"],
                 "supporting_fact_a": item["supporting_fact_a"],

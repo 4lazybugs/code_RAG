@@ -10,7 +10,7 @@ from langchain_openai import ChatOpenAI
 from tqdm import tqdm
 
 from src.qa_gen.params import Params
-from src.qa_gen.hotpot_qa import hotpot
+from src.qa_gen.hotpot_qa import hotpot_gen
 
 if __name__ == "__main__":
     load_dotenv()
@@ -44,7 +44,8 @@ if __name__ == "__main__":
         }
     )
 
-    generate_qa = partial(hotpot, search_dir, params)
+    # hotpot(search_dir, params, ...) 형태로 호출되는 새 함수 generate_qa 생성
+    generate_qa = partial(hotpot_gen, search_dir, params) 
     result = generate_qa()
 
     with output_path.open("w", encoding="utf-8") as f:

@@ -81,9 +81,3 @@ class BaseModel:
                 model=cfg.model_name,
                 temperature=getattr(cfg, "temperature", 0.0),
             )
-    
-    @staticmethod
-    def to_plain_text(x: Any) -> str:
-        if hasattr(x, "content"):
-            return str(x.content or "")
-        return str(x)

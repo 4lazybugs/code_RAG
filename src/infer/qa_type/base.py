@@ -1,12 +1,12 @@
 from typing import Protocol, Dict, Any, Callable
 from langchain_core.prompts import ChatPromptTemplate
 
-class QAMode(Protocol):
+class QAtype(Protocol):
     prompt: ChatPromptTemplate
     def build_inputs(self, payload: Dict[str, Any]) -> Dict[str, Any]: ...
 
 # QA Mode 등록 및 빌드 함수
-QA_MODE_REGISTRY: Dict[str, Callable[[], QAMode]] = {}
+QA_MODE_REGISTRY: Dict[str, Callable[[], QAtype]] = {}
 
 def register_qa_mode(key: str):
     def deco(cls_or_factory):
@@ -21,7 +21,7 @@ def register_qa_mode(key: str):
         return cls_or_factory
     return deco
 
-def build_qa_mode(key: str) -> QAMode:
+def build_qa_type(key: str) -> QAtype:
     k = key.strip().upper()
     try:
         factory = QA_MODE_REGISTRY[k]

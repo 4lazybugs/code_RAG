@@ -1,6 +1,6 @@
 from .base import BaseModel
 from typing import Any, Dict
-from ..qa_mode.base import QAMode
+from .qa_type.base import QAtype
 from .base import build_agent, register_agent  # re-export build_model for external use
 
 class NaiveLLM(BaseModel):
@@ -9,7 +9,7 @@ class NaiveLLM(BaseModel):
     QAMode(prompt + build_inputs)를 그대로 사용한다.
     """
 
-    def __init__(self, cfg, qa_mode: QAMode):
+    def __init__(self, cfg, qa_mode: QAtype):
         super().__init__(cfg)
         self.qa_mode = qa_mode
         self.chain = self.qa_mode.prompt | self.llm
