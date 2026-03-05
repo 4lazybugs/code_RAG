@@ -4,7 +4,7 @@ from typing import Dict, Any
 
 import torch
 from bert_score import score as bert_score
-from .base import Evaluator, add_metric_key, get_config
+from .base import Evaluator, get_config
 
 CFG = get_config()
 
@@ -18,8 +18,7 @@ def _clean_for_bert(x: str, max_chars: int = 3000) -> str:
     return str(x).strip()[:max_chars]
 
 
-@add_metric_key("bert")
-class BertEvaluator(Evaluator):
+class BERTEvaluator(Evaluator):
 
     def score_once(self, data: Dict[str, Any]) -> float:
         reference = _clean_for_bert(self._normalize(self._get_field(data, "reference", "answer")))

@@ -1,7 +1,6 @@
 from typing import Dict, Any
-from .base import Evaluator, add_metric_key
+from .base import Evaluator
 
-@add_metric_key("mrr")
 class MRREvaluator(Evaluator):
 
     @staticmethod

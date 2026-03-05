@@ -1,6 +1,6 @@
 # evaluators/rougel.py
 from typing import Dict, Any, List
-from .base import Evaluator, add_metric_key
+from .base import Evaluator
 
 
 def _lcs_length(a: List[str], b: List[str]) -> int:
@@ -28,7 +28,6 @@ def _lcs_length(a: List[str], b: List[str]) -> int:
     return prev[-1]
 
 
-@add_metric_key("rougel")
 class RougeLEvaluator(Evaluator):
     """
     ROUGE-L F1 (토큰 단위)

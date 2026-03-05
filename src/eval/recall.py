@@ -1,7 +1,6 @@
 from typing import Dict, Any, List
-from .base import Evaluator, add_metric_key
+from .base import Evaluator
 
-@add_metric_key("recall")
 class RecallEvaluator(Evaluator):
 
     @staticmethod

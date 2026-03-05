@@ -75,3 +75,7 @@ openpyxl
 # 6) Tensor/Keras
 ############################################################
 tf-keras
+
+
+# 7) eval: bleurt
+git+https://github.com/google-research/bleurt.git

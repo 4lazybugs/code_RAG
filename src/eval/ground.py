@@ -6,10 +6,9 @@ import json
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
-from .base import Evaluator, add_metric_key
+from .base import Evaluator
 
 
-@add_metric_key("ground")
 class GroundEvaluator(Evaluator):
 
     def __init__(self, k: int = 5, max_context_chars: int = 12000, max_doc_chars: int = 4000):

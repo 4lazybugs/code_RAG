@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
-import math
 import argparse
 import yaml
 import os
@@ -15,6 +14,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.embeddings import Embeddings
 from langchain_chroma import Chroma
 from sentence_transformers import SentenceTransformer
+from src.preprocess.embedding import Embeddor
 
 ################ config utils ############################
 def load_yaml(path: str):
@@ -38,32 +38,23 @@ def get_config(path: str):
 
     return parser.parse_args()
 
-################### embeddors ###############
-class Embeddor(Embeddings):
-    def __init__(self, model_name: str):
-        if not model_name:
-            raise RuntimeError("embedor_model_name is empty")
-        self.model = SentenceTransformer(model_name)
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return self.model.encode(texts, show_progress_bar=False, convert_to_numpy=True).tolist()
-
-    def embed_query(self, text: str) -> List[float]:
-        return self.model.encode([text], show_progress_bar=False, convert_to_numpy=True)[0].tolist()
-
 
 def build_retrievers(*, vec_root: Path, emb) -> Dict[str, Any]:
+    # 메타데이터 목록 읽어옴
     client = chromadb.PersistentClient(path=str(vec_root))
     cols = client.list_collections()  
-    #breakpoint()
+
     retriever_list: Dict[str, Any] = {}
+
     for c in cols:
         name = c.name
+        # 저장된 chroma db들 로드
         store = Chroma(
             collection_name=name,
             persist_directory=str(vec_root),
             embedding_function=emb,
         )
+        # 메타데이터에서 읽어온 DB 이름을 기준으로 각 Retriever를 매핑
         retriever_list[name] = store.as_retriever() # default k=4
 
     print(f"[LOAD] loaded {len(retriever_list)} retrievers from DB: {vec_root}")
@@ -104,7 +95,7 @@ class Multi_Retriever(BaseRetriever):
             for doc, score in self._search_one(name, retriever, query):
                 #breakpoint()
                 md = dict(doc.metadata)
-                md["__source_store__"] = name # 원래 폴더명(pdf명)
+                md["__source_store__"] = name # 원래 폴더명(pdf 파일명)
                 md["__score__"] = float(score)
                 doc.metadata = md
                 candidates.append((doc, score))

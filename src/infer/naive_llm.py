@@ -1,7 +1,7 @@
 from .base import BaseModel
 from typing import Any, Dict
 from .qa_type.base import QAtype
-from .base import build_agent, register_agent  # re-export build_model for external use
+from .base import register_agent  # re-export build_model for external use
 
 class NaiveLLM(BaseModel):
     """
@@ -20,9 +20,10 @@ class NaiveLLM(BaseModel):
         payload.setdefault("reviews", "")
         payload.setdefault("docs", [])
 
-        inputs = self.qa_mode.build_inputs(payload)
-        result = self.chain.invoke(inputs)
-        return self.to_plain_text(result)
+        inputs = self.qa_mode.load_inputs(payload)
+        result = self.chain.invoke(inputs).content
+        #breakpoint()
+        return result
 
     def answer_all(self, payloads: list[Dict[str, Any]]) -> list[str]:
         return [self.answer_once(p) for p in payloads]

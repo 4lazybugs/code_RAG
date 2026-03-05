@@ -2,114 +2,53 @@ import os
 import argparse
 import yaml
 import importlib
-from typing import Any, Dict
+from pathlib import Path
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
 
-from langchain_core.messages import BaseMessage
-
-os.environ["TRANSFORMERS_NO_TF"] = "1"
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128,garbage_collection_threshold:0.6"
+from src.infer import build_agent
+from src.retrieval.retriever import Embeddor, build_retrievers, Multi_Retriever
 
 
-from src.infer import NaiveLLM, build_agent  # 또는 build_model(이름을 그걸로 유지한다면)
-from src.infer.qa_mode import build_qa_mode
-from src.retrieval.retriever import load_retrievers, MultiCosineRetriever
-
-# -----------------------------
-# Config
-# -----------------------------
-def load_yaml(path: str = "configs/config_infer.yaml") -> Dict[str, Any]:
+def load_cfg(path: str = "configs/config_infer.yaml") -> argparse.Namespace:
     with open(path, "r") as f:
-        raw = yaml.safe_load(f) or {}
-    return {k: os.path.expandvars(v) if isinstance(v, str) else v for k, v in raw.items()}
-
-
-def get_config() -> argparse.Namespace:
-    d = load_yaml()
+        d = yaml.safe_load(f) or {}
 
     p = argparse.ArgumentParser()
     p.add_argument("--model_name", type=str, default=d.get("model_name"))
-    p.add_argument("--sbert_model_name", type=str, default=d.get("sbert_model_name"))
-    p.add_argument("--bert_model_name", type=str, default=d.get("bert_model_name"))
     p.add_argument("--embedor_model_name", type=str, default=d.get("embedor_model_name"))
-
+    p.add_argument("--base_url", type=str, default=d.get("base_url", "http://127.0.0.1:8000/v1"))
+    p.add_argument("--api_key", type=str, default=d.get("api_key", "EMPTY"))
+    p.add_argument("--temperature", type=float, default=float(d.get("temperature", 0.0)))
     return p.parse_args()
 
 
-# -----------------------------
-# Utils
-# -----------------------------
-def normalize_answer(res: Any) -> str:
-    if isinstance(res, tuple):
-        res = res[0]
-    if isinstance(res, BaseMessage):
-        return (res.content or "").strip()
-    if isinstance(res, dict):
-        for key in ("result", "answer", "output_text", "content"):
-            if key in res:
-                return str(res[key]).strip()
-    return str(res).strip()
+def build_saq(llm):
+    SAQ = getattr(importlib.import_module("src.infer.qa_type.saq"), "SAQ")
+    return SAQ(llm=llm)  # ✅ llm 주입해서 chain=None 방지
 
 
-def instantiate_mode(cls, cfg: Any):
-    # cfg로 생성 시도 → 안 받으면(TypeError) 무인자 생성
-    try:
-        return cls(cfg)
-    except TypeError:
-        return cls()
+def main():
+    os.environ["TRANSFORMERS_NO_TF"] = "1"
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128,garbage_collection_threshold:0.6"
 
+    load_dotenv()
+    cfg = load_cfg()
 
-def build_qa_mode(mode: str, cfg: Any):
-    """
-    프로젝트에 존재하는 qa_mode 구현체:
-    - HotpotMode
-    - MCQ
-    - SAQ
-    """
-    base = "src.infer.qa_mode"
-    mode = mode.lower()
+    llm = ChatOpenAI(
+        model=cfg.model_name,
+        temperature=cfg.temperature,
+        base_url=cfg.base_url,
+        api_key=cfg.api_key,
+    )
 
-    if mode in ("hotpot", "hotpotmode"):
-        mod = importlib.import_module(f"{base}.hotpot")
-        return instantiate_mode(getattr(mod, "HotpotMode"), cfg)
+    emb = Embeddor(cfg.embedor_model_name)
+    db_pth = Path("db/vector_db")
+    retrievers = build_retrievers(vec_root=db_pth, emb=emb)
+    multi_retriever = Multi_Retriever(retrievers=retrievers, k_each=5, top_k=5)
 
-    if mode == "mcq":
-        mod = importlib.import_module(f"{base}.mcq")
-        return instantiate_mode(getattr(mod, "MCQ"), cfg)
-
-    if mode == "saq":
-        mod = importlib.import_module(f"{base}.saq")
-        return instantiate_mode(getattr(mod, "SAQ"), cfg)
-
-    raise ValueError("qa_mode는 hotpot/mcq/saq 중 하나여야 합니다.")
-
-
-def get_help_text() -> str:
-    return """
-[사용 가이드]
-mode      | 설명
-----------------------------
-RAG       | RAG 응답 
-Naive_LLM   | retrieval 없이 LLM 응답
-(q)       | 종료
-""".strip()
-
-
-# -----------------------------
-# Main
-# -----------------------------
-def main() -> None:
-    cfg = get_config()
-    cfg.EMBED_MODEL = cfg.embedor_model_name
-
-    # RAG 파라미터(프로젝트 팩토리 시그니처에 맞춤)
-    K_EACH = 5
-    TOP_K = 5
-
-    single = load_retrievers(ndocs=K_EACH)
-    retriever = MultiCosineRetriever(retrievers=single, k_each=K_EACH, top_k=TOP_K)
-
-    print(get_help_text())
+    print("[사용 가이드]\nRAG | RAG 응답\nLLM | retrieval 없이 LLM 응답\n(q) | 종료")
 
     while True:
         mode = input("Mode → RAG/LLM (q to quit): ").strip().lower()
@@ -119,37 +58,21 @@ def main() -> None:
             print("Invalid mode.\n")
             continue
 
-        qa_mode = build_qa_mode("saq", cfg)
-
         question = input("Question → ").strip()
         if question.lower() == "q":
             break
 
-        if mode == "rag":
-            expert = build_agent(
-                "naive_rag",
-                cfg=cfg,
-                qa_mode=qa_mode,
-                retriever=retriever,   # ✅ 반드시 주입
-            )
-        else:
-            expert = build_agent(
-                "naive_llm",
-                cfg=cfg,
-                qa_mode=qa_mode,
-            )
-
+        qa_mode = build_saq(llm)
         payload = {"id": "chat", "question": question}
-        out = expert.answer_once(payload)
 
-        # naive_rag: (id, question, answer, docs)
-        # naive_llm: 구현에 따라 (id, question, answer, meta) 또는 유사 튜플일 가능성
-        if isinstance(out, tuple) and len(out) >= 3:
-            ans = out[2]
+        if mode == "rag":
+            expert = build_agent("naive_rag", cfg=cfg, qa_mode=qa_mode, retriever=multi_retriever)
         else:
-            ans = out
+            expert = build_agent("naive_llm", cfg=cfg, qa_mode=qa_mode)
 
-        print(f"\n[Answer]\n{normalize_answer(ans)}\n")
+        out = expert.answer_once(payload)
+        ans = out[2] if isinstance(out, tuple) and len(out) >= 3 else out
+        print(f"\n[Answer]\n{ans}\n")
 
 
 if __name__ == "__main__":

@@ -28,9 +28,12 @@ class SAQ:
     """
     Short Answer Question (주관식, 선택지 없음)
     """
-    prompt: ChatPromptTemplate = saq_prompt
+    def __init__(self, llm: Any = None, prompt= saq_prompt):
+        self.prompt = prompt
+        self.llm = llm
+        self.chain = self.prompt | self.llm if self.llm else None
 
-    def build_inputs(self, payload: Dict[str, Any]) -> Dict[str, str]:
+    def load_inputs(self, payload: Dict[str, Any]) -> Dict[str, str]:
         # retrieved는 NaiveRag에서 normalize_docs로 표준화된 List[Document]
         retrieved = payload.get("retrieved", [])
         reviews = "\n\n".join(
@@ -42,6 +45,10 @@ class SAQ:
             "question": payload["question"],
             "reviews": reviews,
         }
+
+    def return_result(self, agent_input: Dict[str, str]) -> str:
+        result = self.chain.invoke(agent_input)
+        return str(result.content) # LangChain의 AIMessage 타입에서 content 필드만 추출
 
     def build_output(self, retrieved) -> Dict[str, Any]:
         # retrieved는 표준화된 List[Document]

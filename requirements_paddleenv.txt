@@ -1,10 +1,16 @@
-#https://huggingface.co/PaddlePaddle/PaddleOCR-VL
+#https://www.paddleocr.ai/latest/en/version3.x/installation.html
 
 # 1) The following command installs the PaddlePaddle version for CUDA 12.6. For other CUDA versions and the CPU version, please refer to https://www.paddlepaddle.org.cn/en/install/quick?docurl=/documentation/docs/en/develop/install/pip/linux-pip_en.html
-python -m pip install paddlepaddle-gpu==3.2.1 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
-python -m pip install -U "paddleocr[doc-parser]"
-# 2)For Linux systems, run:
-python -m pip install https://paddle-whl.bj.bcebos.com/nightly/cu126/safetensors/safetensors-0.6.2.dev0-cp38-abi3-linux_x86_64.whl
+python -m pip install paddlepaddle-gpu==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
 
-# 2) For Windows systems, run:
-python -m pip install https://xly-devops.cdn.bcebos.com/safetensors-nightly/safetensors-0.6.2.dev0-cp38-abi3-win_amd64.whl
+# If you want to use all functionalities, such as document parsing, document understanding, document translation, and key information extraction
+python -m pip install "paddleocr[all]"
+
+pip install -U pymupdf
+
+
+
+
+### Docling 
+pip install docling
+

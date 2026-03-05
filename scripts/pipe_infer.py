@@ -45,30 +45,43 @@ def get_config(path):
     return SimpleNamespace(**cfg)
 
 
-def save_predictions_json(out_path: Path, payloads, results, qa_type, model):
+def save_predictions_json(out_path: Path, inputs, results, qa_type, model):
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     is_not_rag = isinstance(model, NaiveLLM)
+    rows = []
 
-    if is_not_rag:  # NaiveLLM: results는 list[str]
-        rows = [
-            {
-                **payload,
-                "gen_answer": gen_ans,
+    if is_not_rag:
+        for each_input, gen_ans in zip(inputs, results):
+            row = {
+                "id": each_input.get("id"),
+                "question": each_input.get("question"),
+                "answer": each_input.get("answer"),
+                "generated": gen_ans,
             }
-            for payload, gen_ans in zip(payloads, results)
-        ]
-    else:  # RAG: results는 List[Tuple[str, str, str, str]]
-        rows = [
-            {
-                **payload,
-                "id": _id,
-                "question": question,
-                "gen_answer": gen_ans,
-                **qa_type.build_output(retrieved),
+            rows.append(row)
+
+    else:
+        for each_input, (_id, question, gen_ans, retrieved) in zip(inputs, results):
+
+            parsed = {}
+            try:
+                parsed_json = json.loads(gen_ans)[0]
+                parsed = parsed_json
+            except Exception:
+                pass
+
+            row = {
+                "id": each_input.get("id", _id),
+                "question": each_input.get("question", question),
+                "answer": each_input.get("answer"),
+                "generated": parsed.get("generated", gen_ans),
+                "supporting_fact_a": parsed.get("supporting_fact_a"),
+                "supporting_fact_b": parsed.get("supporting_fact_b"),
+                **qa_type.build_output(retrieved),   # ✅ retrieved 추가 (맨 뒤에 들어감)
             }
-            for payload, (_id, question, gen_ans, retrieved) in zip(payloads, results)
-        ]
+
+            rows.append(row)
 
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False, indent=2)
@@ -92,11 +105,13 @@ if __name__ == "__main__":
          api_key="EMPTY",
     )
 
+     
+    # ====== iter_RAG ======
     ## agent(infer)
     qa_type = Hotpot_short(llm)  # QAtype 인스턴스 생성
     agent = IterRAG_agent(CFG, retriever, qa_type=qa_type, llm=llm, max_iter=3)
 
-    input_path = Path("db/qa_data/test/HOTPOT_[text]weather_manual.json")
+    input_path = Path("results/inferenced/test/test_retrieval.json")
     with open(input_path, "r", encoding="utf-8") as f:
         agent_inputs = json.load(f)
 
@@ -107,22 +122,20 @@ if __name__ == "__main__":
 
     print(f"[DONE] {output_path} (n={len(gen_answers)})")
     print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")
-
-
-'''  
-     ====== naive_Rag ======
-     =======================
+    
+'''
+    # ====== naive_Rag ======
     ## agent(infer)
     qa_type = Hotpot_short(llm)  # QAtype 인스턴스 생성
     agent = RAG_agent(CFG, retriever, qa_type=qa_type)
 
-    input_path = Path("db/qa_data/test/HOTPOT_[text]weather_manual.json")
+    input_path = Path("db/qa_data/test/retrieval_test.json")
     with open(input_path, "r", encoding="utf-8") as f:
         agent_inputs = json.load(f)
 
     gen_answers = agent.answer_all(agent_inputs)
 
-    output_path = Path("results/inferenced/test/hotpotqa_test/hotpot_test.json")
+    output_path = Path("results/inferenced/test/test_retrieval.json")
     save_predictions_json(output_path, agent_inputs, gen_answers, qa_type, agent)
 
     print(f"[DONE] {output_path} (n={len(gen_answers)})")

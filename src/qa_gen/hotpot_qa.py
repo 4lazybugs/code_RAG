@@ -1,9 +1,8 @@
 from pathlib import Path
-from itertools import combinations
-from typing import Any, Dict, List, Iterator
+from typing import Any, Dict, List
+from src.prompts.qa_gen import hotpot_prompt
 import json
 from src.qa_gen.params import Params
-from langchain_core.prompts import ChatPromptTemplate
 from tqdm import tqdm
 import random
 
@@ -23,57 +22,22 @@ def yield_pair(dir_path: Path, *, min_len: int, seed: int | None = None):
 
     it = iter(files)
 
+    # zip(it, it)는 같은 iterator를 연속으로 소모해 2개씩 묶으므로,
+    # 각 파일은 next()로 한 번만 소비되어 다른 pair에 재사용되지 않는다.
     for a, b in zip(it, it):
         text_a, text_b = read_text(a), read_text(b)
-        if len(text_a) < min_len or len(text_b) < min_len:
-            continue
+        if len(text_a) < min_len or len(text_b) < min_len: continue
         yield a, b
 
-hotpot_prompt = ChatPromptTemplate.from_template(
-"""
-다음 context에서 HotpotQA 스타일 multi-hop Ground Truth 1개를 생성하라.
 
-[핵심 규칙]
-1) 반드시 서로 다른 두 문단(A, B)을 사용해야 하며,
-   질문은 A와 B를 모두 읽어야만 답할 수 있어야 한다.
 
-2) supporting_fact_a:
-   - 문단 A에서 답에 필요한 핵심 근거 1개를 원문 그대로 발췌
-   - 문맥상 단독 이해 가능할 만큼 충분히 길 것 (약 200 tokens 이상 권장)
-
-3) supporting_fact_b:
-   - 문단 B에서 답에 필요한 핵심 근거 1개를 원문 그대로 발췌
-   - 문단 A 내용 포함 금지
-
-4) 질문 규칙:
-   - 지시어/모호한 일반명사 금지
-   - 답은 context에 명시된 단일 값
-
-[출력 형식]
-설명 없이 JSON 배열 1개만 출력:
-
-[
-  {{
-    "id": {id},
-    "question": "...",
-    "answer": "...",
-    "supporting_fact_a": "...",
-    "supporting_fact_b": "..."
-  }}
-]
-
-# context
-{md_a}
-{md_b}
-"""
-)
-
-def hotpot_gen(dir_path: Path, params: Params) -> List[Dict[str, Any]]:
+def hotpot_gen(dir_path: Path, params: Params, prompt= hotpot_prompt) -> List[Dict[str, Any]]:
     llm = params.get_llm("llm")  # ✅ llm은 global_에서
-    min_len = params.get_params("hotpot", "min_len", 300)
-    start_id = int(params.get_params("hotpot", "start_id", 0))
+    min_len = params.get_params("hotpot_short", "min_len", 300)
+    start_id = int(params.get_params("hotpot_short", "start_id", 0))
+    seed = int(params.get_params("hotpot_short", "seed", 42 ))
 
-    chain = hotpot_prompt | llm
+    chain = prompt | llm
 
     qas_list: List[Dict[str, Any]] = []
     cur_id = start_id
@@ -84,8 +48,8 @@ def hotpot_gen(dir_path: Path, params: Params) -> List[Dict[str, Any]]:
     invoke_fail_cnt = 0
 
     # --- 진행바 적용 ---
-    pairs = yield_pair(dir_path, min_len=min_len)
-    pbar = tqdm(pairs, desc="hotpot", dynamic_ncols=True)
+    pairs = yield_pair(dir_path, min_len=min_len, seed=seed)
+    pbar = tqdm(pairs, desc="hotpot_short", dynamic_ncols=True)
 
     for idx, (a, b) in enumerate(pbar, start=1):
         md_a = read_text(a)
@@ -134,6 +98,8 @@ def hotpot_gen(dir_path: Path, params: Params) -> List[Dict[str, Any]]:
                 "id": cur_id + j, #✅ j도입 이유: 여러 샘플을 한 번에 만들 경우 id 중복 발생 가능
                 "question": item["question"],
                 "answer": item["answer"],
+                "ref_name_a": a.name,
+                "ref_name_b": b.name,
                 "supporting_fact_a": item["supporting_fact_a"],
                 "supporting_fact_b": item["supporting_fact_b"],
             })

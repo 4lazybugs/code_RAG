@@ -1,4 +1,4 @@
-from .base import Evaluator, add_metric_key
+from .base import Evaluator
 from dotenv import load_dotenv
 import os
 import json
@@ -8,7 +8,6 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 
-@add_metric_key("correct")
 class CorrectnessEvaluator(Evaluator):
 
     def __init__(self):

@@ -1,7 +1,6 @@
-from .base import Evaluator, add_metric_key
+from .base import Evaluator
 from collections import Counter
 
-@add_metric_key("rouge1")
 class Rouge1Evaluator(Evaluator):
 
     def score_once(self, data: dict) -> float:

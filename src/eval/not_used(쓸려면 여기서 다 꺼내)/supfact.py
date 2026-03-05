@@ -1,8 +1,6 @@
 from typing import Any, Dict
-from .base import Evaluator, add_metric_key
+from .base import Evaluator
 
-
-@add_metric_key("supfact")
 class SupportingEMEvaluator(Evaluator):
     """
     supporting_fact_gen이 supporting_fact_ref 또는 supporting_fact_comp에
