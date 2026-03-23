@@ -1,32 +1,25 @@
-from typing import Protocol, Dict, Any, Callable
-from langchain_core.prompts import ChatPromptTemplate
+# base.py
+from dataclasses import dataclass, field
+from typing import Any, Callable, Optional
 
-class QAtype(Protocol):
-    prompt: ChatPromptTemplate
-    def build_inputs(self, payload: Dict[str, Any]) -> Dict[str, Any]: ...
+@dataclass
+class QAtype:
+    prompt: Any = None
+    load_input: Optional[Callable] = None
+    load_output: Optional[Callable] = None
 
-# QA Mode 등록 및 빌드 함수
-QA_MODE_REGISTRY: Dict[str, Callable[[], QAtype]] = {}
+    def set_prompt(self, prompt):
+        self.prompt = prompt
+        return self
 
-def register_qa_mode(key: str):
-    def deco(cls_or_factory):
-        k = key.strip().upper()
-        if k in QA_MODE_REGISTRY:
-            raise KeyError(f"Duplicate qa_mode key: {k}")
-        # 클래스인 경우 factory로 변환
-        if isinstance(cls_or_factory, type):
-            QA_MODE_REGISTRY[k] = lambda: cls_or_factory()
-        else:
-            QA_MODE_REGISTRY[k] = cls_or_factory
-        return cls_or_factory
-    return deco
+    def set_inputs(self, load_input):
+        self.load_input = load_input
+        return self
 
-def build_qa_type(key: str) -> QAtype:
-    k = key.strip().upper()
-    try:
-        factory = QA_MODE_REGISTRY[k]
-    except KeyError:
-        raise KeyError(
-            f"Unknown qa_mode key: {k}. Available: {list(QA_MODE_REGISTRY.keys())}"
-        ) from None
-    return factory()
+    def set_outputs(self, load_output):
+        self.load_output = load_output
+        return self
+
+    def build(self):
+        return self
+

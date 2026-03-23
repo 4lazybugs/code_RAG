@@ -16,7 +16,7 @@ from src.preprocess.extract import DocumentConverter, extract_docling
 if __name__ == "__main__":
     start = time.time()
     
-    # Docling, PaddlePaddleOCR 초기화
+    # Docling 초기화
     #converter = DocumentConverter()
 
     # PaddleOCRVL, PPStructureV3 아무거나 써도 되는데 PaddleOCRVL은 VLM 기반이라 품질 더 좋은 대신 좀 느림

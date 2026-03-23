@@ -6,11 +6,7 @@ import torch
 from bert_score import score as bert_score
 from .base import Evaluator, get_config
 
-CFG = get_config()
-
-# 필요 시 CUDA 사용:
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-device = "cpu"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 def _clean_for_bert(x: str, max_chars: int = 3000) -> str:
     if x is None:
@@ -19,6 +15,8 @@ def _clean_for_bert(x: str, max_chars: int = 3000) -> str:
 
 
 class BERTEvaluator(Evaluator):
+    def __init__(self):
+        super().__init__()
 
     def score_once(self, data: Dict[str, Any]) -> float:
         reference = _clean_for_bert(self._normalize(self._get_field(data, "reference", "answer")))
@@ -35,7 +33,7 @@ class BERTEvaluator(Evaluator):
                 [generated],                  # ✅ list[str] 형태로 전달 권장
                 [reference],
                 lang="ko",
-                model_type=CFG.bert_model_name,
+                model_type=self.CFG.bert_model_name,
                 device=device,
                 batch_size=1,
                 rescale_with_baseline=False,

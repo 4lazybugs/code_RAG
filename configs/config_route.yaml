@@ -1,0 +1,17 @@
+model:
+  name: bert-base-multilingual-cased
+  num_labels: 2
+  hidden_dim: 256
+  dropout: 0.2
+
+training:
+  batch_size: 16
+  epochs: 50
+  lr: 0.001
+  max_length: 128
+  warmup_ratio: 0.1
+
+data:
+  test_size: 0.2
+  random_state: 42
+  stratify: true

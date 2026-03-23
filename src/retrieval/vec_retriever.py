@@ -14,29 +14,9 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.embeddings import Embeddings
 from langchain_chroma import Chroma
 from sentence_transformers import SentenceTransformer
+
+from src.config import get_config, load_yaml
 from src.preprocess.embedding import Embeddor
-
-################ config utils ############################
-def load_yaml(path: str):
-    with open(path, "r") as f:
-        raw = yaml.safe_load(f)
-    return {k: os.path.expandvars(v) if isinstance(v, str) else v for k, v in raw.items()}
-
-
-def get_config(path: str):
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="configs/config_vec.yaml")
-    args, _ = parser.parse_known_args()
-    default_cfg = load_yaml(path or args.config)
-
-    parser.add_argument("--embedor_model_name", type=str, default=default_cfg.get("embedor_model_name"))
-    parser.add_argument("--base_dir", type=str, default=default_cfg.get("base_dir", ""))
-    parser.add_argument("--data_root", type=str, default=default_cfg.get("data_root", ""))
-    parser.add_argument("--vec_root", type=str, default=default_cfg.get("vec_root", ""))
-    # ✅ 새 DB 추가를 위한 확장점: vec_root 여러 개 지원(콤마 구분)
-    parser.add_argument("--vec_roots", type=str, default=default_cfg.get("vec_roots", ""))
-
-    return parser.parse_args()
 
 
 def build_retrievers(*, vec_root: Path, emb) -> Dict[str, Any]:

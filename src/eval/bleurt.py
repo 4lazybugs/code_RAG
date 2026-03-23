@@ -1,18 +1,16 @@
 from __future__ import annotations
-from .base import Evaluator, get_config
+from .base import Evaluator
 import evaluate
-
-CFG = get_config()
+import torch
 
 # 필요 시 CUDA 사용:
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-device = "cpu"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 class BleurtEvaluator(Evaluator):
-    # 원칙적으로 bleurt-base-128의 치역은 제한이 없으나 논문 보고 기준 -1.5 ~ 1.5
-    def __init__(self, model_name: str = "bleurt-base-128"):
-        super().__init__()
-        # BLEURT 로드 (Hugging Face evaluate)
+
+    def __init__(self):
+        super().__init__()  # self.CFG 로드
+        model_name = getattr(self.CFG, "bleurt_model_name", "bleurt-base-128")
         self._bleurt = evaluate.load("bleurt", checkpoint=model_name)
 
     def score_once(self, data: dict) -> float:

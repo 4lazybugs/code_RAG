@@ -35,7 +35,7 @@ def yield_single(dir_path: Path, *, min_len: int, seed: int | None = None):
         yield md
 
 
-def naive_gen(dir_path: Path, params: Params) -> List[Dict[str, Any]]:
+def gen_from_md(dir_path: Path, params: Params) -> List[Dict[str, Any]]:
     llm = params.get_llm("llm")  # ✅ llm은 global_에서
     min_len = params.get_params("naive", "min_len", 300)
     start_id = int(params.get_params("naive", "start_id", 0))
@@ -102,8 +102,8 @@ def naive_gen(dir_path: Path, params: Params) -> List[Dict[str, Any]]:
             qas_list.append({
                 "id": cur_id + j, #✅ j도입 이유: 여러 샘플을 한 번에 만들 경우 id 중복 발생 가능
                 "question": item["question"],
-                "answer": item["answer"],
                 "ref_doc": md.name, 
+                "retrival_needed": 1,
             })
 
         cur_id += len(arr)  #✅ 1이 아니라 len(arr)

@@ -13,5 +13,5 @@ class Params:
             raise KeyError(f"params.global_ missing key: {key}")
         return self.global_[key]
 
-    def get_params(self, strategy_name: str, key: str, default: Any = None) -> Any:
-        return self.per.get(strategy_name, {}).get(key, default)
+    def get_params(self, key: str, default=None):
+        return self.per.get(key, default)  # 중간 네임스페이스 제거

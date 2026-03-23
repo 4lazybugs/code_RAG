@@ -77,5 +77,9 @@ openpyxl
 tf-keras
 
 
-# 7) eval: bleurt
-git+https://github.com/google-research/bleurt.git
+# 7) eval
+rouge_score
+git+https://github.com/google-research/bleurt.git #bleurt
+
+# 8) new: searching algorithm
+rank-bm25 kiwipiepy

@@ -14,4 +14,3 @@ from .bleurt import BleurtEvaluator
 from .ground import GroundEvaluator
 from .correct import CorrectnessEvaluator
 from .em import EMEvaluator
-from .params import Params

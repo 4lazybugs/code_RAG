@@ -5,139 +5,140 @@ import argparse, os, yaml
 from types import SimpleNamespace
 from pathlib import Path
 from dotenv import load_dotenv
-from copy import deepcopy
-from typing import Dict, Any, List, Tuple, Optional
 
-# about llm
 from langchain_openai import ChatOpenAI
 
-# import packages in src/
-from src.infer import NaiveLLM, build_agent, RAG_agent, IterRAG_agent
-from src.infer.qa_type import Hotpot_short
-from src.retrieval import build_retrievers, Multi_Retriever, Embeddor
+from src.config import get_config, load_yaml
+
+# agents
+from src.infer.agents import LLM_agent, RAG_agent, IterRAG_agent
+
+#retrievals
+from src.retrieval import build_retrievers, Multi_Retriever, build_bm25s, Multi_BM25s, Embeddor
+
+# prompts
+from src.infer.qa_type.prompts import saq_llm_prompt, saq_rag_prompt
+from src.infer.qa_type.prompts import mcq_llm_prompt, mcq_rag_prompt
+from src.infer.qa_type.prompts import iter_rag_prompt
+
+from src.infer.qa_type.base import QAtype
+# qa_input
+from src.infer.qa_type.load_input import mcq_input, saq_input
+# qa_output
+from src.infer.qa_type.load_output import llm_output, rag_output, iter_output
 
 
-def load_yaml(path):
-    with open(path, 'r') as f:
-        raw_config = yaml.safe_load(f)
-
-    # 환경 변수 치환 처리
-    config = {}
-    for k, v in raw_config.items():
-        if isinstance(v, str):
-            config[k] = os.path.expandvars(v)
-        else:
-            config[k] = v
-
-    return config
-
-def get_config(path):
-    default_cfg = load_yaml(path=path)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_name", type=str, default=default_cfg.get('model_name'))
-    parser.add_argument("--qa_mode", type=str, default=default_cfg.get('qa_mode', 'MCQ'))
-
-    args, _ = parser.parse_known_args()
-
-    # ✅ YAML + argparse 병합 → Namespace
-    cfg = {**default_cfg, **vars(args)}
-    return SimpleNamespace(**cfg)
-
-
-def save_predictions_json(out_path: Path, inputs, results, qa_type, model):
+def save_predictions_json(out_path: Path, inputs, results):
     out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    is_not_rag = isinstance(model, NaiveLLM)
     rows = []
 
-    if is_not_rag:
-        for each_input, gen_ans in zip(inputs, results):
-            row = {
-                "id": each_input.get("id"),
-                "question": each_input.get("question"),
-                "answer": each_input.get("answer"),
-                "generated": gen_ans,
-            }
-            rows.append(row)
+    for _input, result in zip(inputs, results):
+        # result가 딕셔너리가 아니면 (NaiveLLM처럼 string 반환) 감싸기
+        if not isinstance(result, dict):
+            result = {"generated": result}
 
-    else:
-        for each_input, (_id, question, gen_ans, retrieved) in zip(inputs, results):
+        row = {}
+        # _input에서 먼저 채우고
+        for key in ["id", "question", "answer"]:
+            val = result.get(key) or _input.get(key)
+            if val is not None:
+                row[key] = val
 
-            parsed = {}
-            try:
-                parsed_json = json.loads(gen_ans)[0]
-                parsed = parsed_json
-            except Exception:
-                pass
+        # result에 있는 것 다 넣기
+        for key, val in result.items():
+            if key not in row and val is not None:
+                row[key] = val
 
-            row = {
-                "id": each_input.get("id", _id),
-                "question": each_input.get("question", question),
-                "answer": each_input.get("answer"),
-                "generated": parsed.get("generated", gen_ans),
-                "supporting_fact_a": parsed.get("supporting_fact_a"),
-                "supporting_fact_b": parsed.get("supporting_fact_b"),
-                **qa_type.build_output(retrieved),   # ✅ retrieved 추가 (맨 뒤에 들어감)
-            }
-
-            rows.append(row)
+        rows.append(row)
 
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False, indent=2)
+
+## qa json 하나로 합치고 저장하는 함수
+def merge_json(json_dir: str | Path, save: bool = False) -> list[dict]:
+    json_dir = Path(json_dir)
+    items = []
+    for json_file in sorted(json_dir.rglob("*.json")):
+        data = json.load(json_file.open(encoding="utf-8"))
+        for item in (data if isinstance(data, list) else [data]):
+            if isinstance(item, dict) and "question" in item:
+                items.append(item)
+
+    for i, _dict in enumerate(items):
+        _dict["id"] = i
+
+    if save:
+        output_path = json_dir / "merged.json"
+        with output_path.open("w", encoding="utf-8") as f:
+            json.dump(items, f, ensure_ascii=False, indent=2)
+
+    return items
+
 
 if __name__ == "__main__":
     start_time = time.time()
     load_dotenv()
     CFG = get_config("configs/config_infer.yaml")
     emb = Embeddor(CFG.embedor_model_name)
+    llm_model = CFG.model_name
 
     ## retrievers
-    db_pth = Path("/home/jwkim/[code]생성형과제_server/db/vector_db")
-    retriever_list = build_retrievers(vec_root=db_pth, emb=emb)
+    vec_root = Path("/home/jwkim/[code]생성형과제_server/db/vector_db")
+    retriever_list = build_retrievers(vec_root=vec_root, emb=emb)
     retriever = Multi_Retriever(retrievers=retriever_list, k_each=3, top_k=5)
+    retriever_list = build_bm25s(vec_root=vec_root, k_each=4)
+    lex_retriever = Multi_BM25s(retrievers=retriever_list, top_k=5)
 
     ## llm
     llm = ChatOpenAI(
-         model="Qwen/Qwen2.5-32B-Instruct",
+         model=llm_model,
          temperature=0,
          base_url="http://127.0.0.1:8000/v1",
          api_key="EMPTY",
     )
-
-     
-    # ====== iter_RAG ======
-    ## agent(infer)
-    qa_type = Hotpot_short(llm)  # QAtype 인스턴스 생성
-    agent = IterRAG_agent(CFG, retriever, qa_type=qa_type, llm=llm, max_iter=3)
-
-    input_path = Path("results/inferenced/test/test_retrieval.json")
-    with open(input_path, "r", encoding="utf-8") as f:
-        agent_inputs = json.load(f)
-
-    gen_answers = agent.answer_all(agent_inputs)
-
-    output_path = Path("results/inferenced/test/hotpotqa_test/hotpot_test_iter_rag.json")
-    save_predictions_json(output_path, agent_inputs, gen_answers, qa_type, agent)
-
-    print(f"[DONE] {output_path} (n={len(gen_answers)})")
-    print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")
     
-'''
-    # ====== naive_Rag ======
-    ## agent(infer)
-    qa_type = Hotpot_short(llm)  # QAtype 인스턴스 생성
-    agent = RAG_agent(CFG, retriever, qa_type=qa_type)
+    qa_dir = Path("db/qa_data/test_saq") # json이 들어있는 디렉터리
+    json_merged = merge_json(qa_dir, save=True)
+    for i, _dict in enumerate(json_merged):
+        _dict["id"] = i
 
-    input_path = Path("db/qa_data/test/retrieval_test.json")
-    with open(input_path, "r", encoding="utf-8") as f:
-        agent_inputs = json.load(f)
+    '''
+    <Builder Pattern>
+    조립은 외부에서 수행 — prompt/input/output의 다양한 조합을 지원하기 위해
+    조합마다 클래스를 따로 만들면 N^3 조합이 생겨 비효율적이므로 빌더 패턴 사용
+    '''
+    qa_type_llm = (QAtype()
+        .set_prompt(mcq_llm_prompt)
+        .set_inputs(mcq_input)
+        .set_outputs(llm_output)
+        .build())
 
-    gen_answers = agent.answer_all(agent_inputs)
+    qa_type_rag = (QAtype()
+        .set_prompt(saq_rag_prompt)
+        .set_inputs(saq_input)
+        .set_outputs(rag_output)
+        .build())
 
-    output_path = Path("results/inferenced/test/test_retrieval.json")
-    save_predictions_json(output_path, agent_inputs, gen_answers, qa_type, agent)
+    qa_type_iter = (QAtype()
+        .set_prompt(iter_rag_prompt)
+        .set_outputs(iter_output)
+        .build())
 
-    print(f"[DONE] {output_path} (n={len(gen_answers)})")
+    '''
+    <Strategy Pattern>
+    agent는 고정한 채로, 주입하는 qa_type만 바꿔서
+    agent가 llm_mcq(전략1) 또는 rag_saq(전략2)로 동작하게 만들 수 있음.
+    '''
+    llm_agent = LLM_agent(llm=llm, qa_type=qa_type_llm)
+    rag_agent = RAG_agent(llm=llm, qa_type=qa_type_rag, retriever=lex_retriever) 
+    iter_agent = IterRAG_agent(rag_agent=rag_agent, llm=llm, qa_type=qa_type_iter, max_iter=3)       
+    
+    #results = llm_agent.answer_all(json_merged)
+    results = rag_agent.answer_all(json_merged)
+    #results = iter_agent.answer_all(json_merged)
+
+    output_path = Path("results/inferenced/qa_in_used.json")
+    save_predictions_json(output_path, json_merged, results)
+
+    print(f"[DONE] {output_path} (n={len(results)})")
     print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")
-'''

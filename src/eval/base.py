@@ -6,32 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 from tqdm.auto import tqdm
 
-
-def load_yaml(path='configs/config_eval.yaml'):
-    with open(path, 'r') as f:
-        raw_config = yaml.safe_load(f)
-
-    # 환경 변수 치환 처리
-    config = {}
-    for k, v in raw_config.items():
-        if isinstance(v, str):
-            config[k] = os.path.expandvars(v)
-        else:
-            config[k] = v
-
-    return config
-
-def get_config():
-    default_cfg = load_yaml()
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--sbert_model_name", type=str, default=default_cfg.get('sbert_model_name'))
-    parser.add_argument("--bert_model_name", type=str, default=default_cfg.get('bert_model_name'))
-
-    args = parser.parse_args()
-    return args
-
-
+from src.config import load_yaml, get_config
 
 class Evaluator(ABC):
     """
@@ -39,6 +14,8 @@ class Evaluator(ABC):
     - Runner/Repository가 references/generate/gen_docs/ref_docs를 이미 제공한다는 가정
     - 여기서는 compute_scores()만 강제한다
     """
+    def __init__(self):
+        self.CFG = get_config("configs/config_eval.yaml")
 
     @staticmethod # 객체(self)도 클래스(cls)도 필요 없는 함수
     def _normalize(text) -> str:
@@ -58,11 +35,10 @@ class Evaluator(ABC):
         return str(text).strip()
     
     @staticmethod
-    def _get_field(data: dict, *keys) -> Any:
-        """여러 가능한 키 중 첫 번째로 존재하는 값을 반환"""
-        for key in keys:
-            if key in data and data[key] is not None:
-                return data[key]
+    def _get_field(data: dict, *keys: str) -> Any:
+        for k in keys:
+            if k in data:
+                return data[k]
         return None
 
     @abstractmethod # 상속받은 자식 클래스에서 반드시 구현해야 함

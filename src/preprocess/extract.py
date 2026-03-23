@@ -8,8 +8,6 @@ from paddleocr import PaddleOCRVL
 # Docling imports: https://docling-project.github.io/docling/
 from docling.document_converter import DocumentConverter
 
-
-
 def extract_paddle(pipeline, pdf_path: Path, save_dir: Path):
     print(f"PDF ({pdf_path})를 찾았습니다.", flush=True)
     save_dir.mkdir(parents=True, exist_ok=True)

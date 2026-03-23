@@ -1,13 +1,8 @@
 # qa_mode/specs/hotpot.py
 from typing import Dict, Any, Optional, Sequence, List
-from .base import register_qa_mode
 from src.prompts.qa_type import hotpot_short_prompt
 import re
 
-def _format_options(options: Optional[Sequence[str]]) -> str:
-    if not options:
-        return ""
-    return "[선택지]\n" + "\n".join(options)
 
 def _make_pretty(text: str, max_block_chars: int = 1200) -> List[str]:
     """
@@ -34,7 +29,6 @@ def _make_pretty(text: str, max_block_chars: int = 1200) -> List[str]:
         out.append(b)
     return out
 
-@register_qa_mode("hotpot")
 class Hotpot_short:
     def __init__(self, llm: Any = None, prompt= hotpot_short_prompt):
         self.prompt = prompt
