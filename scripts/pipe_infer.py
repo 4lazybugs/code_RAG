@@ -1,31 +1,32 @@
 # import packages in std
 import time
 import json
+import copy
 import argparse, os, yaml
 from types import SimpleNamespace
 from pathlib import Path
 from dotenv import load_dotenv
 
 from langchain_openai import ChatOpenAI
+from minicheck.minicheck import MiniCheck
 
 from src.config import get_config, load_yaml
 
 # agents
-from src.infer.agents import LLM_agent, RAG_agent, IterRAG_agent
+from src.infer.agents import LLM_agent, RAG_agent, Gateway_agent, IterRAG_agent
 
-#retrievals
+# retrievals
 from src.retrieval import build_retrievers, Multi_Retriever, build_bm25s, Multi_BM25s, Embeddor
 
 # prompts
-from src.infer.qa_type.prompts import saq_llm_prompt, saq_rag_prompt
-from src.infer.qa_type.prompts import mcq_llm_prompt, mcq_rag_prompt
-from src.infer.qa_type.prompts import iter_rag_prompt
+from src.prompts.qa_type import saq_rag_prompt, saq_llm_prompt, iter_rag_prompt, logprob_prompt
 
 from src.infer.qa_type.base import QAtype
 # qa_input
 from src.infer.qa_type.load_input import mcq_input, saq_input
 # qa_output
 from src.infer.qa_type.load_output import llm_output, rag_output, iter_output
+from src.infer.qa_type.load_output import router_output, gate_llm_output, gate_rag_output, gate_sota_output
 
 
 def save_predictions_json(out_path: Path, inputs, results):
@@ -64,8 +65,8 @@ def merge_json(json_dir: str | Path, save: bool = False) -> list[dict]:
             if isinstance(item, dict) and "question" in item:
                 items.append(item)
 
-    for i, _dict in enumerate(items):
-        _dict["id"] = i
+    for i, q_id_dict in enumerate(items):
+        q_id_dict["id"] = i
 
     if save:
         output_path = json_dir / "merged.json"
@@ -78,50 +79,68 @@ def merge_json(json_dir: str | Path, save: bool = False) -> list[dict]:
 if __name__ == "__main__":
     start_time = time.time()
     load_dotenv()
-    CFG = get_config("configs/config_infer.yaml")
-    emb = Embeddor(CFG.embedor_model_name)
-    llm_model = CFG.model_name
+    CFG_infer = get_config("configs/config_infer.yaml")
+    CFG_pth = get_config("configs/config_path.yaml")
 
-    ## retrievers
-    vec_root = Path("/home/jwkim/[code]생성형과제_server/db/vector_db")
+    vec_root = Path("db/vector_db")
+    ## retrievers    
+    emb = Embeddor(CFG_infer.embedor_model_name)
     retriever_list = build_retrievers(vec_root=vec_root, emb=emb)
-    retriever = Multi_Retriever(retrievers=retriever_list, k_each=3, top_k=5)
-    retriever_list = build_bm25s(vec_root=vec_root, k_each=4)
-    lex_retriever = Multi_BM25s(retrievers=retriever_list, top_k=5)
+    multi_retriever = Multi_Retriever(retrievers=retriever_list, k_each=3, top_k=5)
+    bm25_list = build_bm25s(vec_root=vec_root, k_each=4)
+    lex_retriever = Multi_BM25s(retrievers=bm25_list, top_k=5)
 
-    ## llm
-    llm = ChatOpenAI(
-         model=llm_model,
+    # load QA
+    qa_dir = Path(CFG_pth.qa_dir) # json이 들어있는 디렉터리
+    json_merged = merge_json(qa_dir, save=False)
+    for i, q_id_dict in enumerate(json_merged):
+        q_id_dict["id"] = i
+
+    ## load LM(Language Model)
+    qwen = ChatOpenAI(
+         model=CFG_infer.model_name,
          temperature=0,
          base_url="http://127.0.0.1:8000/v1",
          api_key="EMPTY",
     )
-    
-    qa_dir = Path("db/qa_data/test_saq") # json이 들어있는 디렉터리
-    json_merged = merge_json(qa_dir, save=True)
-    for i, _dict in enumerate(json_merged):
-        _dict["id"] = i
+    gpt = ChatOpenAI(
+            model="gpt-4o-mini",
+            temperature=0.7,
+    )
+    # MiniCheck는 주어진 문서(context)가 특정 문장(claim 또는 answer)을
+    # 실제로 근거로 뒷받침하는지를 판단하는 LLM 기반 검증 모델
+    judge_lm = MiniCheck(
+            model_name=CFG_infer.judge_model,
+            cache_dir=CFG_infer.judge_cache_dir,
+    )
 
     '''
     <Builder Pattern>
     조립은 외부에서 수행 — prompt/input/output의 다양한 조합을 지원하기 위해
     조합마다 클래스를 따로 만들면 N^3 조합이 생겨 비효율적이므로 빌더 패턴 사용
     '''
-    qa_type_llm = (QAtype()
-        .set_prompt(mcq_llm_prompt)
-        .set_inputs(mcq_input)
-        .set_outputs(llm_output)
+    qa_router = (QAtype()
+        .set_prompt(logprob_prompt)
+        .set_inputs(saq_input)
+        .set_outputs(router_output)
         .build())
 
-    qa_type_rag = (QAtype()
+    qa_llm = (QAtype()
+        .set_prompt(saq_llm_prompt)
+        .set_inputs(saq_input)
+        .set_outputs(gate_llm_output)
+        .build())
+
+    qa_rag = (QAtype()
         .set_prompt(saq_rag_prompt)
         .set_inputs(saq_input)
-        .set_outputs(rag_output)
+        .set_outputs(gate_rag_output)
         .build())
 
-    qa_type_iter = (QAtype()
-        .set_prompt(iter_rag_prompt)
-        .set_outputs(iter_output)
+    qa_sota = (QAtype()
+        .set_prompt(saq_llm_prompt)
+        .set_inputs(saq_input)
+        .set_outputs(gate_sota_output)
         .build())
 
     '''
@@ -129,15 +148,31 @@ if __name__ == "__main__":
     agent는 고정한 채로, 주입하는 qa_type만 바꿔서
     agent가 llm_mcq(전략1) 또는 rag_saq(전략2)로 동작하게 만들 수 있음.
     '''
-    llm_agent = LLM_agent(llm=llm, qa_type=qa_type_llm)
-    rag_agent = RAG_agent(llm=llm, qa_type=qa_type_rag, retriever=lex_retriever) 
-    iter_agent = IterRAG_agent(rag_agent=rag_agent, llm=llm, qa_type=qa_type_iter, max_iter=3)       
-    
-    #results = llm_agent.answer_all(json_merged)
-    results = rag_agent.answer_all(json_merged)
-    #results = iter_agent.answer_all(json_merged)
+    router_agent = LLM_agent(llm=qwen, qa_type=qa_router)
+    #qa_llm.set_outputs(llm_output) 
+    llm_agent = LLM_agent(llm=qwen, qa_type=qa_llm)
+    #qa_rag.set_outputs(rag_output)
+    rag_agent = RAG_agent(llm=qwen, qa_type=qa_rag, retriever=multi_retriever)
+    #qa_sota.set_outputs(llm_output) 
+    sota_agent = LLM_agent(llm=gpt, qa_type=qa_sota) 
+    gateway_agent = Gateway_agent(
+                Router_agent=router_agent,
+                LLM_agent=llm_agent,
+                RAG_agent=rag_agent,
+                SOTA_agent = sota_agent,
+                judge_lm=judge_lm,
+                know_thres=CFG_infer.know_thres,
+                relv_thre=CFG_infer.relv_thre,
+                faith_thre=CFG_infer.faith_thre   
+    )
 
-    output_path = Path("results/inferenced/qa_in_used.json")
+    #results = llm_agent.answer_all(json_merged)
+    #results = rag_agent.answer_all(json_merged)
+    #results = sota_agent.answer_all(json_merged)
+    results = gateway_agent.answer_all(json_merged)
+
+
+    output_path = Path(CFG_pth.infered_fpth)
     save_predictions_json(output_path, json_merged, results)
 
     print(f"[DONE] {output_path} (n={len(results)})")

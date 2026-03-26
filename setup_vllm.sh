@@ -1,11 +1,12 @@
 ########################## vLLM 실행 ######################################################
 # 터미널 초기화시 실행
+export PYTHONNOUSERSITE=1
 python -m vllm.entrypoints.openai.api_server \
   --host 127.0.0.1 \
   --port 8000 \
-  --model Qwen/Qwen2.5-3B-Instruct \
+  --model Qwen/Qwen2.5-7B-Instruct-GPTQ-Int8 \
   --max-model-len 28672 \
-  --gpu-memory-utilization 0.15 \
+  --gpu-memory-utilization 0.5 \
   --swap-space 32
 
 

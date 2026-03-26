@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from .base import BaseModel
 from .naive_rag import RAG_agent
 from src.infer.qa_type.base import QAtype
-from src.infer.qa_type.prompts import iter_rag_prompt
+from src.prompts.qa_type import iter_rag_prompt
 
 @dataclass
 class IterRAG_agent(BaseModel):
@@ -64,6 +64,3 @@ class IterRAG_agent(BaseModel):
         items.insert(2, ("original_question", ori_ques)) # original question을 3번째 키로 이동
         iter_output = dict(items)
         return iter_output
-
-    def answer_all(self, rag_inputs: list[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        return [self.answer_once(p) for p in rag_inputs]

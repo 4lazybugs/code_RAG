@@ -22,8 +22,9 @@ def _tokenize(text: str) -> list[str]:
 ############## 임베딩 래퍼 ##################################################
 class Embeddor(Embeddings):
     """SentenceTransformer 기반 임베딩 래퍼"""
-    def __init__(self, model_name: Optional[str] = None):
-        self.model = SentenceTransformer(model_name)
+    def __init__(self, model_name: Optional[str] = None, device: str = "cpu"):
+        self.model = SentenceTransformer(model_name, device=device)
+        #self.model = SentenceTransformer(model_name, device="gpu")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         return self.model.encode(texts, show_progress_bar=False, convert_to_numpy=True).tolist()

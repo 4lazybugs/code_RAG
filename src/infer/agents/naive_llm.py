@@ -1,4 +1,11 @@
 from dataclasses import dataclass, field
+from dataclasses import dataclass, field
+
+from typing import Any, Dict, Tuple, List
+from .base import BaseModel
+from src.infer.qa_type.base import QAtype
+
+from dataclasses import dataclass, field
 
 from typing import Any, Dict, Tuple, List
 from .base import BaseModel
@@ -15,12 +22,12 @@ class LLM_agent(BaseModel):
     #retriever: Any  <- retriever는 필요없음
     
     def __post_init__(self):
-        self.prompt = self.qa_type.prompt
-        self.chain = self.prompt | self.llm
+        self.qa_prompt = self.qa_type.prompt
+        self.chain = self.qa_prompt | self.llm
 
     def answer_once(self, raw_input: Dict[str, Any] = None) -> Tuple[str, str, str, str]:
         input_dic = self.qa_type.load_input(raw_input)
-        #breakpoint()
+        # quesion이 안쓰이지만 input_dic의 key값인 걸 알려주기 위해 적었음
         question = input_dic["question"]
 
         print(f"=============== Answering a question .... ================")
@@ -28,9 +35,6 @@ class LLM_agent(BaseModel):
         gen_ans = self.chain.invoke(input_dic).content
         #breakpoint()
         print("====== Answer generated! ===============")
-        output_dic = self.qa_type.load_output(input_dic, gen_ans)
+        output_dic = self.qa_type.load_output(raw_input, gen_ans)
 
         return output_dic
-
-    def answer_all(self, input_dics: list[Dict[str, Any]]) -> List[Tuple[str, str, str, str]]:
-        return [self.answer_once(p) for p in input_dics]

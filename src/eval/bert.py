@@ -4,7 +4,7 @@ from typing import Dict, Any
 
 import torch
 from bert_score import score as bert_score
-from .base import Evaluator, get_config
+from .base import Evaluator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -15,8 +15,9 @@ def _clean_for_bert(x: str, max_chars: int = 3000) -> str:
 
 
 class BERTEvaluator(Evaluator):
-    def __init__(self):
+    def __init__(self, bert_model_name):
         super().__init__()
+        self.bert_model_name = bert_model_name
 
     def score_once(self, data: Dict[str, Any]) -> float:
         reference = _clean_for_bert(self._normalize(self._get_field(data, "reference", "answer")))
@@ -33,7 +34,7 @@ class BERTEvaluator(Evaluator):
                 [generated],                  # ✅ list[str] 형태로 전달 권장
                 [reference],
                 lang="ko",
-                model_type=self.CFG.bert_model_name,
+                model_type=self.bert_model_name,
                 device=device,
                 batch_size=1,
                 rescale_with_baseline=False,

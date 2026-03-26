@@ -14,8 +14,8 @@ class RAG_agent(BaseModel):
     retriever: Any
     
     def __post_init__(self):
-        self.prompt = self.qa_type.prompt
-        self.chain = self.prompt | self.llm
+        self.qa_prompt = self.qa_type.prompt
+        self.chain = self.qa_prompt | self.llm
 
     def answer_once(self, raw_input: Dict[str, Any] = None) -> Tuple[str, str, str, str]:
         input_dic = self.qa_type.load_input(raw_input)
@@ -30,9 +30,6 @@ class RAG_agent(BaseModel):
         gen_ans = self.chain.invoke(input_dic).content
         #breakpoint()
         print("====== Answer generated! ===============") 
-        output_dic = self.qa_type.load_output(input_dic, gen_ans, retrieved)
+        output_dic = self.qa_type.load_output(raw_input, gen_ans, retrieved)
 
         return output_dic
-
-    def answer_all(self, input_dics: list[Dict[str, Any]]) -> List[Tuple[str, str, str, str]]:
-        return [self.answer_once(p) for p in input_dics]

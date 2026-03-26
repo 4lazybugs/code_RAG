@@ -10,21 +10,23 @@
 #model_name : 'llama3:70b'
 #model_name : 'LGAI-EXAONE/EXAONE-3.5-32B-Instruct' # 한국어 최적화 국산 모델
 #huggingface token : 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
-#model_name : 'mistralai/Mistral-Nemo-Instruct-2407' # 12b 로컬용
+#model_name : 'shuyuej/Mistral-Nemo-Instruct-2407-GPTQ-INT8' # 12b 로컬용
 #model_name : 'falcon:40b-instruct-q5_1' # 영어 최적화
-model_name: "Qwen/Qwen2.5-3B-Instruct"  # 다국어 지원, 성능 괜찮음
+#model_name: "Qwen/Qwen2.5-3B-Instruct"  # 다국어 지원, 성능 괜찮음
+model_name: 'Qwen/Qwen2.5-7B-Instruct-GPTQ-Int8'
 
 temperature: 0.0
 
-###################
-## 선택 arguments ##
-###################
-ndocs: 3
-max_new_tokens: 50
-threshold: 0.4
-w_rel: 1.0
-w_sup: 2.0
-w_use: 0.5
+
+###########################
+## Scorere LM 모델 설정 ####
+###########################
+judge_model : "flan-t5-large"
+judge_cache_dir : "./ckpts"
+know_thres: 0.9
+relv_thre: 0.4
+faith_thre: 0.4
+
 
 ####################
 ## Retriever ####

@@ -1,5 +1,7 @@
-import os
+import os, time
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
+from src.config import get_config, load_yaml
 
 # -*- coding: utf-8 -*-
 from pathlib import Path
@@ -41,36 +43,38 @@ class Params:
         self.data = self._load_data()
 
     def _load_data(self) -> list[dict]:
-        return json.loads(self.data_path.read_text(encoding="utf-8"))
+        data = json.loads(self.data_path.read_text(encoding="utf-8"))
+        return sorted(data, key=lambda x: x.get("id", 0))  # id 순서대로 정렬
 
     def get_param(self, key: str) -> list[Any]:
         return [record.get(key) for record in self.data]
 
 
 if __name__ == "__main__":
+    start_time = time.time()
+    CFG_eval = get_config("configs/config_eval.yaml")
+    CFG_pth = get_config("configs/config_path.yaml")
 
-    qa_path = Path("db/qa_data/test_saq/merged.json")
-    params_qa = Params(qa_path)
-    ref_docs = params_qa.get_param("ref_doc")
-
-    result_path = Path("results/inferenced/qa_in_used.json")
+    result_path = Path(CFG_pth.infered_fpth)
     params_res = Params(result_path)
     
+    ref_docs = params_res.get_param("ref_doc")
     ref = params_res.get_param("answer")
     ans = params_res.get_param("generated")
+
+    ids = params_res.get_param("id")
+    batch_res = [{"id": i, "reference": ref, "generated": gen}
+        for i, ref, gen in zip(ids, ref, ans)]
     retrieved = params_res.get_param("retrieved")
-    batch_res = [{"reference": ref, "generated": gen}
-        for ref, gen in zip(ref, ans)]
-    batch_retr = [{"ref_docs": doc, "gen_docs": retr}
-        for retr, doc in zip(retrieved, ref_docs)
-    ]
+    batch_retr = [{"id": i, "ref_docs": doc, "gen_docs": retr}
+        for i, retr, doc in zip(ids, retrieved, ref_docs)]
 
     em_eval = EMEvaluator()
     rouge1_eval = Rouge1Evaluator()
     rougeL_eval = RougeLEvaluator()
-    bert_eval = BERTEvaluator()
-    sbert_eval = SBERTEvaluator()
-    bleurt_eval = BleurtEvaluator()
+    bert_eval = BERTEvaluator(CFG_eval.bert_model_name)
+    sbert_eval = SBERTEvaluator(CFG_eval.sbert_model_name)
+    bleurt_eval = BleurtEvaluator(CFG_eval.bleurt_model_name)
     mrr_eval = MRREvaluator()
     recall_eval = RecallEvaluator()
 
@@ -86,7 +90,7 @@ if __name__ == "__main__":
     }
 
     save_eval_results(
-        save_dir=Path("results/eval_score"),
+        save_dir=Path(CFG_pth.eval_dir),
         results=results,
     )
 
@@ -95,3 +99,5 @@ if __name__ == "__main__":
         s = pd.Series(scores)
         print(f"\n[{metric}]  avg={s.mean():.4f}  std={s.std():.4f}")
         print(s.round(4).to_string())
+    
+    print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")

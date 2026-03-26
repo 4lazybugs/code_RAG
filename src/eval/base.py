@@ -6,16 +6,12 @@ from abc import ABC, abstractmethod
 from typing import Any
 from tqdm.auto import tqdm
 
-from src.config import load_yaml, get_config
-
 class Evaluator(ABC):
     """
     오프라인 평가용 베이스:
     - Runner/Repository가 references/generate/gen_docs/ref_docs를 이미 제공한다는 가정
     - 여기서는 compute_scores()만 강제한다
     """
-    def __init__(self):
-        self.CFG = get_config("configs/config_eval.yaml")
 
     @staticmethod # 객체(self)도 클래스(cls)도 필요 없는 함수
     def _normalize(text) -> str:

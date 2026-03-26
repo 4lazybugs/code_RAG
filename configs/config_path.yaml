@@ -1,0 +1,3 @@
+qa_dir: "db/qa_data/test_qa"
+infered_fpth: "results/inferenced/test2_rag.json"
+eval_dir: "results/eval_score/test2_rag"

@@ -2,14 +2,14 @@ from __future__ import annotations
 from typing import Dict, Any
 from sentence_transformers import util, SentenceTransformer
 import torch
-from .base import Evaluator, get_config
+from .base import Evaluator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 class SBERTEvaluator(Evaluator):
-    def __init__(self):
+    def __init__(self, sbert_model_name):
         super().__init__()
-        self.sbert_model = SentenceTransformer(self.CFG.sbert_model_name, device=device)
+        self.sbert_model = SentenceTransformer(sbert_model_name, device=device)
 
     def score_once(self, data: Dict[str, Any]) -> float:
         ref = self._normalize(self._get_field(data, "reference", "answer"))

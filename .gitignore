@@ -5,6 +5,8 @@
 *.pickle
 *.png
 
+ckpts/
+MiniCheck/
 __pycache__
 ssh-key
 

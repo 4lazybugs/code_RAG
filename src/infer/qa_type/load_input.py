@@ -12,13 +12,15 @@ def mcq_input(raw_input: Dict[str, Any]) -> Dict[str, str]:
         "id": raw_input["id"],
         "question": raw_input["question"],
         "answer": raw_input["answer"],
+        "ref_path": raw_input["ref_doc"],
         "options": _format_options(raw_input.get("options")),
     }
 
-def saq_input(raw_input: Dict[str, Any]) -> Dict[str, str]:
 
+def saq_input(raw_input: Dict[str, Any]) -> Dict[str, str]:
     return {
-        "id": raw_input["id"],
+        "id":       raw_input["id"],
         "question": raw_input["question"],
-        "answer": raw_input["answer"],
+        "answer":   raw_input.get("answer", ""),
+        "ref_doc":  raw_input.get("ref_doc", ""),
     }

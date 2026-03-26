@@ -57,7 +57,7 @@ konlpy>=0.6.0,<0.7.0
 # 4) Data / Utils
 ############################################################
 pandas>=2.2.0,<3.0.0
-numpy>=1.26.0,<2.0.0
+numpy==1.26.4
 tqdm>=4.66.0,<5.0.0
 jsonlines>=3.0.0,<4.0.0
 
@@ -79,7 +79,17 @@ tf-keras
 
 # 7) eval
 rouge_score
-git+https://github.com/google-research/bleurt.git #bleurt
+pip install https://github.com/google-research/bleurt.git #bleurt
 
 # 8) new: searching algorithm
-rank-bm25 kiwipiepy
+kiwipiepy
+rank_bm25
+
+
+git clone https://github.com/Liyan06/MiniCheck.git
+cd MiniCheck
+pip install -e .
+
+
+accelerate==0.33.0
+python -c "import nltk; nltk.download('punkt_tab')"

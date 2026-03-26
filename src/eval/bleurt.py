@@ -8,10 +8,9 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 class BleurtEvaluator(Evaluator):
 
-    def __init__(self):
+    def __init__(self, bleurt_model_name):
         super().__init__()  # self.CFG 로드
-        model_name = getattr(self.CFG, "bleurt_model_name", "bleurt-base-128")
-        self._bleurt = evaluate.load("bleurt", checkpoint=model_name)
+        self._bleurt = evaluate.load("bleurt", checkpoint=bleurt_model_name)
 
     def score_once(self, data: dict) -> float:
         ref = self._normalize(self._get_field(data, "reference", "answer")).strip()
