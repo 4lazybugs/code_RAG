@@ -79,14 +79,15 @@ def merge_json(json_dir: str | Path, save: bool = False) -> list[dict]:
 if __name__ == "__main__":
     start_time = time.time()
     load_dotenv()
+    CFG_emb = get_config("configs/config_emb.yaml")
     CFG_infer = get_config("configs/config_infer.yaml")
     CFG_pth = get_config("configs/config_path.yaml")
 
     vec_root = Path("db/vector_db")
     ## retrievers    
-    emb = Embeddor(CFG_infer.embedor_model_name)
+    emb = Embeddor(CFG_emb.embedor_model_name)
     retriever_list = build_retrievers(vec_root=vec_root, emb=emb)
-    multi_retriever = Multi_Retriever(retrievers=retriever_list, k_each=3, top_k=5)
+    multi_retriever = Multi_Retriever(retrievers=retriever_list, k_each=5, top_k=2)
     bm25_list = build_bm25s(vec_root=vec_root, k_each=4)
     lex_retriever = Multi_BM25s(retrievers=bm25_list, top_k=5)
 
@@ -104,11 +105,11 @@ if __name__ == "__main__":
          api_key="EMPTY",
     )
     gpt = ChatOpenAI(
-            model="gpt-4o-mini",
+            model="gpt-4o",
             temperature=0.7,
     )
     # MiniCheck는 주어진 문서(context)가 특정 문장(claim 또는 answer)을
-    # 실제로 근거로 뒷받침하는지를 판단하는 LLM 기반 검증 모델
+    # 실제로 근거로 뒷받침하는지를 판단하는 LM 검증 모델
     judge_lm = MiniCheck(
             model_name=CFG_infer.judge_model,
             cache_dir=CFG_infer.judge_cache_dir,
@@ -151,7 +152,7 @@ if __name__ == "__main__":
     router_agent = LLM_agent(llm=qwen, qa_type=qa_router)
     #qa_llm.set_outputs(llm_output) 
     llm_agent = LLM_agent(llm=qwen, qa_type=qa_llm)
-    #qa_rag.set_outputs(rag_output)
+    qa_rag.set_outputs(rag_output)
     rag_agent = RAG_agent(llm=qwen, qa_type=qa_rag, retriever=multi_retriever)
     #qa_sota.set_outputs(llm_output) 
     sota_agent = LLM_agent(llm=gpt, qa_type=qa_sota) 
@@ -167,9 +168,9 @@ if __name__ == "__main__":
     )
 
     #results = llm_agent.answer_all(json_merged)
-    #results = rag_agent.answer_all(json_merged)
+    results = rag_agent.answer_all(json_merged)
     #results = sota_agent.answer_all(json_merged)
-    results = gateway_agent.answer_all(json_merged)
+    #results = gateway_agent.answer_all(json_merged)
 
 
     output_path = Path(CFG_pth.infered_fpth)

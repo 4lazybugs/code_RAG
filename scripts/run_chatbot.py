@@ -15,7 +15,8 @@ from src.infer.qa_type.load_output import router_output, gate_llm_output, gate_r
 
 if __name__ == "__main__":
     load_dotenv()
-    CFG = get_config("configs/config_infer.yaml")
+    CFG_infer = get_config("configs/config_infer.yaml")
+    CFG_emb = get_config("configs/config_emb.yaml")
 
     ## LM
     qwen = ChatOpenAI(
@@ -27,10 +28,10 @@ if __name__ == "__main__":
     gpt = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
     # MiniCheck는 주어진 문서(context)가 특정 문장(claim 또는 answer)을
     # 실제로 근거로 뒷받침하는지를 판단하는 LLM 기반 검증 모델
-    judge_lm = MiniCheck(model_name=CFG.judge_model, cache_dir=CFG.judge_cache_dir)
+    judge_lm = MiniCheck(model_name=CFG_infer.judge_model, cache_dir=CFG_infer.judge_cache_dir)
 
     ## retrievers
-    emb = Embeddor(CFG.embedor_model_name)
+    emb = Embeddor(CFG_emb.embedor_model_name)
     retriever_list = build_retrievers(vec_root=Path("db/vector_db"), emb=emb)
     multi_retriever = Multi_Retriever(retrievers=retriever_list, k_each=3, top_k=5)
 
