@@ -1,31 +1,33 @@
 # conda create -n rag_env python=3.10 -y
 
 ############################################################
-# PyTorch (CUDA 12.1) - torch 2.4.0에 맞춰 고정
-# 설치 시 아래 명령을 권장:
-#   pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu121
+### 0) Core Environment (PyTorch / CUDA 12.1)
+# 설치 시 아래 명령 권장:
+# pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu121
 ############################################################
 torch==2.4.0
 torchvision==0.19.0
 torchaudio==2.4.0
 
+
 ############################################################
-# 1) HuggingFace / SBERT
+### 1) HuggingFace / SBERT / Model Utilities
 ############################################################
 transformers>=4.45.0,<5.0.0
 sentence-transformers>=3.1.0,<4.0.0
 
 # PaddleOCR 쪽에서 safetensors 0.6.x가 필요한 경우가 있어 상한을 완화
-# (기존 <0.5.0이면 PaddleOCR-VL/일부 파이프라인에서 충돌 가능)  :contentReference[oaicite:1]{index=1}
+# (기존 <0.5.0이면 PaddleOCR-VL/일부 파이프라인에서 충돌 가능)
 safetensors>=0.6.2,<0.7.0
 
-accelerate>=0.34.0,<0.35.0
 huggingface-hub>=0.24.0,<0.30.0
 sentencepiece>=0.1.99,<0.2.0
 sacrebleu
+accelerate==0.33.0
+
 
 ############################################################
-# 2) LangChain / RAG (1.x 라인으로 통일)
+### 2) LangChain / RAG Framework (1.x)
 ############################################################
 langchain>=1.2.0,<2.0.0
 langchain-openai>=1.1.4,<2.0.0
@@ -37,32 +39,42 @@ langchain-google-genai>=4.0.0,<5.0.0
 langchain-community>=0.3.0,<1.0.0
 
 # chromadb 주석과 실제 버전 조건이 상충되어 있어(0.5.x 유지 vs 1.3.5~)
-# 일단 사용 중이신 조건을 존중해 1.x 유지로 둠
+# 일단 사용 중인 조건을 존중해 1.x 유지로 둠
 chromadb>=1.3.5,<2.0.0
 
+
 ############################################################
-# 2-1) vLLM
+### 3) High-Performance Inference
 ############################################################
 vllm==0.5.5
 
+
 ############################################################
-# 3) NLP Metrics & Utils
+### 4) Evaluation / NLP Metrics
 ############################################################
 bert-score>=0.3.13,<0.4.0
 evaluate>=0.4.3,<0.5.0
-rouge-score>=0.1.2,<0.2.0
-konlpy>=0.6.0,<0.7.0
+
 
 ############################################################
-# 4) Data / Utils
+### 5) Korean NLP / Search Algorithms
+############################################################
+konlpy>=0.6.0,<0.7.0
+kiwipiepy
+rank_bm25
+
+
+############################################################
+### 6) Data Processing / Utilities
 ############################################################
 pandas>=2.2.0,<3.0.0
 numpy==1.26.4
 tqdm>=4.66.0,<5.0.0
 jsonlines>=3.0.0,<4.0.0
 
+
 ############################################################
-# 5) PDF / Parsing / DB
+### 7) PDF / Parsing / DB / API
 ############################################################
 PyMuPDF>=1.24.0,<1.30.0
 PyPDF2>=3.0.0,<4.0.0
@@ -71,25 +83,8 @@ openai>=1.0.0,<2.0.0
 pydantic>=2.0.0,<3.0.0
 openpyxl
 
+
 ############################################################
-# 6) Tensor/Keras
+### 8) TensorFlow / Keras Compatibility
 ############################################################
 tf-keras
-
-
-# 7) eval
-rouge_score
-pip install https://github.com/google-research/bleurt.git #bleurt
-
-# 8) new: searching algorithm
-kiwipiepy
-rank_bm25
-
-
-pip install git+https://github.com/Liyan06/MiniCheck.git
-cd MiniCheck
-pip install -e .
-
-
-accelerate==0.33.0
-python -c "import nltk; nltk.download('punkt_tab')"

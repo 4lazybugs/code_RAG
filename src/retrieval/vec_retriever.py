@@ -3,9 +3,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
-import argparse
-import yaml
-import os
 import chromadb
 
 from langchain_core.retrievers import BaseRetriever
@@ -99,7 +96,7 @@ class Multi_Retriever(BaseRetriever):
 # main usage
 # -------------------------
 if __name__ == "__main__":
-    CFG = get_config("configs/config_vec.yaml")
+    CFG = get_config("configs/config_emb.yaml")
     emb = Embeddor(CFG.embedor_model_name)
 
     pth = Path("/home/jwkim/[code]생성형과제_server/db/vector_db")

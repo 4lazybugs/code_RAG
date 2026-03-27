@@ -4,7 +4,7 @@ from __future__ import annotations
 import chromadb
 import pickle
 from pathlib import Path
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List
 
 from langchain_chroma import Chroma
 from langchain_community.retrievers import BM25Retriever

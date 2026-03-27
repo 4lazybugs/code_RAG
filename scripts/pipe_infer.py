@@ -152,9 +152,9 @@ if __name__ == "__main__":
     router_agent = LLM_agent(llm=qwen, qa_type=qa_router)
     #qa_llm.set_outputs(llm_output) 
     llm_agent = LLM_agent(llm=qwen, qa_type=qa_llm)
-    qa_rag.set_outputs(rag_output)
+    #qa_rag.set_outputs(rag_output)
     rag_agent = RAG_agent(llm=qwen, qa_type=qa_rag, retriever=multi_retriever)
-    #qa_sota.set_outputs(llm_output) 
+    qa_sota.set_outputs(llm_output) 
     sota_agent = LLM_agent(llm=gpt, qa_type=qa_sota) 
     gateway_agent = Gateway_agent(
                 Router_agent=router_agent,
@@ -168,8 +168,8 @@ if __name__ == "__main__":
     )
 
     #results = llm_agent.answer_all(json_merged)
-    results = rag_agent.answer_all(json_merged)
-    #results = sota_agent.answer_all(json_merged)
+    #results = rag_agent.answer_all(json_merged)
+    results = sota_agent.answer_all(json_merged)
     #results = gateway_agent.answer_all(json_merged)
 
 
