@@ -3,6 +3,9 @@ from .base import Evaluator
 
 class RecallEvaluator(Evaluator):
 
+    def __init__(self):
+        self.metric_key = "Recall"
+
     @staticmethod
     def _canon(name: str) -> str:
         return (name or "").strip()

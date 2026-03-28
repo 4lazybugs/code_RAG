@@ -7,6 +7,7 @@ class EMEvaluator(Evaluator):
     def __init__(self, remove_spaces: bool = True):
         super().__init__()
         self.remove_spaces = remove_spaces
+        self.metric_key = "EM"
 
     def _prep(self, x: Any) -> str:
         s = self._normalize(x)

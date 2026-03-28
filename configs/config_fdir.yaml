@@ -1,4 +1,4 @@
-qa_dir: "db/qa_data/test"
-infered_dir: "results/inferenced/test_book"
-eval_dir: "results/eval_score/test_book_rag"
+qa_dir: "db/qa_data/qa_in_use/book"
+infered_dir: "results/inferenced/book"
+eval_dir: "results/eval_score/book"
 

@@ -10,6 +10,7 @@ class SBERTEvaluator(Evaluator):
     def __init__(self, sbert_model_name):
         super().__init__()
         self.sbert_model = SentenceTransformer(sbert_model_name, device=device)
+        self.metric_key = "SBERT"
 
     def score_once(self, data: Dict[str, Any]) -> float:
         ref = self._normalize(self._get_field(data, "reference", "answer"))

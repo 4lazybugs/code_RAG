@@ -3,6 +3,9 @@ from .base import Evaluator
 
 class MRREvaluator(Evaluator):
 
+    def __init__(self):
+        self.metric_key = "MRR"
+
     @staticmethod
     def _canon(name: str) -> str:
         return (name or "").strip()

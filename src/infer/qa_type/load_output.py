@@ -8,6 +8,7 @@ def llm_output(input_dic, gen_ans) -> Dict[str, Any]:
         "question": input_dic["question"],
         "generated": gen_ans,
         "answer": input_dic["answer"],
+        "agent": "naive_llm",
         "ref_doc": input_dic.get("ref_doc", ""),
     }
 
@@ -19,6 +20,7 @@ def rag_output(input_dic, gen_ans, retrieved) -> Dict[str, Any]:
         "question": input_dic["question"],
         "generated": gen_ans,
         "answer": input_dic["answer"],
+        "agent": "rag",
         "ref_doc": input_dic.get("ref_doc", ""),
         "retrieved": [
             {
@@ -111,6 +113,16 @@ def gate_sota_output(input_dic, gen_ans) -> Dict[str, Any]:
         "ref_doc": input_dic.get("ref_doc", "")
     }
 
+def sota_output(input_dic, gen_ans) -> Dict[str, Any]:
+    #breakpoint()
+    return {
+        "id": input_dic["id"],
+        "question": input_dic["question"],
+        "generated": gen_ans,
+        "answer": input_dic["answer"],
+        "agent": "sota",
+        "ref_doc": input_dic.get("ref_doc", "")
+    }
 
 def iter_output(rag_out: Dict[str, Any], iter_result) -> Dict[str, Any]:
     iter_result = json.loads(iter_result.content)[0]

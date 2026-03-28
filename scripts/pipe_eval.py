@@ -55,45 +55,48 @@ if __name__ == "__main__":
     CFG_eval = get_config("configs/config_eval.yaml")
     CFG_fdir = get_config("configs/config_fdir.yaml")
 
+    # evaluator 초기화
+    em_eval     = EMEvaluator()
+    rouge1_eval = Rouge1Evaluator(CFG_eval.tokenizer_name)
+    rougeL_eval = RougeLEvaluator(CFG_eval.tokenizer_name)
+    bert_eval   = BERTEvaluator(CFG_eval.bert_model_name, CFG_eval.bert_num_layers)
+    sbert_eval  = SBERTEvaluator(CFG_eval.sbert_model_name)
+    bleurt_eval = BleurtEvaluator(CFG_eval.bleurt_model_name)
+    mrr_eval    = MRREvaluator()
+    recall_eval = RecallEvaluator()
+
     json_files = list(Path(CFG_fdir.infered_dir).rglob("*.json"))
     print(f"Found {len(json_files)} files in {CFG_fdir.infered_dir}")
 
     for result_path in json_files:
         print(f"\n Processing: {result_path}")
         params_res = Params(result_path)
-        
-        ref_docs = params_res.get_param("ref_doc")
-        ref = params_res.get_param("answer")
-        ans = params_res.get_param("generated")
 
-        ids = params_res.get_param("id")
-        batch_res = [{"id": i, "reference": ref, "generated": gen}
-            for i, ref, gen in zip(ids, ref, ans)]
+        ref_docs  = params_res.get_param("ref_doc")
+        ref       = params_res.get_param("answer")
+        ans       = params_res.get_param("generated")
+        ids       = params_res.get_param("id")
         retrieved = params_res.get_param("retrieved")
+
+        batch_res  = [{"id": i, "reference": r, "generated": g}
+                      for i, r, g in zip(ids, ref, ans)]
         batch_retr = [{"id": i, "ref_docs": doc, "gen_docs": retr}
-            for i, retr, doc in zip(ids, retrieved, ref_docs)]
+                      for i, retr, doc in zip(ids, retrieved, ref_docs)]
 
-        em_eval = EMEvaluator()
-        rouge1_eval = Rouge1Evaluator(CFG_eval.tokenizer_name)
-        rougeL_eval = RougeLEvaluator(CFG_eval.tokenizer_name)
-        bert_eval = BERTEvaluator(CFG_eval.bert_model_name, CFG_eval.bert_num_layers)
-        sbert_eval = SBERTEvaluator(CFG_eval.sbert_model_name)
-        bleurt_eval = BleurtEvaluator(CFG_eval.bleurt_model_name)
-        mrr_eval = MRREvaluator()
-        recall_eval = RecallEvaluator()
-
-        results = {
-            "recall": (batch_retr, recall_eval.score_all(batch_retr)),
-            "mrr":    (batch_retr, mrr_eval.score_all(batch_retr)),
-            "bert":   (batch_res,  bert_eval.score_all(batch_res)),
-            "sbert":  (batch_res,  sbert_eval.score_all(batch_res)),
-            "rouge1": (batch_res,  rouge1_eval.score_all(batch_res)),
-            "rougeL": (batch_res,  rougeL_eval.score_all(batch_res)),
-            "em":     (batch_res,  em_eval.score_all(batch_res)),
-        }
+        results = {}
+        for metric_name, (batch, evaluator) in [
+            ("recall", (batch_retr, recall_eval)),
+            ("mrr",    (batch_retr, mrr_eval)),
+            ("bert",   (batch_res,  bert_eval)),
+            ("sbert",  (batch_res,  sbert_eval)),
+            ("rouge1", (batch_res,  rouge1_eval)),
+            ("rougeL", (batch_res,  rougeL_eval)),
+            ("em",     (batch_res,  em_eval)),
+        ]:
+            results[metric_name] = (batch, evaluator.score_all(batch))
 
         save_eval_results(
-            save_dir=Path(CFG_pth.eval_dir) / result_path.stem,  # 파일명으로 구분
+            save_dir=Path(CFG_fdir.eval_dir) / result_path.stem,
             results=results,
         )
 
@@ -102,4 +105,4 @@ if __name__ == "__main__":
             print(f"  [{metric}]  avg={s.mean():.4f}  std={s.std():.4f}")
 
     print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")
-    print(f"result in {CFG_pth.eval_dir}")
+    print(f"result in {CFG_fdir.eval_dir}")

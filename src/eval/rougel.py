@@ -34,6 +34,7 @@ class RougeLEvaluator(Evaluator):
     def __init__(self, tokenizer_name: str):
         super().__init__()  
         self._tokenize = get_tokenizer(tokenizer_name)
+        self.metric_key = "ROUGE-L"
 
     def score_once(self, data: Dict[str, Any]) -> float:
         ref_text = self._normalize(self._get_field(data, "reference", "answer"))

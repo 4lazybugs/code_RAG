@@ -19,6 +19,7 @@ class BERTEvaluator(Evaluator):
         super().__init__()
         self.bert_model_name = bert_model_name
         self.num_layers = num_layer
+        self.metric_key = "BERT"
 
     def score_once(self, data: Dict[str, Any]) -> float:
         reference = _clean_for_bert(self._normalize(self._get_field(data, "reference", "answer")))

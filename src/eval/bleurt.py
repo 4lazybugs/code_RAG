@@ -11,6 +11,7 @@ class BleurtEvaluator(Evaluator):
     def __init__(self, bleurt_model_name):
         super().__init__()  # self.CFG 로드
         self._bleurt = evaluate.load("bleurt", checkpoint=bleurt_model_name)
+        self.metric_key = "BLEURT"
 
     def score_once(self, data: dict) -> float:
         ref = self._normalize(self._get_field(data, "reference", "answer")).strip()

@@ -26,7 +26,7 @@ from src.infer.qa_type.base import QAtype
 # qa_input
 from src.infer.qa_type.load_input import mcq_input, saq_input
 # qa_output
-from src.infer.qa_type.load_output import llm_output, rag_output, iter_output
+from src.infer.qa_type.load_output import llm_output, rag_output, sota_output, iter_output
 from src.infer.qa_type.load_output import router_output, gate_llm_output, gate_rag_output, gate_sota_output
 
 
@@ -56,6 +56,7 @@ def save_predictions_json(out_path: Path, inputs, results):
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False, indent=2)
     print(f"[DONE] {out_path} (n={len(results)})")
+
 
 ## qa json 하나로 합치고 저장하는 함수
 def merge_json(json_dir: str | Path, save: bool = False) -> list[dict]:
@@ -100,9 +101,10 @@ if __name__ == "__main__":
     for i, q_id_dict in enumerate(json_merged):
         q_id_dict["id"] = i
 
-    # 일단 300개만 하기
-    if len(json_merged)>10:
-         json_merged = json_merged[:10] 
+    # 일단 n개만 하기
+    n=100000
+    if len(json_merged)>n:
+         json_merged = json_merged[:n] 
 
     ## load LM(Language Model)
     qwen = ChatOpenAI(
@@ -179,25 +181,25 @@ if __name__ == "__main__":
     ) 
 
     '''
-    <Outputs>
+    <Outputs & Save>
     '''
     results = gateway_agent.answer_all(json_merged)
-    output_path = Path(f"{CFG_pth.infered_dir}_gateway.json")
+    output_path = Path(f"{CFG_fdir.infered_dir}/gateway.json")
     save_predictions_json(output_path, json_merged, results)
 
     qa_llm.set_outputs(llm_output)
     results = llm_agent.answer_all(json_merged)
-    output_path = Path(f"{CFG_pth.infered_dir}_llm.json")
+    output_path = Path(f"{CFG_fdir.infered_dir}/llm.json")
     save_predictions_json(output_path, json_merged, results)
 
     qa_rag.set_outputs(rag_output)
     results = rag_agent.answer_all(json_merged)
-    output_path = Path(f"{CFG_pth.infered_dir}_rag.json")
+    output_path = Path(f"{CFG_fdir.infered_dir}/rag.json")
     save_predictions_json(output_path, json_merged, results)
 
-    qa_sota.set_outputs(llm_output) 
+    qa_sota.set_outputs(sota_output) 
     results = sota_agent.answer_all(json_merged)
-    output_path = Path(f"{CFG_pth.infered_dir}_sota.json")
+    output_path = Path(f"{CFG_fdir.infered_dir}/sota.json")
     save_predictions_json(output_path, json_merged, results)
 
     print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")

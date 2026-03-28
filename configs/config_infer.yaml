@@ -1,20 +1,21 @@
 ####################
 ## LLM 모델 설정 ####
 ###################
-#model_name: "$MODEL_DIR" # local huggingface model directory, selfrag/llama2_7b를 환경변수로 저장하였음
 #model_name: "yi:34b-chat"
+
+#model_name: "Qwen/Qwen2.5-3B-Instruct"  # 다국어 지원, 성능 괜찮음
+#model_name: 'Qwen/Qwen2.5-7B-Instruct-GPTQ-Int8'
 #model_name : "Qwen/Qwen2.5-14B-Instruct"
 #model_name : "Qwen/Qwen2.5-32B-Instruct"
 model_name: Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8
-#model_name : "gpt-4o-mini"
-#model_name : "qwen2.5:72b-instruct"
+
 #model_name : 'llama3:70b'
+
 #model_name : 'LGAI-EXAONE/EXAONE-3.5-32B-Instruct' # 한국어 최적화 국산 모델
-#huggingface token : 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
+
 #model_name : 'shuyuej/Mistral-Nemo-Instruct-2407-GPTQ-INT8' # 12b 로컬용
+
 #model_name : 'falcon:40b-instruct-q5_1' # 영어 최적화
-#model_name: "Qwen/Qwen2.5-3B-Instruct"  # 다국어 지원, 성능 괜찮음
-#model_name: 'Qwen/Qwen2.5-7B-Instruct-GPTQ-Int8'
 
 
 ###########################
