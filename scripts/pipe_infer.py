@@ -13,13 +13,14 @@ from minicheck.minicheck import MiniCheck
 from src.config import get_config, load_yaml
 
 # agents
-from src.infer.agents import LLM_agent, RAG_agent, Gateway_agent, IterRAG_agent
+from src.infer.agents import LLM_agent, RAG_agent, Judge_LM, Gateway_agent, IterRAG_agent
 
 # retrievals
 from src.retrieval import build_retrievers, Multi_Retriever, build_bm25s, Multi_BM25s, Embeddor
 
 # prompts
-from src.prompts.qa_type import saq_rag_prompt, saq_llm_prompt, iter_rag_prompt, logprob_prompt
+from src.prompts.qa_type import saq_llm_prompt, saq_rag_prompt, iter_rag_prompt, logprob_prompt # kor
+from src.prompts.qa_type import saq_llm_prompt_eng, saq_rag_prompt_eng, logprob_prompt_eng # eng
 
 from src.infer.qa_type.base import QAtype
 # qa_input
@@ -54,6 +55,7 @@ def save_predictions_json(out_path: Path, inputs, results):
 
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False, indent=2)
+    print(f"[DONE] {out_path} (n={len(results)})")
 
 ## qa json 하나로 합치고 저장하는 함수
 def merge_json(json_dir: str | Path, save: bool = False) -> list[dict]:
@@ -69,7 +71,8 @@ def merge_json(json_dir: str | Path, save: bool = False) -> list[dict]:
         q_id_dict["id"] = i
 
     if save:
-        output_path = json_dir / "merged.json"
+        output_path = Path(f"{json_dir}_merged") / "qa_merged.json"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         with output_path.open("w", encoding="utf-8") as f:
             json.dump(items, f, ensure_ascii=False, indent=2)
 
@@ -81,7 +84,7 @@ if __name__ == "__main__":
     load_dotenv()
     CFG_emb = get_config("configs/config_emb.yaml")
     CFG_infer = get_config("configs/config_infer.yaml")
-    CFG_pth = get_config("configs/config_path.yaml")
+    CFG_fdir = get_config("configs/config_fdir.yaml")
 
     vec_root = Path("db/vector_db")
     ## retrievers    
@@ -92,10 +95,14 @@ if __name__ == "__main__":
     lex_retriever = Multi_BM25s(retrievers=bm25_list, top_k=5)
 
     # load QA
-    qa_dir = Path(CFG_pth.qa_dir) # json이 들어있는 디렉터리
-    json_merged = merge_json(qa_dir, save=False)
+    qa_dir = Path(CFG_fdir.qa_dir) # json이 들어있는 디렉터리
+    json_merged = merge_json(qa_dir, save=True)
     for i, q_id_dict in enumerate(json_merged):
         q_id_dict["id"] = i
+
+    # 일단 300개만 하기
+    if len(json_merged)>10:
+         json_merged = json_merged[:10] 
 
     ## load LM(Language Model)
     qwen = ChatOpenAI(
@@ -108,11 +115,10 @@ if __name__ == "__main__":
             model="gpt-4o",
             temperature=0.7,
     )
-    # MiniCheck는 주어진 문서(context)가 특정 문장(claim 또는 answer)을
-    # 실제로 근거로 뒷받침하는지를 판단하는 LM 검증 모델
-    judge_lm = MiniCheck(
-            model_name=CFG_infer.judge_model,
-            cache_dir=CFG_infer.judge_cache_dir,
+    # 주어진 문서(context)가 특정 문장(claim 또는 answer)을 근거로 뒷받침하는지를 판단하는 LM
+    judge_lm = Judge_LM(
+        model_name=CFG_infer.judge_model,
+        cache_dir=CFG_infer.judge_cache_dir
     )
 
     '''
@@ -149,13 +155,18 @@ if __name__ == "__main__":
     agent는 고정한 채로, 주입하는 qa_type만 바꿔서
     agent가 llm_mcq(전략1) 또는 rag_saq(전략2)로 동작하게 만들 수 있음.
     '''
+    #qa_router.set_prompt(logprob_prompt_eng)
     router_agent = LLM_agent(llm=qwen, qa_type=qa_router)
-    #qa_llm.set_outputs(llm_output) 
+
+    #qa_llm.set_prompt(saq_llm_prompt_eng) 
     llm_agent = LLM_agent(llm=qwen, qa_type=qa_llm)
-    #qa_rag.set_outputs(rag_output)
+
+    #qa_rag.set_prompt(saq_rag_prompt_eng)
     rag_agent = RAG_agent(llm=qwen, qa_type=qa_rag, retriever=multi_retriever)
-    qa_sota.set_outputs(llm_output) 
-    sota_agent = LLM_agent(llm=gpt, qa_type=qa_sota) 
+
+    #qa_sota.set_prompt(saq_llm_prompt_eng)
+    sota_agent = LLM_agent(llm=gpt, qa_type=qa_sota)
+
     gateway_agent = Gateway_agent(
                 Router_agent=router_agent,
                 LLM_agent=llm_agent,
@@ -165,16 +176,28 @@ if __name__ == "__main__":
                 know_thres=CFG_infer.know_thres,
                 relv_thre=CFG_infer.relv_thre,
                 faith_thre=CFG_infer.faith_thre   
-    )
+    ) 
 
-    #results = llm_agent.answer_all(json_merged)
-    #results = rag_agent.answer_all(json_merged)
-    results = sota_agent.answer_all(json_merged)
-    #results = gateway_agent.answer_all(json_merged)
-
-
-    output_path = Path(CFG_pth.infered_fpth)
+    '''
+    <Outputs>
+    '''
+    results = gateway_agent.answer_all(json_merged)
+    output_path = Path(f"{CFG_pth.infered_dir}_gateway.json")
     save_predictions_json(output_path, json_merged, results)
 
-    print(f"[DONE] {output_path} (n={len(results)})")
+    qa_llm.set_outputs(llm_output)
+    results = llm_agent.answer_all(json_merged)
+    output_path = Path(f"{CFG_pth.infered_dir}_llm.json")
+    save_predictions_json(output_path, json_merged, results)
+
+    qa_rag.set_outputs(rag_output)
+    results = rag_agent.answer_all(json_merged)
+    output_path = Path(f"{CFG_pth.infered_dir}_rag.json")
+    save_predictions_json(output_path, json_merged, results)
+
+    qa_sota.set_outputs(llm_output) 
+    results = sota_agent.answer_all(json_merged)
+    output_path = Path(f"{CFG_pth.infered_dir}_sota.json")
+    save_predictions_json(output_path, json_merged, results)
+
     print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")

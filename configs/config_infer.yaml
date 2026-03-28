@@ -20,7 +20,8 @@ model_name: Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8
 ###########################
 ## Scorere LM 모델 설정 ####
 ###########################
-judge_model : "flan-t5-large"
+#judge_model : "flan-t5-large" 
+judge_model: "Qwen/Qwen2.5-1.5B-Instruct"
 judge_cache_dir : "./ckpts"
 know_thres: 0.9
 relv_thre: 0.4

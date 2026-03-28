@@ -44,6 +44,40 @@ hotpot_short_prompt = ChatPromptTemplate.from_template(
 """
 )
 
+logprob_prompt_eng = ChatPromptTemplate.from_template(
+"""
+You are a tool that determines whether you know the answer to a given question or not.
+Based on the question, output a single number between 0 and 1 representing the probability that you know the answer.
+
+[Rules]
+- You must output only a single decimal number between 0 and 1.
+- A value closer to 1 means you are very confident you know the answer.
+- A value closer to 0 means you do not know the answer at all.
+- Do not output any explanation, reasoning, or additional text.
+
+[Examples]
+Question: What is the capital of South Korea?
+Answer: 0.99
+
+Question: Who won the Nobel Prize in Physics in 2024?
+Answer: 0.45
+
+Question: Who was the 22nd king of the Joseon dynasty?
+Answer: 0.85
+
+Question: What is the optimal reproductive temperature of strawberry root rot nematodes?
+Answer: 0.10
+
+Question: What function is used to sort a list in Python?
+Answer: 0.98
+
+[Actual Question]
+Question: {question}
+Answer:
+"""
+)
+
+
 logprob_prompt = ChatPromptTemplate.from_template(
 """
 당신은 주어진 질문에 대해 자신이 알고 있는지 모르는지를 판단하는 도구입니다.
@@ -124,6 +158,15 @@ mcq_rag_prompt = ChatPromptTemplate.from_template("""
 {options}
 """)
 
+saq_llm_prompt_eng = ChatPromptTemplate.from_template("""
+You are an agricultural expert. Answer the following question clearly and concisely.
+
+Provide a direct answer based on your knowledge.
+
+[Question]
+{question}
+""")
+
 saq_llm_prompt = ChatPromptTemplate.from_template("""
 당신은 농업 전문가다. 질문에 답하라.
 
@@ -139,6 +182,19 @@ saq_llm_prompt = ChatPromptTemplate.from_template("""
 [질문]
 {question}
 """)
+
+saq_rag_prompt_eng = ChatPromptTemplate.from_template("""
+You are an agricultural expert. Answer the question based on the provided reference materials.
+
+Use the given context as the primary source for your answer. If the information is not available in the context, you may respond accordingly.
+
+[Reference]
+{context}
+
+[Question]
+{question}
+""")
+
 
 saq_rag_prompt = ChatPromptTemplate.from_template("""
 당신은 농업 전문가다. 자료를 근거로 질문에 답하라.

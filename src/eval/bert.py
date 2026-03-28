@@ -15,9 +15,10 @@ def _clean_for_bert(x: str, max_chars: int = 3000) -> str:
 
 
 class BERTEvaluator(Evaluator):
-    def __init__(self, bert_model_name):
+    def __init__(self, bert_model_name, num_layer):
         super().__init__()
         self.bert_model_name = bert_model_name
+        self.num_layers = num_layer
 
     def score_once(self, data: Dict[str, Any]) -> float:
         reference = _clean_for_bert(self._normalize(self._get_field(data, "reference", "answer")))
@@ -35,6 +36,7 @@ class BERTEvaluator(Evaluator):
                 [reference],
                 lang="ko",
                 model_type=self.bert_model_name,
+                num_layers=self.num_layers,   # 추가
                 device=device,
                 batch_size=1,
                 rescale_with_baseline=False,

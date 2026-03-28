@@ -53,51 +53,53 @@ class Params:
 if __name__ == "__main__":
     start_time = time.time()
     CFG_eval = get_config("configs/config_eval.yaml")
-    CFG_pth = get_config("configs/config_path.yaml")
+    CFG_fdir = get_config("configs/config_fdir.yaml")
 
-    result_path = Path(CFG_pth.infered_fpth)
-    params_res = Params(result_path)
-    
-    ref_docs = params_res.get_param("ref_doc")
-    ref = params_res.get_param("answer")
-    ans = params_res.get_param("generated")
+    json_files = list(Path(CFG_fdir.infered_dir).rglob("*.json"))
+    print(f"Found {len(json_files)} files in {CFG_fdir.infered_dir}")
 
-    ids = params_res.get_param("id")
-    batch_res = [{"id": i, "reference": ref, "generated": gen}
-        for i, ref, gen in zip(ids, ref, ans)]
-    retrieved = params_res.get_param("retrieved")
-    batch_retr = [{"id": i, "ref_docs": doc, "gen_docs": retr}
-        for i, retr, doc in zip(ids, retrieved, ref_docs)]
+    for result_path in json_files:
+        print(f"\n Processing: {result_path}")
+        params_res = Params(result_path)
+        
+        ref_docs = params_res.get_param("ref_doc")
+        ref = params_res.get_param("answer")
+        ans = params_res.get_param("generated")
 
-    em_eval = EMEvaluator()
-    rouge1_eval = Rouge1Evaluator()
-    rougeL_eval = RougeLEvaluator()
-    bert_eval = BERTEvaluator(CFG_eval.bert_model_name)
-    sbert_eval = SBERTEvaluator(CFG_eval.sbert_model_name)
-    bleurt_eval = BleurtEvaluator(CFG_eval.bleurt_model_name)
-    mrr_eval = MRREvaluator()
-    recall_eval = RecallEvaluator()
+        ids = params_res.get_param("id")
+        batch_res = [{"id": i, "reference": ref, "generated": gen}
+            for i, ref, gen in zip(ids, ref, ans)]
+        retrieved = params_res.get_param("retrieved")
+        batch_retr = [{"id": i, "ref_docs": doc, "gen_docs": retr}
+            for i, retr, doc in zip(ids, retrieved, ref_docs)]
 
-    results={
-        "recall": (batch_retr, recall_eval.score_all(batch_retr)),
-        "mrr":    (batch_retr, mrr_eval.score_all(batch_retr)),
-        "bert":   (batch_res,  bert_eval.score_all(batch_res)),
-        "sbert":  (batch_res,  sbert_eval.score_all(batch_res)),
-        "rouge1": (batch_res,  rouge1_eval.score_all(batch_res)),
-        "rougeL": (batch_res,  rougeL_eval.score_all(batch_res)),
-        "em":     (batch_res,  em_eval.score_all(batch_res)),
-        "bleurt": (batch_res,  bleurt_eval.score_all(batch_res)),
-    }
+        em_eval = EMEvaluator()
+        rouge1_eval = Rouge1Evaluator(CFG_eval.tokenizer_name)
+        rougeL_eval = RougeLEvaluator(CFG_eval.tokenizer_name)
+        bert_eval = BERTEvaluator(CFG_eval.bert_model_name, CFG_eval.bert_num_layers)
+        sbert_eval = SBERTEvaluator(CFG_eval.sbert_model_name)
+        bleurt_eval = BleurtEvaluator(CFG_eval.bleurt_model_name)
+        mrr_eval = MRREvaluator()
+        recall_eval = RecallEvaluator()
 
-    save_eval_results(
-        save_dir=Path(CFG_pth.eval_dir),
-        results=results,
-    )
+        results = {
+            "recall": (batch_retr, recall_eval.score_all(batch_retr)),
+            "mrr":    (batch_retr, mrr_eval.score_all(batch_retr)),
+            "bert":   (batch_res,  bert_eval.score_all(batch_res)),
+            "sbert":  (batch_res,  sbert_eval.score_all(batch_res)),
+            "rouge1": (batch_res,  rouge1_eval.score_all(batch_res)),
+            "rougeL": (batch_res,  rougeL_eval.score_all(batch_res)),
+            "em":     (batch_res,  em_eval.score_all(batch_res)),
+        }
 
-    # 각 지표별 점수 리스트로 출력
-    for metric, (_, scores) in results.items():
-        s = pd.Series(scores)
-        print(f"\n[{metric}]  avg={s.mean():.4f}  std={s.std():.4f}")
-        print(s.round(4).to_string())
-    
+        save_eval_results(
+            save_dir=Path(CFG_pth.eval_dir) / result_path.stem,  # 파일명으로 구분
+            results=results,
+        )
+
+        for metric, (_, scores) in results.items():
+            s = pd.Series(scores)
+            print(f"  [{metric}]  avg={s.mean():.4f}  std={s.std():.4f}")
+
     print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")
+    print(f"result in {CFG_pth.eval_dir}")

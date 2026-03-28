@@ -7,7 +7,8 @@ python -m vllm.entrypoints.openai.api_server \
   --model Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8 \
   --max-model-len 32768 \
   --gpu-memory-utilization 0.65 \
-  --swap-space 32
+  --swap-space 32 
+  #--disable-sliding-window
 
 
 # Qwen/Qwen2.5-3B-Instruct

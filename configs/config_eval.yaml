@@ -1,9 +1,28 @@
 ##################
-## 평가 지표 설정 ###
+### BERT #########
 ##################
-sbert_model_name : "snunlp/KR-SBERT-V40K-klueNLI-augSTS"
-#sbert_model_name : "all-MiniLM-L6-v2"
+bert_num_layers: 9
+
+#bert_model_name : bert-base-multilingual-cased # 다국어 지원
 #bert_model_name : "bert-base-uncased" # 영어 전용
-bert_model_name : bert-base-multilingual-cased # 다국어 지원
-#bert_model_name : xlm-roberta-large # 다국어 지원2 hugging face 모델, 근데 에러남
-bleurt_model_name : "bleurt-base-128"
+bert_model_name: "klue/bert-base" # 한국어 전용 1) KLUE BERT
+#bert_model_name: "snunlp/KR-BERT-char16424" # 서울대 개발 한국어 전용 2) KR-BERT
+
+
+#################
+### SBERT #########
+##################
+#tokenizer_name: "moses" # 다국어용
+tokenizer_name: "kiwi" # 한국어 전용
+#tokenizer_name: "spacy" # 영어용 
+
+#sbert_model_name : "intfloat/multilingual-e5-large" # 다국어 지원
+sbert_model_name : "snunlp/KR-SBERT-V40K-klueNLI-augSTS" # 서울대 개발한 한국어 전용
+#sbert_model_name : "jhgan/ko-sbert-sts" # 한국어 전용
+
+
+
+##################
+### BLEURT #######
+##################
+bleurt_model_name : "bleurt-base-128" # 다국어 없음, only 영어

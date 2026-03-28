@@ -60,7 +60,9 @@ class Gateway_agent(BaseModel):
             for doc in output_dic["retrieved"]:
                 contents.extend(doc["content"]) # extend는 리스트 이어붙이는 메서드
             context = "\n\n".join(contents) 
-            
+            if not context.strip(): # "context가 비어있거나, 공백만 있는 경우"
+                return 0.0
+        
             relv_score = self.relv_prob(question, context)
             output_dic["judge_score"][0]["relv_score"] = relv_score
     

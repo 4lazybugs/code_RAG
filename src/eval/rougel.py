@@ -1,14 +1,8 @@
 # evaluators/rougel.py
 from typing import Dict, Any, List
-from kiwipiepy import Kiwi
+
 from .base import Evaluator
-
-
-_kiwi = Kiwi()
-
-
-def _tokenize_ko(text: str) -> List[str]:
-    return [token.form for token in _kiwi.tokenize(text)]
+from .rouge_token import get_tokenizer
 
 
 def _lcs_length(a: List[str], b: List[str]) -> int:
@@ -37,15 +31,16 @@ class RougeLEvaluator(Evaluator):
     - LCS 기반 precision/recall -> F1
     """
 
-    def __init__(self):
-        super().__init__()  # self.CFG = get_config(...) 로드
+    def __init__(self, tokenizer_name: str):
+        super().__init__()  
+        self._tokenize = get_tokenizer(tokenizer_name)
 
     def score_once(self, data: Dict[str, Any]) -> float:
         ref_text = self._normalize(self._get_field(data, "reference", "answer"))
         gen_text = self._normalize(self._get_field(data, "generated", "gen_answer"))
 
-        ref_tokens = _tokenize_ko(ref_text)
-        gen_tokens = _tokenize_ko(gen_text)
+        ref_tokens = self._tokenize(ref_text)
+        gen_tokens = self._tokenize(gen_text)
 
         if not ref_tokens and not gen_tokens:
             return 1.0

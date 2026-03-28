@@ -1,3 +1,0 @@
-qa_dir: "db/qa_data/qa_in_use/manual_book"
-infered_fpth: "results/inferenced/test_gpt_manual.json"
-eval_dir: "results/eval_score/test_gpt_manual"
