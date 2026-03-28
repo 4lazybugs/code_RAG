@@ -13,7 +13,7 @@ from minicheck.minicheck import MiniCheck
 from src.config import get_config, load_yaml
 
 # agents
-from src.infer.agents import LLM_agent, RAG_agent, Judge_LM, Gateway_agent, IterRAG_agent
+from src.infer.agents import LLM_agent, RAG_agent, Judge_LM, Gateway_agent, SimGate_agent, IterRAG_agent
 
 # retrievals
 from src.retrieval import build_retrievers, Multi_Retriever, build_bm25s, Multi_BM25s, Embeddor
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     ## retrievers    
     emb = Embeddor(CFG_emb.embedor_model_name)
     retriever_list = build_retrievers(vec_root=vec_root, emb=emb)
-    multi_retriever = Multi_Retriever(retrievers=retriever_list, k_each=5, top_k=2)
+    multi_retriever = Multi_Retriever(retrievers=retriever_list, k_each=7, top_k=4)
     bm25_list = build_bm25s(vec_root=vec_root, k_each=4)
     lex_retriever = Multi_BM25s(retrievers=bm25_list, top_k=5)
 
@@ -102,7 +102,7 @@ if __name__ == "__main__":
         q_id_dict["id"] = i
 
     # 일단 n개만 하기
-    n=100000
+    n=1000000
     if len(json_merged)>n:
          json_merged = json_merged[:n] 
 
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     )
     gpt = ChatOpenAI(
             model="gpt-4o",
-            temperature=0.7,
+            temperature=0,
     )
     # 주어진 문서(context)가 특정 문장(claim 또는 answer)을 근거로 뒷받침하는지를 판단하는 LM
     judge_lm = Judge_LM(
@@ -178,11 +178,23 @@ if __name__ == "__main__":
                 know_thres=CFG_infer.know_thres,
                 relv_thre=CFG_infer.relv_thre,
                 faith_thre=CFG_infer.faith_thre   
-    ) 
+    )
+
+    simgate_agent = SimGate_agent(
+                RAG_agent=rag_agent,
+                SOTA_agent = sota_agent,
+                judge_lm=judge_lm,
+                relv_thre=CFG_infer.relv_thre,
+                faith_thre=CFG_infer.faith_thre   
+    )  
 
     '''
     <Outputs & Save>
     '''
+    results = gateway_agent.answer_all(json_merged)
+    output_path = Path(f"{CFG_fdir.infered_dir}/simple_gateway.json")
+    save_predictions_json(output_path, json_merged, results)
+
     results = gateway_agent.answer_all(json_merged)
     output_path = Path(f"{CFG_fdir.infered_dir}/gateway.json")
     save_predictions_json(output_path, json_merged, results)

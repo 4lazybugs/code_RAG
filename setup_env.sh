@@ -17,7 +17,7 @@
 conda create -n rag_env python=3.10 -y
 conda activate rag_env
 pip install git+https://github.com/google-research/bleurt.git # bleurt 설치 <- evaluator 중 하나
-pip install git+https://github.com/Liyan06/MiniCheck.git # mini_chek 설치 <- judge_lm
+#pip install git+https://github.com/Liyan06/MiniCheck.git # mini_chek 설치 <- judge_lm
 pip install -r requirements.txt # 각종 rag_env의 requirement 설치
 python -c "import nltk; nltk.download('punkt_tab')" # NLTK 리소스 다운로드
 

@@ -3,7 +3,6 @@ python -m vllm.entrypoints.openai.api_server \
   --host 127.0.0.1 \
   --port 8000 \
   --model Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8 \
-  --enforce-eager \
   --max-model-len 32768 \
   --gpu-memory-utilization 0.75 \
   --swap-space 32

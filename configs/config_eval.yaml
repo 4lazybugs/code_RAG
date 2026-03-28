@@ -1,3 +1,11 @@
+#################
+### ROUGE #######
+#################
+#tokenizer_name: "moses" # 다국어용
+tokenizer_name: "kiwi" # 한국어 전용
+#tokenizer_name: "spacy" # 영어용 
+
+
 ##################
 ### BERT #########
 ##################
@@ -12,15 +20,10 @@ bert_model_name: "klue/bert-base" # 한국어 전용 1) KLUE BERT
 #################
 ### SBERT #########
 ##################
-#tokenizer_name: "moses" # 다국어용
-tokenizer_name: "kiwi" # 한국어 전용
-#tokenizer_name: "spacy" # 영어용 
-
 #sbert_model_name : "intfloat/multilingual-e5-large" # 다국어 지원
+#sbert_model_name: "sentence-transformers/all-mpnet-base-v2" # 영어 전용
 sbert_model_name : "snunlp/KR-SBERT-V40K-klueNLI-augSTS" # 서울대 개발한 한국어 전용
 #sbert_model_name : "jhgan/ko-sbert-sts" # 한국어 전용
-
-
 
 ##################
 ### BLEURT #######
