@@ -9,7 +9,6 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 class Judge_LM:
     def __init__(
         self,
-        know_prompt,
         relv_prompt,
         faith_prompt,
         model_name: str,

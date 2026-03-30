@@ -4,10 +4,10 @@
 #model_name: "yi:34b-chat"
 
 #model_name: "Qwen/Qwen2.5-3B-Instruct"  # 다국어 지원, 성능 괜찮음
-#model_name: 'Qwen/Qwen2.5-7B-Instruct-GPTQ-Int8'
+model_name: 'Qwen/Qwen2.5-7B-Instruct-GPTQ-Int8'
 #model_name : "Qwen/Qwen2.5-14B-Instruct"
 #model_name : "Qwen/Qwen2.5-32B-Instruct"
-model_name: Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8
+#model_name: Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8
 
 #model_name : 'llama3:70b'
 
@@ -24,6 +24,6 @@ model_name: Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8
 #judge_model : "flan-t5-large" 
 judge_model: "Qwen/Qwen2.5-1.5B-Instruct"
 judge_cache_dir : "./ckpts"
-know_thres: 0.1
-relv_thre: 0.1
-faith_thre: 0.1
+know_thres: 0.6
+relv_thre: 0.6
+faith_thre: 0.6

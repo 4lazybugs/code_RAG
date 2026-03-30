@@ -120,7 +120,6 @@ if __name__ == "__main__":
     # 주어진 문서(context)가 특정 문장(claim 또는 answer)을 근거로 뒷받침하는지를 판단하는 LM
     judge_lm = Judge_LM(
         model_name=CFG_infer.judge_model,
-        cache_dir=CFG_infer.judge_cache_dir,
         relv_prompt = relv_prompt,
         faith_prompt = faith_prompt
     )
@@ -201,19 +200,19 @@ if __name__ == "__main__":
     output_path = Path(f"{CFG_fdir.infered_dir}/gateway.json")
     save_predictions_json(output_path, json_merged, results)
 
-    # qa_llm.set_outputs(llm_output)
-    # results = llm_agent.answer_all(json_merged)
-    # output_path = Path(f"{CFG_fdir.infered_dir}/llm.json")
-    # save_predictions_json(output_path, json_merged, results)
+    qa_llm.set_outputs(llm_output)
+    results = llm_agent.answer_all(json_merged)
+    output_path = Path(f"{CFG_fdir.infered_dir}/llm.json")
+    save_predictions_json(output_path, json_merged, results)
 
-    # qa_rag.set_outputs(rag_output)
-    # results = rag_agent.answer_all(json_merged)
-    # output_path = Path(f"{CFG_fdir.infered_dir}/rag.json")
-    # save_predictions_json(output_path, json_merged, results)
+    qa_rag.set_outputs(rag_output)
+    results = rag_agent.answer_all(json_merged)
+    output_path = Path(f"{CFG_fdir.infered_dir}/rag.json")
+    save_predictions_json(output_path, json_merged, results)
 
-    # qa_sota.set_outputs(sota_output) 
-    # results = sota_agent.answer_all(json_merged)
-    # output_path = Path(f"{CFG_fdir.infered_dir}/sota.json")
-    # save_predictions_json(output_path, json_merged, results)
+    qa_sota.set_outputs(sota_output) 
+    results = sota_agent.answer_all(json_merged)
+    output_path = Path(f"{CFG_fdir.infered_dir}/sota.json")
+    save_predictions_json(output_path, json_merged, results)
 
     print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")

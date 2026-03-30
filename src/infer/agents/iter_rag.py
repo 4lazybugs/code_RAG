@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from .base import BaseModel
 from .naive_rag import RAG_agent
 from src.infer.qa_type.base import QAtype
-from src.prompts.qa_type import iter_rag_prompt
+from src.prompts import iter_rag_prompt
 
 @dataclass
 class IterRAG_agent(BaseModel):
