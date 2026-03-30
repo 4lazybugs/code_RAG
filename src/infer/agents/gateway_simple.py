@@ -50,7 +50,7 @@ class SimGate_agent(BaseModel):
         if not context.strip(): # "context가 비어있거나, 공백만 있는 경우"
             return 0.0
     
-        relv_score = self.relv_prob(question, context)
+        relv_score = self.relv_prob(question=question, context=context)
         output_dic["judge_score"][0]["relv_score"] = relv_score
 
         # Context Relevance Bad → GPT fallback
@@ -60,7 +60,7 @@ class SimGate_agent(BaseModel):
 
         else:
             # Context Relevance Good → Faithfulness 체크
-            faith_score = self.faith_prob(gen_ans, context)
+            faith_score = self.faith_prob(answer=gen_ans, context=context)
 
             # Faithfulness Good → QWEN+RAG 답변 그대로 반환
             if faith_score > self.faith_thre:

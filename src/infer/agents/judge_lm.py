@@ -67,7 +67,7 @@ class Judge_LM:
         prompt = self._select_prompt(prompt_type).format(doc=doc, claim=claim)
 
         messages = [
-            {"role": "system", "content": "You are a precise factual judge."},
+            {"role": "system", "content": "You are a judge."},
             {"role": "user", "content": prompt},
         ]
 

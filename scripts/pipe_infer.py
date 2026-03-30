@@ -158,7 +158,7 @@ if __name__ == "__main__":
     agent는 고정한 채로, 주입하는 qa_type만 바꿔서
     agent가 llm_mcq(전략1) 또는 rag_saq(전략2)로 동작하게 만들 수 있음.
     '''
-    #qa_router.set_prompt(logprob_prompt_eng)
+    #qa_router.set_prompt(know_prompt_eng)
     router_agent = LLM_agent(llm=qwen, qa_type=qa_router)
 
     #qa_llm.set_prompt(saq_llm_prompt_eng) 
