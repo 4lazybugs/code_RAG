@@ -91,9 +91,9 @@ if __name__ == "__main__":
     ## retrievers    
     emb = Embeddor(CFG_emb.embedor_model_name)
     retriever_list = build_retrievers(vec_root=vec_root, emb=emb)
-    multi_retriever = Multi_Retriever(retrievers=retriever_list, k_each=7, top_k=4)
-    bm25_list = build_bm25s(vec_root=vec_root, k_each=4)
-    lex_retriever = Multi_BM25s(retrievers=bm25_list, top_k=5)
+    multi_retriever = Multi_Retriever(retrievers=retriever_list, k_each=7, top_k=3)
+    # bm25_list = build_bm25s(vec_root=vec_root, k_each=4)
+    # lex_retriever = Multi_BM25s(retrievers=bm25_list, top_k=5)
 
     # load QA
     qa_dir = Path(CFG_fdir.qa_dir) # json이 들어있는 디렉터리
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     '''
     <Outputs & Save>
     '''
-    results = gateway_agent.answer_all(json_merged)
+    results = simgate_agent.answer_all(json_merged)
     output_path = Path(f"{CFG_fdir.infered_dir}/simple_gateway.json")
     save_predictions_json(output_path, json_merged, results)
 
@@ -199,19 +199,19 @@ if __name__ == "__main__":
     output_path = Path(f"{CFG_fdir.infered_dir}/gateway.json")
     save_predictions_json(output_path, json_merged, results)
 
-    qa_llm.set_outputs(llm_output)
-    results = llm_agent.answer_all(json_merged)
-    output_path = Path(f"{CFG_fdir.infered_dir}/llm.json")
-    save_predictions_json(output_path, json_merged, results)
+    # qa_llm.set_outputs(llm_output)
+    # results = llm_agent.answer_all(json_merged)
+    # output_path = Path(f"{CFG_fdir.infered_dir}/llm.json")
+    # save_predictions_json(output_path, json_merged, results)
 
-    qa_rag.set_outputs(rag_output)
-    results = rag_agent.answer_all(json_merged)
-    output_path = Path(f"{CFG_fdir.infered_dir}/rag.json")
-    save_predictions_json(output_path, json_merged, results)
+    # qa_rag.set_outputs(rag_output)
+    # results = rag_agent.answer_all(json_merged)
+    # output_path = Path(f"{CFG_fdir.infered_dir}/rag.json")
+    # save_predictions_json(output_path, json_merged, results)
 
-    qa_sota.set_outputs(sota_output) 
-    results = sota_agent.answer_all(json_merged)
-    output_path = Path(f"{CFG_fdir.infered_dir}/sota.json")
-    save_predictions_json(output_path, json_merged, results)
+    # qa_sota.set_outputs(sota_output) 
+    # results = sota_agent.answer_all(json_merged)
+    # output_path = Path(f"{CFG_fdir.infered_dir}/sota.json")
+    # save_predictions_json(output_path, json_merged, results)
 
     print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")

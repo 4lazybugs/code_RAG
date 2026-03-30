@@ -79,7 +79,7 @@ def gate_rag_output(input_dic, gen_ans, retrieved) -> Dict[str, Any]:
         "agent": "rag",
         "judge_score": [
             {
-                "know_prob": input_dic["judge_score"][0]["know_prob"],
+                "know_prob": (input_dic.get("judge_score") or [{}])[0].get("know_prob"),
                 "relv_score": None,
                 "faith_score": None,
             }
