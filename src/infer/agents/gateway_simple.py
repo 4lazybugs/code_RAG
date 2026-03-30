@@ -16,7 +16,7 @@ class SimGate_agent(BaseModel):
 
     def relv_prob(self, question: str, context: str) -> float:
 
-        _, prob, _, _ = self.judge_lm.score(docs=[context], claims=[question])
+        _, prob, _, _ = self.judge_lm.score(docs=[context], claims=[question], prompt_type="relv")
         '''
             반환값 4개는:(pred_label, prob, used_chunk, support_prob_per_chunk)
             ↑ 0 or 1    ↑ 확률값  ↑ 사용된 청크   ↑ 청크별 확률
@@ -27,7 +27,7 @@ class SimGate_agent(BaseModel):
 
     def faith_prob(self, answer: str, context: str) -> float:
 
-        _, prob, _, _ = self.judge_lm.score(docs=[context], claims=[answer])
+        _, prob, _, _ = self.judge_lm.score(docs=[context], claims=[answer], prompt_type="faith")
         '''
             반환값 4개는:(pred_label, prob, used_chunk, support_prob_per_chunk)
             ↑ 0 or 1    ↑ 확률값  ↑ 사용된 청크   ↑ 청크별 확률

@@ -19,8 +19,8 @@ from src.infer.agents import LLM_agent, RAG_agent, Judge_LM, Gateway_agent, SimG
 from src.retrieval import build_retrievers, Multi_Retriever, build_bm25s, Multi_BM25s, Embeddor
 
 # prompts
-from src.prompts.qa_type import saq_llm_prompt, saq_rag_prompt, iter_rag_prompt, logprob_prompt # kor
-from src.prompts.qa_type import saq_llm_prompt_eng, saq_rag_prompt_eng, logprob_prompt_eng # eng
+from src.prompts import saq_llm_prompt, saq_rag_prompt, know_prompt, relv_prompt, faith_prompt # kor
+from src.prompts import saq_llm_prompt_eng, saq_rag_prompt_eng, know_prompt_eng # eng
 
 from src.infer.qa_type.base import QAtype
 # qa_input
@@ -120,7 +120,9 @@ if __name__ == "__main__":
     # 주어진 문서(context)가 특정 문장(claim 또는 answer)을 근거로 뒷받침하는지를 판단하는 LM
     judge_lm = Judge_LM(
         model_name=CFG_infer.judge_model,
-        cache_dir=CFG_infer.judge_cache_dir
+        cache_dir=CFG_infer.judge_cache_dir,
+        relv_prompt = relv_prompt,
+        faith_prompt = faith_prompt
     )
 
     '''
@@ -129,7 +131,7 @@ if __name__ == "__main__":
     조합마다 클래스를 따로 만들면 N^3 조합이 생겨 비효율적이므로 빌더 패턴 사용
     '''
     qa_router = (QAtype()
-        .set_prompt(logprob_prompt)
+        .set_prompt(know_prompt)
         .set_inputs(saq_input)
         .set_outputs(router_output)
         .build())
