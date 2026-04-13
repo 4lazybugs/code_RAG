@@ -6,7 +6,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 
-class Judge_LM:
+class Judge_HF:
     def __init__(
         self,
         relv_prompt,
@@ -35,7 +35,6 @@ class Judge_LM:
             return self.relv_prompt
         if prompt_type == "faith":
             return self.faith_prompt
-        raise ValueError(f"지원하지 않는 prompt_type입니다: {prompt_type}")
 
     def _extract_json(self, text: str) -> Tuple[int, float]:
         text = text.strip()

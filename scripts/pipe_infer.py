@@ -13,7 +13,9 @@ from minicheck.minicheck import MiniCheck
 from src.config import get_config, load_yaml
 
 # agents
-from src.infer.agents import LLM_agent, RAG_agent, Judge_LM, Gateway_agent, SimGate_agent, IterRAG_agent
+from src.infer.agents import LLM_agent, RAG_agent 
+from src.infer.agents import Judge_HF, Judge_OpenAI, Gateway_agent, SimGate_agent
+from src.infer.agents import Reranker, RankGate_agent, tokGate_agent
 
 # retrievals
 from src.retrieval import build_retrievers, Multi_Retriever, build_bm25s, Multi_BM25s, Embeddor
@@ -91,13 +93,13 @@ if __name__ == "__main__":
     ## retrievers    
     emb = Embeddor(CFG_emb.embedor_model_name)
     retriever_list = build_retrievers(vec_root=vec_root, emb=emb)
-    multi_retriever = Multi_Retriever(retrievers=retriever_list, k_each=7, top_k=3)
+    multi_retriever = Multi_Retriever(retrievers=retriever_list, k_each=5, top_k=1)
     # bm25_list = build_bm25s(vec_root=vec_root, k_each=4)
     # lex_retriever = Multi_BM25s(retrievers=bm25_list, top_k=5)
 
     # load QA
     qa_dir = Path(CFG_fdir.qa_dir) # json이 들어있는 디렉터리
-    json_merged = merge_json(qa_dir, save=True)
+    json_merged = merge_json(qa_dir, save=False)
     for i, q_id_dict in enumerate(json_merged):
         q_id_dict["id"] = i
 
@@ -112,17 +114,21 @@ if __name__ == "__main__":
          temperature=0,
          base_url="http://127.0.0.1:8000/v1",
          api_key="EMPTY",
+        logprobs=True,    # ← 추가
+        top_logprobs=1,   # ← 추가
     )
     gpt = ChatOpenAI(
             model="gpt-4o",
             temperature=0,
     )
     # 주어진 문서(context)가 특정 문장(claim 또는 answer)을 근거로 뒷받침하는지를 판단하는 LM
-    judge_lm = Judge_LM(
+    judge_lm = Judge_HF(
         model_name=CFG_infer.judge_model,
         relv_prompt = relv_prompt,
         faith_prompt = faith_prompt
     )
+    reranker = Reranker(model_name=CFG_infer.reranker_model)
+
 
     '''
     <Builder Pattern>
@@ -189,30 +195,58 @@ if __name__ == "__main__":
                 faith_thre=CFG_infer.faith_thre   
     )  
 
+    rankgate_agent = RankGate_agent(
+        reranker=reranker,
+        RAG_agent=rag_agent,
+        SOTA_agent=sota_agent,
+        rerank_thre=CFG_infer.rerank_thre
+    )
+
+    tokgate_agent = tokGate_agent(
+        RAG_agent=rag_agent,
+        LLM_agent=llm_agent,      # ← 추가
+        SOTA_agent=sota_agent,
+        tok_thre=CFG_infer.tok_thre,
+        epsilon=1e-6,
+        n_samples=1,
+    )
+    
     '''
     <Outputs & Save>
     '''
-    results = simgate_agent.answer_all(json_merged)
-    output_path = Path(f"{CFG_fdir.infered_dir}/simple_gateway.json")
+    results = tokgate_agent.answer_all(json_merged)
+    output_path = Path(f"{CFG_fdir.infered_dir}/tok_gateway.json")
     save_predictions_json(output_path, json_merged, results)
 
-    results = gateway_agent.answer_all(json_merged)
-    output_path = Path(f"{CFG_fdir.infered_dir}/gateway.json")
-    save_predictions_json(output_path, json_merged, results)
+    # results = rankgate_agent.answer_all(json_merged)
+    # output_path = Path(f"{CFG_fdir.infered_dir}/rank_gateway.json")
+    # save_predictions_json(output_path, json_merged, results)
+    
+    # results = simgate_agent.answer_all(json_merged)
+    # output_path = Path(f"{CFG_fdir.infered_dir}/simple_gateway.json")
+    # save_predictions_json(output_path, json_merged, results)
 
-    qa_llm.set_outputs(llm_output)
-    results = llm_agent.answer_all(json_merged)
-    output_path = Path(f"{CFG_fdir.infered_dir}/llm.json")
-    save_predictions_json(output_path, json_merged, results)
+    # results = gateway_agent.answer_all(json_merged)
+    # output_path = Path(f"{CFG_fdir.infered_dir}/gateway.json")
+    # save_predictions_json(output_path, json_merged, results)
 
+    test_out = rag_agent.answer_once(json_merged[0])
+    print("logprobs 개수:", len(test_out.get("logprobs", [])))
+    print("logprobs 앞 5개:", test_out.get("logprobs", [])[:5])
+    
     qa_rag.set_outputs(rag_output)
     results = rag_agent.answer_all(json_merged)
     output_path = Path(f"{CFG_fdir.infered_dir}/rag.json")
     save_predictions_json(output_path, json_merged, results)
 
-    qa_sota.set_outputs(sota_output) 
-    results = sota_agent.answer_all(json_merged)
-    output_path = Path(f"{CFG_fdir.infered_dir}/sota.json")
-    save_predictions_json(output_path, json_merged, results)
+    # qa_llm.set_outputs(llm_output)
+    # results = llm_agent.answer_all(json_merged)
+    # output_path = Path(f"{CFG_fdir.infered_dir}/llm.json")
+    # save_predictions_json(output_path, json_merged, results)
+
+    # qa_sota.set_outputs(sota_output) 
+    # results = sota_agent.answer_all(json_merged)
+    # output_path = Path(f"{CFG_fdir.infered_dir}/sota.json")
+    # save_predictions_json(output_path, json_merged, results)
 
     print(f"\nTOTAL elapsed: {time.time() - start_time:.2f}s")

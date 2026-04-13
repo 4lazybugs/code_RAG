@@ -63,7 +63,7 @@ class SimGate_agent(BaseModel):
             faith_score = self.faith_prob(answer=gen_ans, context=context)
 
             # Faithfulness Good → QWEN+RAG 답변 그대로 반환
-            if faith_score > self.faith_thre:
+            if faith_score >= self.faith_thre:
                 print("==== Faithfulness Good → QWEN+RAG 반환 =======")
 
             # Faithfulness Bad → GPT fallback

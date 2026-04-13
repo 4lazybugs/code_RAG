@@ -67,6 +67,7 @@ QUERY:
 OUTPUT:
 {{"score": 0.05, "label": 0}}
 
+
 이제 아래 입력을 평가하세요.
 
 DOCUMENT:

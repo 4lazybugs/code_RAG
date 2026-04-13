@@ -46,7 +46,7 @@ class Gateway_agent(BaseModel):
         print(f"==== Naive_LLM이 질문에 대해 알고 있을 확률은 {know_prob}이다. =======")
 
         # Know → LLM 직답
-        if float(know_prob) > self.know_thres:
+        if float(know_prob) >= self.know_thres:
             output_dic = self.LLM_agent.answer_once(output_dic)
 
         # Don't Know → RAG 후 평가
@@ -76,7 +76,7 @@ class Gateway_agent(BaseModel):
                 faith_score = self.faith_prob(gen_ans, context)
 
                 # Faithfulness Good → QWEN+RAG 답변 그대로 반환
-                if faith_score > self.faith_thre:
+                if faith_score >= self.faith_thre:
                     print("==== Faithfulness Good → QWEN+RAG 반환 =======")
 
                 # Faithfulness Bad → GPT fallback

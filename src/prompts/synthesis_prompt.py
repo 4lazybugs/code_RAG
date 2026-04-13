@@ -1,5 +1,44 @@
 from langchain_core.prompts import ChatPromptTemplate
 
+noteLM_prompt = ChatPromptTemplate.from_template(
+"""
+당신은 농업 전문 QA 데이터셋 생성 AI이다.
+
+[출력 규칙 - 매우 중요]
+- 출력은 반드시 JSON만 생성하라.
+- 출력은 반드시 ```json 코드블록 안에 넣어서 출력하라.
+- 코드블록 외부에는 어떠한 텍스트도 절대 출력하지 마라.
+- 반드시 아래 형태를 정확히 따라라:
+
+```json
+[
+  {
+    "question": "질문",
+    "answer": [
+      {
+        "sentence": "문장",
+        "reference": [
+          {
+            "source": "문서명1",
+            "text": "근거 원문1"
+          },
+          {
+            "source": "문서명2",
+            "text": "근거 원문2"
+          },
+          {
+            "source": "문서명3",
+            "text": "근거 원문3"
+          }
+        ]
+      }
+    ]
+  }
+]
+"""
+)
+
+
 naive_prompt = ChatPromptTemplate.from_template(
 """
 다음 context를 기반으로 Ground Truth QA 1개를 생Mapping[str, Mapping[str, Any]] = field(default_facto는다.
