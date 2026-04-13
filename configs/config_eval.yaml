@@ -24,6 +24,8 @@ bert_model_name: "klue/bert-base" # 한국어 전용 1) KLUE BERT
 #sbert_model_name: "sentence-transformers/all-mpnet-base-v2" # 영어 전용
 sbert_model_name : "snunlp/KR-SBERT-V40K-klueNLI-augSTS" # 서울대 개발한 한국어 전용
 #sbert_model_name : "jhgan/ko-sbert-sts" # 한국어 전용
+#sbert_model_name : "jhgan/ko-sroberta-multitask" # 한국어 전용
+
 
 ##################
 ### BLEURT #######

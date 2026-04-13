@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, List
 import json
-from src.qa_gen.params import Params
+from src.synthesis.params import Params
 from tqdm import tqdm
 import random, re
 
@@ -40,14 +40,14 @@ def clean_md(text: str) -> str:
     text = re.sub(r'[ \t]+', ' ', text)      # 연속 공백 정리
     return text.strip()
 
-def gen_from_md(dir_path: Path, params: Params, mode: str = "qa") -> List[Dict[str, Any]]:
+def gen_from_md(dir_path: Path, params: Params, mode: str = "qa", max_qa: int | None = None) -> List[Dict[str, Any]]:
     llm = params.get_llm("llm")
     min_len = params.get_params("min_len", 300)
     start_id = int(0)
     seed = int(42)
 
     prompt_key = {"q": "prompt_q", "a": "prompt_a", "qa": "prompt_qa"}.get(mode, "prompt_qa")
-    prompt = params.get_params(prompt_key)  # "naive" 없애고 바로 조회
+    prompt = params.get_params(prompt_key)
     chain = prompt | llm
 
     results: List[Dict[str, Any]] = []
@@ -98,8 +98,7 @@ def gen_from_md(dir_path: Path, params: Params, mode: str = "qa") -> List[Dict[s
             record = {
                 "id": cur_id + j,
                 "ref_doc": md.name,
-                "ref_content": clean_md(md_text),  
-                "retrival_needed": 1,
+                "ref_content": clean_md(md_text),
             }
 
             if mode in ("q", "qa"):
@@ -108,6 +107,11 @@ def gen_from_md(dir_path: Path, params: Params, mode: str = "qa") -> List[Dict[s
                 record["answer"] = item["answer"]
 
             results.append(record)
+
+            # max_qa 도달 시 즉시 반환
+            if max_qa is not None and len(results) >= max_qa:
+                tqdm.write(f"⚠️ max_qa={max_qa} 도달, 조기 종료")
+                return results
 
         cur_id += len(arr)
 

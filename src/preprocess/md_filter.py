@@ -12,8 +12,6 @@ def trim_and_save(
         output_dir: 필터링된 파일을 저장할 새 경로
         headers: 기준이 되는 헤더 문자열 목록 (하나라도 매칭되면 OK)
     """
-    if headers is None:
-        headers = ["# 2차 현장컨설팅 결과보고서"]
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)

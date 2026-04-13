@@ -12,29 +12,30 @@ noteLM_prompt = ChatPromptTemplate.from_template(
 
 ```json
 [
-  {
+  {{
     "question": "질문",
     "answer": [
-      {
+      {{
         "sentence": "문장",
         "reference": [
-          {
+          {{
             "source": "문서명1",
             "text": "근거 원문1"
-          },
-          {
+          }},
+          {{
             "source": "문서명2",
             "text": "근거 원문2"
-          },
-          {
+          }},
+          {{
             "source": "문서명3",
             "text": "근거 원문3"
-          }
+          }}
         ]
-      }
+      }}
     ]
-  }
+  }}
 ]
+```
 """
 )
 
@@ -58,6 +59,37 @@ naive_prompt = ChatPromptTemplate.from_template(
 
 # context
 {md}
+"""
+)
+
+chunk_prompt = ChatPromptTemplate.from_template(
+"""
+다음은 농업 분야 문서의 일부입니다.
+아래 정보를 모두 활용하여 Ground Truth QA 1개를 생성하라.
+
+[생성 규칙]
+1) 질문은 맥락의 정보를 자연스럽게 배경으로 제시하면서 시작하여, QA만 단독으로 읽어도 어떤 상황에서의 질문인지 완전히 이해할 수 있어야 한다.
+2) 질문에 지시어나 대명사를 사용하지 마라. 맥락의 구체적인 내용을 질문에 직접 명시하라.
+3) 질문을 작성한 후 맥락의 내용이 질문에 빠짐없이 들어갔는지 반드시 검토하라. 맥락 정보가 하나라도 빠졌으면 질문을 다시 작성하라.
+4) 질문의 구체적인 내용은 분류, 세부분류, 내용을 참고하여 구성하라.
+5) 답은 내용에 명시된 단일 사실이어야 한다.
+6) 추론이나 외부 지식 사용 금지.
+
+[출력 형식]
+설명 없이 JSON 배열 1개만 출력:
+
+[
+  {{
+    "id": {id},
+    "question": "...",
+    "answer": "..."
+  }}
+]
+
+맥락: {context}
+분류: {category}
+세부분류: {sub_category}
+내용: {text}
 """
 )
 

@@ -1,0 +1,38 @@
+#################
+### Directories ##
+#################
+search_dirs:
+  - "db/raw_db_extracted/consulting_2022_01"
+  - "db/raw_db_extracted/consulting_2022_02"
+  - "db/raw_db_extracted/consulting_2022_04"
+  - "db/raw_db_extracted/consulting_2024_(1)"
+  - "db/raw_db_extracted/consulting_2024_(2)"
+
+output_dir: "db/md_for_synthesis/"
+chunk_dir: "db/chunks_for_synthesis/"
+
+md_dirs:
+  # - "db/md_for_synthesis/consulting_2022_01"
+  - "db/md_for_synthesis/consulting_2022_02"
+  # - "db/md_for_synthesis/consulting_2022_04"
+  # - "db/md_for_synthesis/consulting_2024_(1)"
+  # - "db/md_for_synthesis/consulting_2024_(2)"
+
+#################
+### Chunking #####
+#################
+max_fnum: 1  # 테스트용, null이면 전체 처리
+llm_model: "gpt-4o-mini"
+
+#################
+### Headers ######
+#################
+headers:
+  - "# 1차 현장컨설팅 결과보고서"
+  - "# 1 차 현장컨설팅 결과보고서"
+  - "# 2차 현장컨설팅 결과보고서"
+  - "# 2 차 현장컨설팅 결과보고서"
+  - '<div style="text-align: center;">1차 현장 컨설팅 결과보고서</div>'
+  - '<div style="text-align: center;">1차 현장컨설팅 결과보고서</div>'
+  - '<div style="text-align: center;">2차 현장 컨설팅 결과보고서</div>'
+  - '<div style="text-align: center;">2차 현장컨설팅 결과보고서</div>'

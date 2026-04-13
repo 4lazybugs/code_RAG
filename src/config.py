@@ -26,6 +26,13 @@ def get_config(path):
     parser.add_argument("--top_k", type=int, default=default_cfg.get('top_k', 5))
     parser.add_argument("--embedor_model_name", type=str, default=default_cfg.get('embedor_model_name'))
 
+    # config_preproc 관련
+    parser.add_argument("--max_fnum", type=int, default=default_cfg.get('max_fnum'))
+    parser.add_argument("--llm_model", type=str, default=default_cfg.get('llm_model'))
+    parser.add_argument("--chunk_dir", type=str, default=default_cfg.get('chunk_dir'))
+    parser.add_argument("--output_dir", type=str, default=default_cfg.get('output_dir'))
+
+
     args, _ = parser.parse_known_args()
 
     cfg = {**default_cfg, **vars(args)}

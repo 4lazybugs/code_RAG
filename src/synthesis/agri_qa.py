@@ -3,7 +3,7 @@ import json
 import random
 from tqdm import tqdm
 from src.synthesis.params import Params
-
+from langchain_core.prompts import ChatPromptTemplate
 
 Q_TYPES = ["정의형", "이유형", "역할형", "방법형", "조건형", "비교형", "특징형"]
 TOPICS = [

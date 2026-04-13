@@ -8,11 +8,13 @@ from langchain_openai import ChatOpenAI
 from tqdm import tqdm
 
 from src.synthesis.params import Params
-from src.synthesis.hotpot_qa import hotpot_gen
+#from src.synthesis.hotpot_qa import hotpot_gen
 from src.synthesis.one_md_qa import gen_from_md
+from src.synthesis.chunk_qa import gen_from_chunks
 from src.synthesis.agri_qa import qa_from_prompt
-from src.prompts.qa_gen import agri_gpt_prompt, naive_prompt, consulting_prompt, hotpot_prompt
-from src.prompts.ares_gen import q_gen_prompt, ans_gen_prompt
+
+from src.prompts.synthesis_prompt import agri_gpt_prompt, consulting_prompt, hotpot_prompt
+from src.prompts import naive_prompt, chunk_prompt
 
 def look4md(root: Path):
     """
@@ -48,6 +50,7 @@ if __name__ == "__main__":
     )
     '''
 
+    '''
     llm_md = ChatOpenAI(
         model= "gpt-4o-mini", # 빠르고 싼 가성비 모델
         temperature=0,
@@ -61,38 +64,64 @@ if __name__ == "__main__":
             "min_len": 300,
             "start_id": 0,
             "seed": 42,
-            "prompt_q": q_gen_prompt,
+            #"prompt_q": naive_prompt,
+            "prompt_qa": naive_prompt,
         }
     )
 
     # md들이 들어있는 폴더
-    extracted_dir = Path("db/raw_db_extracted/test")
+    extracted_dir = Path("db/md_for_synthesis")
 
-    out_root = Path("db/qa_data/test/q")
+    out_root = Path("db/qa_data/cand_book")
     out_root.mkdir(parents=True, exist_ok=True)
 
     md_dirs = list(look4md(extracted_dir))
     print(f"found md-dirs: {len(md_dirs)}")
 
+    MAX_QA = 10000
+    remaining = MAX_QA
+
     for search_dir in md_dirs:
-        # output 파일명: NAIVE_[text]plant_disease_manual.json (pdf 확장자 제거)
         out_name = f"{search_dir.stem}.json"
         output_path = out_root / out_name
 
-        # 기존 스타일 유지: partial로 generate_qa 생성
-        generate_qa = partial(gen_from_md, search_dir, params_md, "q")
+        generate_qa = partial(gen_from_md, search_dir, params_md, "qa", remaining)
         result = generate_qa()
 
         with output_path.open("w", encoding="utf-8") as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
-
         print(f"saved: {output_path} (n={len(result)})")
+
+        remaining -= len(result)
+        if remaining <= 0:
+            break
+    '''
     
+    #================ chunk_qa =========================================================
+    llm_chunk = ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0,
+    )
 
+    params_chunk = Params(
+        global_={"llm": llm_chunk},
+        per={
+            "prompt_qa": chunk_prompt,
+        }
+    )
 
+    out_root = Path("db/qa_data/cand_book_chunk")
+    out_root.mkdir(parents=True, exist_ok=True)
 
+    MAX_QA = 10000
 
+    chunk_root = Path("db/chunks_for_synthesis")
+    chunk_results = gen_from_chunks(chunk_root, params_chunk, max_qa=MAX_QA)
 
+    out_path = out_root / "chunk_qa.json"
+    with out_path.open("w", encoding="utf-8") as f:
+        json.dump(chunk_results, f, ensure_ascii=False, indent=2)
+    print(f"saved: {out_path} (n={len(chunk_results)})")
 
     '''
     out_root = Path("db/qa_data/qa_in_use/without_md")
