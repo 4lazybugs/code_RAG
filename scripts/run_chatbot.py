@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
 from src.config import get_config
-from src.infer.agents import LLM_agent, RAG_agent, SimGate_agent
+from src.infer.agents import LLM_agent, RAG_agent, SimGate_agent, Judge_LM
 from src.retrieval import build_retrievers, Multi_Retriever, Embeddor
 from src.infer.qa_type.base import QAtype
 from src.prompts import saq_rag_prompt, saq_llm_prompt, relv_prompt, faith_prompt

@@ -3,53 +3,71 @@ import time
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-os.environ["TOKENIZERS_PARALLELISM"] = "false"           # HuggingFace tokenizer 경고 방지
-os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = "True"  # 오프라인 환경 필수
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = "True"
 
-# paddle ocr
-from src.preprocess.extract import extract_paddle
-from paddleocr import PaddleOCRVL, PPStructureV3
+from src.preprocess.extract import extract_paddle, pdfs_to_imgs
+from paddleocr import PaddleOCRVL
 
-# docling
-from src.preprocess.extract import DocumentConverter, extract_docling
 
 if __name__ == "__main__":
     start = time.time()
     
-    # Docling 초기화
-    #converter = DocumentConverter()
-
-    # PaddleOCRVL, PPStructureV3 아무거나 써도 되는데 PaddleOCRVL은 VLM 기반이라 품질 더 좋은 대신 좀 느림
-    pipeline_ocr = PaddleOCRVL(
-        use_chart_recognition=False,         # 그래프/차트를 표로 인식하는 옵션
-        format_block_content=True,          # 기본 False → 블록 내용 포맷 정리
-        layout_threshold=0.2,               # 기본 0.3 → 낮추면 표 경계 더 잘 잡음
-        device="gpu:0",  
-    )
+    #converter = DocumentConverter() # docling
 
     # pipeline_pp = PPStructureV3(
-    #     use_chart_recognition=False,         # 그래프/차트를 표로 인식하는 옵션
-    #     format_block_content=True,          # 기본 False → 블록 내용 포맷 정리
-    #     layout_threshold=0.2,               # 기본 0.3 → 낮추면 표 경계 더 잘 잡음
-    #     device="gpu:0",  
-    #     lang="korean",  # PPStructureV3 
+    #     use_chart_recognition=False,
+    #     format_block_content=True,
+    #     layout_threshold=0.2,
+    #     device="gpu:0",
+    #     lang="korean",
     # )
 
-    # root 입력 폴더
-    input_root = Path("db/raw_db/test")
-    #input_root = Path("db/raw_db/test_db/consulting")
+    pipeline_ocrvl = PaddleOCRVL(
+        use_chart_recognition=False,
+        format_block_content=True,
+        #layout_threshold=0.6,  # 높을수록 보수적으로 표 detecting 판단
+        device="gpu:0",
+    )
 
-    # 모든 pdf 재귀 탐색
+    input_root = Path("db/raw_db/test/")
+
     for pdf_path in input_root.rglob("*.pdf"):
+        save_root = Path("db/raw_db_extracted_test") / pdf_path.stem
 
-        # 저장 폴더
-        save_dir = Path("db/raw_db_extracted/consulting_2022_01") / pdf_path.stem
+        pdfs_dir = save_root / "pdfs"
+        mds_dir = save_root / "mds"
+        jsons_dir = save_root / "jsons"
 
-        # Docling
-        #extract_docling(converter=converter, pdf_path=pdf_path, save_dir=save_dir)
-        # Paddle OCR
-        extract_paddle(pipeline=pipeline_ocr, pdf_path=pdf_path, save_dir=save_dir)
-    
+        pdfs_dir.mkdir(parents=True, exist_ok=True)
+        mds_dir.mkdir(parents=True, exist_ok=True)
+        jsons_dir.mkdir(parents=True, exist_ok=True)
+
+        page_items = pdfs_to_imgs(
+            pdf_path=pdf_path,
+            dpi=300,
+        )
+
+        for page_no, part_name, page_img in page_items:
+            stem_name = f"{pdf_path.stem}_{page_no}"
+
+            image_path = pdfs_dir / f"{stem_name}.png"
+            page_img.save(image_path)
+
+            print(
+                f"[OCR] {pdf_path.name} | page={page_no} | image={image_path}",
+                flush=True
+            )
+
+            #extract_docling(converter=converter, pdf_path=pdf_path, save_dir=save_dir)
+            extract_paddle(
+                pipeline=pipeline_ocrvl,
+                image=page_img,
+                image_name=stem_name,
+                md_dir=mds_dir,
+                json_dir=jsons_dir,
+            )
+
     end = time.time()
 
     elapsed = end - start
