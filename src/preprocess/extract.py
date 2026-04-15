@@ -32,9 +32,13 @@ def extract_paddle(pipeline, pdf_path: Path, save_dir: Path):
     print(f"[DEBUG] starting predict for {pdf_path}", flush=True)  # ✅ 추가
     for page_no, res in enumerate(pipeline.predict(str(pdf_path)), start=1):
         print(f"[DEBUG] page {page_no} complete!", flush=True)
-        saved_md_path = save_dir / f"{pdf_path.stem}_{page_no}.md"
-        res.save_to_markdown(save_path=saved_md_path)
-        print(f"[{page_no}] saved → {saved_md_path}", flush=True)
+        stem = f"{pdf_path.stem}_{page_no}"
+        md_path   = save_dir / f"{stem}.md"
+        json_path = save_dir / f"{stem}.json"
+        res.save_to_markdown(save_path=md_path)
+        res.save_to_json(save_path=json_path)
+        print(f"[{page_no}] saved → {md_path}", flush=True)
+        print(f"[{page_no}] saved → {json_path}", flush=True)
         del res
 
 

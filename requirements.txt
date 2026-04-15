@@ -98,3 +98,5 @@ chonkie[catsu]
 
 ## install Beatuiful Soup for html parsing
 bs4
+
+anthropic

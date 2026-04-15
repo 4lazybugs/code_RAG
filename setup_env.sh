@@ -26,15 +26,29 @@ conda deactivate
 #############################
 ### paddle_env 가상환경 생성 ###
 #############################  * 참고로, paddle_env와 rag_env를 분리한 이유는 패키지 충돌을 방지하기 위해서
+conda install -c conda-forge libstdcxx-ng -n paddle_env
+
 conda create -n paddle_env python=3.10 -y
 conda activate paddle_env
 
+# dependencies for ocr
+pip install jinja2 
+pip install urllib3
+pip install beautifulsoup4
+
 #https://www.paddleocr.ai/latest/en/version3.x/installation.html
 # 1) The following command installs the PaddlePaddle version for CUDA 12.6. For other CUDA versions and the CPU version, please refer to https://www.paddlepaddle.org.cn/en/install/quick?docurl=/documentation/docs/en/develop/install/pip/linux-pip_en.html
-pip install paddlepaddle-gpu==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
+#pip install paddlepaddle-gpu==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
+pip install paddlepaddle-gpu==2.6.1.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html
 
 # If you want to use all functionalities, such as document parsing, document understanding, document translation, and key information extraction
 pip install "paddleocr[all]"
+
+pip install chromadb
+pip install kiwipiepy
+pip install langchain_chroma
+pip install rank_bm25
+pip install sentence_transformers
 
 pip install -U pymupdf
 pip install docling 

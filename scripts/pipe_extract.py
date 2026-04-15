@@ -27,23 +27,23 @@ if __name__ == "__main__":
         device="gpu:0",  
     )
 
-    pipeline_pp = PPStructureV3(
-        use_chart_recognition=False,         # 그래프/차트를 표로 인식하는 옵션
-        format_block_content=True,          # 기본 False → 블록 내용 포맷 정리
-        layout_threshold=0.2,               # 기본 0.3 → 낮추면 표 경계 더 잘 잡음
-        device="gpu:0",  
-        lang="korean",  # PPStructureV3 
-    )
+    # pipeline_pp = PPStructureV3(
+    #     use_chart_recognition=False,         # 그래프/차트를 표로 인식하는 옵션
+    #     format_block_content=True,          # 기본 False → 블록 내용 포맷 정리
+    #     layout_threshold=0.2,               # 기본 0.3 → 낮추면 표 경계 더 잘 잡음
+    #     device="gpu:0",  
+    #     lang="korean",  # PPStructureV3 
+    # )
 
     # root 입력 폴더
-    input_root = Path("db/raw_db/db_in_use")
+    input_root = Path("db/raw_db/test")
     #input_root = Path("db/raw_db/test_db/consulting")
 
     # 모든 pdf 재귀 탐색
     for pdf_path in input_root.rglob("*.pdf"):
 
         # 저장 폴더
-        save_dir = Path("db/raw_db_extracted") / pdf_path.stem
+        save_dir = Path("db/raw_db_extracted/consulting_2022_01") / pdf_path.stem
 
         # Docling
         #extract_docling(converter=converter, pdf_path=pdf_path, save_dir=save_dir)
