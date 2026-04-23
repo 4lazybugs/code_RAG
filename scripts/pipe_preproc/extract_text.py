@@ -30,10 +30,10 @@ if __name__ == "__main__":
         device="gpu:0",
     )
 
-    input_root = Path("db/raw_db/test/")
+    input_root = Path("db/raw_db/in_use/")
 
     for pdf_path in input_root.rglob("*.pdf"):
-        save_root = Path("db/raw_db_extracted_test") / pdf_path.stem
+        save_root = Path("db/raw_db_extracted_resolution") / pdf_path.stem
 
         pdfs_dir = save_root / "pdfs"
         mds_dir = save_root / "mds"

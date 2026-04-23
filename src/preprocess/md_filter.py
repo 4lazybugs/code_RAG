@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-def trim_and_save(
+def filt_and_save(
     search_dirs: list[Path],
     output_dir: Path,
     headers: list[str] | None = None,
@@ -24,7 +24,7 @@ def trim_and_save(
             continue
 
         pattern = "*.md"
-        md_files = sorted(search_dir.glob(pattern))
+        md_files = sorted(search_dir.rglob(pattern))
         print(f"[INFO] {search_dir} 에서 마크다운 파일 {len(md_files)}개 발견\n")
 
         for md_file in md_files:
@@ -46,9 +46,14 @@ def trim_and_save(
                     continue
 
                 trimmed = "".join(lines[header_idx:])
-                dest_path = output_dir / search_dir.name / md_file.name
+                
+                # 마지막 _숫자 제거해서 그룹 폴더명 생성
+                group_name = re.sub(r'_\d+$', '', md_file.stem)
+
+                dest_path = output_dir / group_name / md_file.name
                 dest_path.parent.mkdir(parents=True, exist_ok=True)
                 dest_path.write_text(trimmed, encoding="utf-8")
+                
                 print(f"  [OK] 저장 완료 → {dest_path.name} "
                       f"({header_idx}줄 제거, {len(lines) - header_idx}줄 저장)")
                 stats["saved"] += 1

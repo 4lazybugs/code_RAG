@@ -14,7 +14,7 @@ from src.synthesis.chunk_qa import gen_from_chunks
 from src.synthesis.agri_qa import qa_from_prompt
 
 from src.prompts.synthesis_prompt import agri_gpt_prompt, consulting_prompt, hotpot_prompt
-from src.prompts import naive_prompt, chunk_prompt
+from src.prompts import naive_prompt, qa_gen_prompt
 
 def look4md(root: Path):
     """
@@ -30,6 +30,28 @@ def look4md(root: Path):
     else:
         for md in root.rglob("*.md"):
             yield md
+
+
+def _save_qa(chunk_file: Path, chunk_root: Path, output_dir: Path, qa_list: list):
+    # chunks_for_synthesis/fruit_diagnosis_manual_10/fruit_diagnosis_manual_10_chunk00.json
+    # → qa_for_synthesis/fruit_diagnosis_manual_10/fruit_diagnosis_manual_10_qa_chunk00.json
+    rel_dir = chunk_file.parent.relative_to(chunk_root)
+    save_dir = output_dir / rel_dir
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    qa_filename = chunk_file.name.replace("_chunk", "_qa_chunk")
+    with open(save_dir / qa_filename, "w", encoding="utf-8") as f:
+        json.dump(qa_list, f, ensure_ascii=False, indent=2)
+
+
+############### load params #######################
+chunk_root = Path("db/chunks_for_synthesis")
+out_root = Path("db/qa_data/cand_qa_from_agentic_chunks")
+out_root.mkdir(parents=True, exist_ok=True)
+
+MAX_QA = 100000
+##################################################    
+
 
 if __name__ == "__main__":
     load_dotenv()
@@ -106,22 +128,20 @@ if __name__ == "__main__":
     params_chunk = Params(
         global_={"llm": llm_chunk},
         per={
-            "prompt_qa": chunk_prompt,
+            "prompt_qa": qa_gen_prompt,
         }
     )
 
-    out_root = Path("db/qa_data/cand_book_chunk")
-    out_root.mkdir(parents=True, exist_ok=True)
-
-    MAX_QA = 10000
-
-    chunk_root = Path("db/chunks_for_synthesis")
     chunk_results = gen_from_chunks(chunk_root, params_chunk, max_qa=MAX_QA)
 
-    out_path = out_root / "chunk_qa.json"
-    with out_path.open("w", encoding="utf-8") as f:
-        json.dump(chunk_results, f, ensure_ascii=False, indent=2)
-    print(f"saved: {out_path} (n={len(chunk_results)})")
+    # chunk_file 기준으로 그룹핑해서 저장
+    from itertools import groupby
+    keyfunc = lambda x: x["chunk_file"]
+    for chunk_file_str, group in groupby(sorted(chunk_results, key=keyfunc), key=keyfunc):
+        qa_list = list(group)
+        _save_qa(Path(chunk_file_str), chunk_root, out_root, qa_list)
+
+    print(f"total qa: {len(chunk_results)}")
 
     '''
     out_root = Path("db/qa_data/qa_in_use/without_md")

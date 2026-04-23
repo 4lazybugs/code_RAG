@@ -184,7 +184,7 @@ def save_report(results: list[dict], out_path: Path = Path("ocr_quality_report.c
 
 # ── 메인 ─────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    root = Path("db/raw_db_extracted/consulting_2022_01")
+    root = Path("db/raw_db_extracted_resolution/strawberry_research_data_manual/mds")
 
     results = evaluate_all(extracted_root=root, max_workers=5)
 
