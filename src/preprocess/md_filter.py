@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 
+
 def filt_and_save(
     search_dirs: list[Path],
     output_dir: Path,

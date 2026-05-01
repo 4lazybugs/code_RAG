@@ -45,6 +45,12 @@ def _save_qa(chunk_file: Path, chunk_root: Path, output_dir: Path, qa_list: list
 
 
 ############### load params #######################
+
+CFG = get_config("configs/config_preproc.yaml")
+
+MD_DIRS    = [Path(d) for d in CFG.md_dirs]
+CHUNK_DIR  = Path(CFG.chunk_dir)
+
 chunk_root = Path("db/chunks_for_synthesis")
 out_root = Path("db/qa_data/cand_qa_from_agentic_chunks")
 out_root.mkdir(parents=True, exist_ok=True)
@@ -53,72 +59,11 @@ MAX_QA = 100000
 ##################################################    
 
 
+
+
 if __name__ == "__main__":
     load_dotenv()
 
-    '''
-    llm = ChatOpenAI(
-        model="Qwen/Qwen2.5-32B-Instruct",
-        temperature=0,
-        base_url="http://127.0.0.1:8000/v1",
-        api_key="EMPTY",
-    )
-    '''
-
-    '''
-    llm_naive = ChatOpenAI(
-                model="gpt-4o-mini",
-                temperature=0.7,
-    )
-    '''
-
-    '''
-    llm_md = ChatOpenAI(
-        model= "gpt-4o-mini", # 빠르고 싼 가성비 모델
-        temperature=0,
-    )
-
-    # ===== naive_qa =========================================================
-    # ✅ llm은 global_에만
-    params_md = Params(
-        global_={"llm": llm_md},
-        per={
-            "min_len": 300,
-            "start_id": 0,
-            "seed": 42,
-            #"prompt_q": naive_prompt,
-            "prompt_qa": naive_prompt,
-        }
-    )
-
-    # md들이 들어있는 폴더
-    extracted_dir = Path("db/md_for_synthesis")
-
-    out_root = Path("db/qa_data/cand_book")
-    out_root.mkdir(parents=True, exist_ok=True)
-
-    md_dirs = list(look4md(extracted_dir))
-    print(f"found md-dirs: {len(md_dirs)}")
-
-    MAX_QA = 10000
-    remaining = MAX_QA
-
-    for search_dir in md_dirs:
-        out_name = f"{search_dir.stem}.json"
-        output_path = out_root / out_name
-
-        generate_qa = partial(gen_from_md, search_dir, params_md, "qa", remaining)
-        result = generate_qa()
-
-        with output_path.open("w", encoding="utf-8") as f:
-            json.dump(result, f, ensure_ascii=False, indent=2)
-        print(f"saved: {output_path} (n={len(result)})")
-
-        remaining -= len(result)
-        if remaining <= 0:
-            break
-    '''
-    
     #================ chunk_qa =========================================================
     llm_chunk = ChatOpenAI(
         model="gpt-4o-mini",
@@ -142,19 +87,3 @@ if __name__ == "__main__":
         _save_qa(Path(chunk_file_str), chunk_root, out_root, qa_list)
 
     print(f"total qa: {len(chunk_results)}")
-
-    '''
-    out_root = Path("db/qa_data/qa_in_use/without_md")
-    out_root.mkdir(parents=True, exist_ok=True)
-
-    for i in range(1100):
-        out_name = f"agri_QA_only_via_GPT_{i}.json"
-        output_path = out_root / out_name
-
-        result = qa_from_prompt(params_naive, num_samples=1)
-
-        with output_path.open("w", encoding="utf-8") as f:
-            json.dump(result, f, ensure_ascii=False, indent=2)
-
-        print(f"saved: {output_path} (n={len(result)})")
-    '''

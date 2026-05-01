@@ -24,21 +24,23 @@ headers:
   - '<div style="text-align: center;">2차 현장컨설팅 결과보고서</div>'
 
 #################
+### Extraction ##
+#################
+db_dirs:
+  - "db/raw_db/in_use_manual/"
+md_out_dir: "db/raw_db_extracted_paddle_manual/"
+
+#################
 ### Chunking #####
 #################
-
-model_name: 'Qwen/Qwen2.5-7B-Instruct-GPTQ-Int8'
-
-md_dirs:
-   - "db/md_for_synthesis/"
-
-  # - db/md_for_synthesis/fruit_diagnosis_manual
-  # - "db/md_for_synthesis/consulting_2022_02"
-  # - "db/md_for_synthesis/consulting_2022_04"
-  # - "db/md_for_synthesis/consulting_2024_(1)"
-  # - "db/md_for_synthesis/consulting_2024_(2)"
-
-chunk_dir: "db/chunks_for_synthesis/"
-
+md_in_dirs:
+  - "db/raw_db_extracted_paddle_manual/"
+chunk_out_dir: "db/lumber_chunks_for_synthesis/"
 max_fnum: 100000  # 테스트용, null이면 전체 처리
 
+#################
+### QA ##########
+#################
+chunk_in_dirs:
+  - "db/lumber_chunks_for_synthesis/"
+qa_out_dir: "db/qa_data/qa_lumber_chunks/"

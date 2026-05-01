@@ -1,7 +1,9 @@
-from pathlib import Path
 from bs4 import BeautifulSoup
 from typing import Any
 import json
+from pathlib import Path
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
 
 def html2text(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
@@ -28,134 +30,79 @@ def html2text(html: str) -> str:
 
     return "\n".join(result)
 
+def parse_json(text: str) -> dict:
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[-1]
+        text = text.rsplit("```", 1)[0]
+    return json.loads(text.strip())
 
-def llm_chunking(md_file: Path, chain: Any, meta_chain: Any, decision_chain: Any) -> list[dict]:
-    content = md_file.read_text(encoding="utf-8")
-    lines = content.split("\n")
 
-    header = next((l.lstrip("#").strip() for l in lines if l.startswith("#")), "")
-    if not header:
-        soup = BeautifulSoup(content, "html.parser")
-        div = soup.find("div", style=lambda s: s and "text-align" in s)
-        if div:
-            header = div.get_text(strip=True)
-
-    raw_text = html2text(content)
-
-    # 0단계: 유효성 판단
+def decision(raw_text: str, decision_chain) -> bool:
     try:
-        decision_response = decision_chain.invoke({"raw_text": raw_text})
-        decision = json.loads(decision_response.content)
-        if not decision["is_useful"]:
-            print(f"  → [SKIP] {decision['reason']}")
-            return []
-        print(f"  → [PASS] {decision['reason']}")
+        response = decision_chain.invoke({"raw_text": raw_text})
+        result = parse_json(response.content)
+        return result.get("is_useful", False)
     except Exception as e:
-        print(f"[WARN] 유효성 판단 실패: {md_file} / {e}")
+        print(f"[WARN] decision 실패: {e}")
+        return True
 
-    # 1단계: 메타 추출
-    try:
-        meta_response = meta_chain.invoke({"raw_text": raw_text})
-        meta = json.loads(meta_response.content)
-        context_prefix = meta["context_prefix"]
-        print(f"  → context_prefix: {context_prefix}")
-    except Exception as e:
-        print(f"[WARN] 메타 추출 실패: {md_file} / {e}")
-        context_prefix = header
 
-    # 2단계: 청킹
-    response = chain.invoke({
-        "header": header,
-        "raw_text": raw_text,
-        "context_prefix": context_prefix,
-    })
-
-    try:
-        result = json.loads(response.content)
-        md_summary = result["md_summary"]
-
-        chunks = []
-        for i, chunk in enumerate(result["chunks"]):
-            chunks.append({
-                "id": i,
-                "source_file": md_file.name,
-                "source_path": str(md_file),
-                "md_summary": md_summary,
-                "raw_chunk": chunk["text"],
-                "agentic_chunk": chunk["agentic_chunk"],
-            })
-        return chunks
-
-    except Exception as e:
-        print(f"[WARN] JSON 파싱 실패: {md_file} / {e}")
-        print(response.content[:500])
+def lumber_chunking(prose_pages: list[str], boundary_chain, accumulate_pages: int = 3) -> list[str]:
+    if not prose_pages:
         return []
 
+    chunks = []
+    current_chunk = [prose_pages[0]]
+    accumulated = prose_pages[0]
 
-def collect_md_files(path: Path) -> list[Path]:
-    path = Path(path)
+    for i in range(1, len(prose_pages)):
+        new_text = prose_pages[i]
 
-    if not path.exists():
-        print(f"[WARN] 경로가 존재하지 않습니다: {path}")
-        return []
+        if len(current_chunk) >= accumulate_pages:
+            try:
+                response = boundary_chain.invoke({
+                    "accumulated": accumulated[-2000:],
+                    "new_text": new_text,
+                })
+                result = parse_json(response.content)
+                is_boundary = result.get("is_boundary", False)
+                print(f"  페이지 {i+1}: {'[경계]' if is_boundary else '[연속]'} {result.get('reason', '')}")
+            except Exception as e:
+                print(f"[WARN] 단절 판단 실패: {e}")
+                is_boundary = False
 
-    if path.is_file():
-        if path.suffix.lower() != ".md":
-            print(f"[WARN] md 파일이 아닙니다: {path}")
-            return []
-        return [path]
-
-    return sorted(path.rglob("*.md"))
-
-
-def chunking_and_save(
-    chain: Any,
-    meta_chain: Any,
-    decision_chain: Any,
-    md_dirs: list[Path],
-    output_dir: Path,
-    max_files: int | None = None
-) -> list[dict]:
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    all_chunks = []
-    processed_files = 0
-
-    for md_dir in md_dirs:
-        md_dir = Path(md_dir)
-        md_files = collect_md_files(md_dir)
-
-        print(f"[INFO] {md_dir} 에서 마크다운 파일 {len(md_files)}개 발견")
-
-        for md_file in md_files:
-            print(f"  처리중: {md_file}")
-
-            chunks = llm_chunking(md_file, chain, meta_chain, decision_chain)
-
-            if not chunks:  # SKIP된 파일은 카운트도 저장도 안 함
+            if is_boundary:
+                chunks.append("\n\n".join(current_chunk))
+                current_chunk = [new_text]
+                accumulated = new_text
                 continue
-            
-            all_chunks.extend(chunks)
-            processed_files += 1
 
-            print(f"  → {len(chunks)}개 청크 생성")
+        current_chunk.append(new_text)
+        accumulated += "\n\n" + new_text
 
-            if chunks:  # SKIP된 파일은 저장 안 함
-                rel_parent = Path(md_file.stem)
+    if current_chunk:
+        chunks.append("\n\n".join(current_chunk))
 
-                save_path = output_dir / rel_parent
-                save_path.mkdir(parents=True, exist_ok=True)
+    return chunks
 
-                for chunk in chunks:
-                    chunk_id = chunk["id"]
-                    filename = f"{md_file.stem}_chunk{chunk_id:02d}.json"
-                    with open(save_path / filename, "w", encoding="utf-8") as f:
-                        json.dump(chunk, f, ensure_ascii=False, indent=2)
 
-            if max_files is not None and processed_files >= max_files:
-                print(f"⚠️ max_files={max_files} 도달, 조기 종료")
-                return all_chunks
+def agentic_chunking(raw_chunk: str, meta_chain, agentic_chain) -> tuple[list[dict], str]:
+    try:
+        meta_response = meta_chain.invoke({"raw_text": raw_chunk})
+        meta = parse_json(meta_response.content)
+        md_summary = meta["md_summary"]
+    except Exception as e:
+        print(f"[WARN] 메타 추출 실패: {e}")
+        md_summary = ""
 
-    print(f"총 청크 수: {len(all_chunks)}")
-    return all_chunks
+    try:
+        response = agentic_chain.invoke({
+            "raw_text": raw_chunk,
+            "md_summary": md_summary,
+        })
+        result = parse_json(response.content)
+        return result["chunks"], md_summary
+    except Exception as e:
+        print(f"[WARN] agentic chunking 실패: {e}")
+        return [], ""
