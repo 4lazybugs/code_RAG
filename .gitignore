@@ -4,6 +4,8 @@
 *.bin
 *.pickle
 *.png
+*.log
+*.out
 
 ckpts/
 MiniCheck/

@@ -1,11 +1,11 @@
 import json, re
 from pathlib import Path
 from dotenv import load_dotenv
+from itertools import groupby
 
 from langchain_openai import ChatOpenAI
 
 from src.config import get_config
-from src.preprocess.md_filter import filt_and_save
 from src.prompts.chunking_prompt import (
     md2text_prompt, boundary_prompt, agentic_prompt, decision_prompt, meta_prompt
 )
@@ -18,7 +18,6 @@ from src.preprocess.chunking import (
 def collect_md_files(md_dir: Path) -> list[Path]:
     """재귀적으로 모든 하위 폴더의 .md 파일 수집 (숫자 순 정렬)"""
     def natural_key(path: Path):
-        # 파일명에서 숫자를 추출해 정수로 비교
         parts = re.split(r'(\d+)', path.stem)
         return [int(p) if p.isdigit() else p.lower() for p in parts]
 
@@ -27,18 +26,27 @@ def collect_md_files(md_dir: Path) -> list[Path]:
     for f in files:
         print(f"  발견: {f.relative_to(md_dir)}")
     return files
-    
+
+
 def full_pipeline(
     md_dir: Path | list[Path],
     output_dir: Path,
     accumulate_pages: int = 3,
 ) -> list[dict]:
-    # ── 리스트면 각 디렉토리마다 재귀 호출 ──────────────────────
+
+    # ── 리스트면 각 항목마다 재귀 호출 (파일/폴더 혼합 OK) ──────
     if isinstance(md_dir, list):
         all_chunks = []
         for d in md_dir:
+            d = Path(d)
             print(f"\n{'='*60}")
-            print(f"[INFO] 디렉토리 처리 시작: {d}")
+            if d.is_file() and d.suffix == ".md":
+                print(f"[INFO] 파일 처리 시작: {d}")
+            elif d.is_dir():
+                print(f"[INFO] 디렉토리 처리 시작: {d}")
+            else:
+                print(f"[WARN] 건너뜀 (파일/폴더 아님): {d}")
+                continue
             print(f"{'='*60}")
             all_chunks.extend(full_pipeline(d, output_dir, accumulate_pages))
         print(f"\n[INFO] 전체 완료 — 총 {len(all_chunks)}개 청크")
@@ -50,7 +58,7 @@ def full_pipeline(
     # ── 단일 .md 파일이면 해당 파일만 처리 ──────────────────────
     if md_dir.is_file() and md_dir.suffix == ".md":
         md_files = [md_dir]
-        md_root  = md_dir.parent   # 상대경로 기준점을 부모 디렉토리로
+        md_root  = md_dir.parent
         print(f"[INFO] 단일 파일 모드: {md_dir}")
     else:
         md_files = collect_md_files(md_dir)
@@ -89,60 +97,67 @@ def full_pipeline(
 
     print(f"\n[INFO] {len(prose_pages)}개 페이지 통과")
 
-    prose_texts = [p for p, _ in prose_pages]
-    prose_files = [f for _, f in prose_pages]
+    # ── 2단계 & 3단계: 폴더별로 분리해서 처리 ───────────────────
+    print("\n[INFO] 2단계 & 3단계: 폴더별 Lumber + Agentic Chunking 중...")
 
-    # ── 2단계: Lumber Chunking ────────────────────────────────────
-    print("\n[INFO] 2단계: Lumber Chunking 중...")
-    lumber_chunks = lumber_chunking(prose_texts, boundary_chain, accumulate_pages)
-    print(f"[INFO] {len(lumber_chunks)}개 큰 청크 생성")
+    def get_base(md_file: Path) -> str:
+        rel   = md_file.relative_to(md_root)
+        parts = rel.parts
+        return parts[0] if len(parts) > 1 else md_root.name
 
-    # ── 3단계: Agentic Chunking ───────────────────────────────────
-    print("\n[INFO] 3단계: Agentic Chunking 중...")
-    output_dir.mkdir(parents=True, exist_ok=True)
+    prose_pages_sorted = sorted(prose_pages, key=lambda x: get_base(x[1]))
 
     all_chunks = []
-    chunk_idx  = 0
 
-    for i, lumber_chunk in enumerate(lumber_chunks):
-        page_start = i * accumulate_pages
-        rep_file   = prose_files[page_start] if page_start < len(prose_files) else prose_files[-1]
-        rel_subdir = rep_file.parent.relative_to(md_root)
+    for base_name, group in groupby(prose_pages_sorted, key=lambda x: get_base(x[1])):
+        group_pages = list(group)
+        group_texts = [p for p, _ in group_pages]
+        group_files = [f for _, f in group_pages]
 
-        print(f"\n  큰 청크 {i+1}/{len(lumber_chunks)} 처리중... (출처: {rel_subdir or '.'})")
+        print(f"\n  [{base_name}] {len(group_texts)}개 페이지 → Lumber Chunking")
+        lumber_chunks = lumber_chunking(group_texts, boundary_chain, accumulate_pages)
+        print(f"  [{base_name}] {len(lumber_chunks)}개 큰 청크 생성")
 
-        agentic_chunks, md_summary = agentic_chunking(lumber_chunk, meta_chain, agentic_chain)
-        print(f"  → {len(agentic_chunks)}개 agentic chunk 생성")
+        chunk_idx = 1  # 폴더마다 초기화
 
-        sub_output_dir = output_dir / rel_subdir
-        sub_output_dir.mkdir(parents=True, exist_ok=True)
+        for i, lumber_chunk in enumerate(lumber_chunks):
+            page_start = i * accumulate_pages
+            rep_file   = group_files[page_start] if page_start < len(group_files) else group_files[-1]
+            rel_subdir = rep_file.parent.relative_to(md_root)
 
-        for chunk in agentic_chunks:
-            record = {
-                "id":            chunk_idx,
-                "source_file":   rep_file.name,
-                "md_summary":    md_summary,
-                "raw_chunk":     chunk["raw_chunk"],
-                "agentic_chunk": chunk["agentic_chunk"],
-            }
-            all_chunks.append(record)
+            print(f"\n    큰 청크 {i+1}/{len(lumber_chunks)} 처리중... (출처: {rel_subdir})")
 
-            # 단일 파일 모드면 파일 stem, 디렉토리 모드면 디렉토리 이름 사용
-            base_name = md_root.stem if md_dir.is_file() and md_dir.suffix == ".md" else md_root.name
-            filename  = f"{base_name}_chunk{chunk_idx:03d}.json"
-            with open(sub_output_dir / filename, "w", encoding="utf-8") as f:
-                json.dump(record, f, ensure_ascii=False, indent=2)
+            agentic_chunks, md_summary = agentic_chunking(lumber_chunk, meta_chain, agentic_chain)
+            print(f"    → {len(agentic_chunks)}개 agentic chunk 생성")
 
-            chunk_idx += 1
+            sub_output_dir = output_dir / rel_subdir
+            sub_output_dir.mkdir(parents=True, exist_ok=True)
+
+            for chunk in agentic_chunks:
+                record = {
+                    "id":            chunk_idx,
+                    "source_file":   rep_file.name,
+                    "md_summary":    md_summary,
+                    "raw_chunk":     chunk["raw_chunk"],
+                    "agentic_chunk": chunk["agentic_chunk"],
+                }
+                all_chunks.append(record)
+
+                filename = f"{base_name}_chunk{chunk_idx:03d}.json"
+                with open(sub_output_dir / filename, "w", encoding="utf-8") as f:
+                    json.dump(record, f, ensure_ascii=False, indent=2)
+
+                chunk_idx += 1
 
     print(f"\n[INFO] {len(all_chunks)}개 청크 저장 완료 → {output_dir}")
     return all_chunks
 
+
 #########  파라미터 로드 #######################
 CFG = get_config("configs/config_preproc.yaml")
 
-MD_DIRS    = [Path(d) for d in CFG.md_in_dirs]
-CHUNK_DIR  = Path(CFG.chunk_out_dir)
+MD_DIRS   = [Path(d) for d in CFG.md_in_dirs]
+CHUNK_DIR = Path(CFG.chunk_out_dir)
 
 load_dotenv()
 
@@ -157,7 +172,7 @@ if __name__ == "__main__":
     load_dotenv()
 
     full_pipeline(
-        md_dir=MD_DIRS, 
+        md_dir=MD_DIRS,
         output_dir=CHUNK_DIR,
         accumulate_pages=1,
     )
