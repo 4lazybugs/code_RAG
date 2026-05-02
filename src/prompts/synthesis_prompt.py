@@ -14,16 +14,23 @@ qa2d_prompt = ChatPromptTemplate.from_template(
 
 qa_gen_prompt = ChatPromptTemplate.from_template(
 """
-다음은 농업 분야 문서의 청크입니다.
-청크 내용: {agentic_chunk}
+다음은 농업 분야 문서의 청크이다.
 
-아래 정보를 활용하여 Ground Truth QA 1개를 생성하라.
+[md_summary]
+{md_summary}
+
+[raw_chunk]
+{raw_chunk}
+
+위 두 정보를 모두 활용하여 농업 분야 RAG 시스템 평가용 Ground Truth QA 1개를 생성하라.
+- md_summary: 문서 전체의 맥락과 배경 정보를 제공한다. 질문의 맥락(누가, 언제, 어떤 상황인지)을 구성할 때 참고하라.
+- raw_chunk: 실제 질답의 근거가 되는 원문이다.
 
 [생성 규칙]
-1) 질문은 agentic_chunk의 맥락(누가, 언제, 무엇에 대한)을 자연스럽게 포함하여, 질문만 단독으로 읽어도 어떤 상황에서의 질문인지 완전히 이해할 수 있어야 한다.
+1) 질문은 md_summary의 맥락(누가, 언제, 무엇에 대한)을 자연스럽게 포함하여, 질문만 단독으로 읽어도 어떤 상황에서의 질문인지 완전히 이해할 수 있어야 한다.
 2) 질문에 지시어나 대명사를 사용하지 마라. 구체적인 내용을 질문에 직접 명시하라.
-3) 질문을 작성한 후 agentic_chunk의 내용이 질문에 빠짐없이 반영됐는지 검토하라. 빠진 정보가 있으면 질문을 다시 작성하라.
-4) 답은 agentic_chunk에 명시된 단일 사실이어야 한다.
+3) 질문을 작성한 후 raw_chunk의 내용이 질문에 빠짐없이 반영됐는지 검토하라. 빠진 정보가 있으면 질문을 다시 작성하라.
+4) 답은 raw_chunk에 명시된 단일 사실이어야 한다.
 5) 추론이나 외부 지식 사용 금지.
 
 [출력 형식]
@@ -77,6 +84,45 @@ noteLM_prompt = ChatPromptTemplate.from_template(
   }}
 ]
 ```
+"""
+)
+
+hotpot_prompt = ChatPromptTemplate.from_template(
+"""
+다음 context에서 HotpotQA 스타일 multi-hop Ground Truth 1개를 생성하라.
+
+[핵심 규칙]
+1) 반드시 서로 다른 두 문단(A, B)을 사용해야 하며,
+   질문은 A와 B를 모두 읽어야만 답할 수 있어야 한다.
+
+2) supporting_fact_a:
+   - 문단 A에서 답에 필요한 핵심 근거 1개를 원문 그대로 발췌
+   - 문맥상 단독 이해 가능할 만큼 충분히 길 것 (약 200 tokens 이상 권장)
+
+3) supporting_fact_b:
+   - 문단 B에서 답에 필요한 핵심 근거 1개를 원문 그대로 발췌
+   - 문단 A 내용 포함 금지
+
+4) 질문 규칙:
+   - 지시어/모호한 일반명사 금지
+   - 답은 context에 명시된 단일 값
+
+[출력 형식]
+설명 없이 JSON 배열 1개만 출력:
+
+[
+  {{
+    "id": {id},
+    "question": "...",
+    "answer": "...",
+    "supporting_fact_a": "...",
+    "supporting_fact_b": "..."
+  }}
+]
+
+# context
+{md_a}
+{md_b}
 """
 )
 
@@ -163,44 +209,5 @@ mcq_prompt = ChatPromptTemplate.from_template(
 
 # context
 {context}
-"""
-)
-
-hotpot_prompt = ChatPromptTemplate.from_template(
-"""
-다음 context에서 HotpotQA 스타일 multi-hop Ground Truth 1개를 생성하라.
-
-[핵심 규칙]
-1) 반드시 서로 다른 두 문단(A, B)을 사용해야 하며,
-   질문은 A와 B를 모두 읽어야만 답할 수 있어야 한다.
-
-2) supporting_fact_a:
-   - 문단 A에서 답에 필요한 핵심 근거 1개를 원문 그대로 발췌
-   - 문맥상 단독 이해 가능할 만큼 충분히 길 것 (약 200 tokens 이상 권장)
-
-3) supporting_fact_b:
-   - 문단 B에서 답에 필요한 핵심 근거 1개를 원문 그대로 발췌
-   - 문단 A 내용 포함 금지
-
-4) 질문 규칙:
-   - 지시어/모호한 일반명사 금지
-   - 답은 context에 명시된 단일 값
-
-[출력 형식]
-설명 없이 JSON 배열 1개만 출력:
-
-[
-  {{
-    "id": {id},
-    "question": "...",
-    "answer": "...",
-    "supporting_fact_a": "...",
-    "supporting_fact_b": "..."
-  }}
-]
-
-# context
-{md_a}
-{md_b}
 """
 )

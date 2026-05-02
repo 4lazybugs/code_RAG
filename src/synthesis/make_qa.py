@@ -18,7 +18,8 @@ def gen_from_chunks(chunk_root: Path, params, max_qa: int | None = None):
             resp = chain.invoke({
                 "id": len(results),
                 "source_file": chunk.get("source_file", ""),
-                "agentic_chunk": chunk.get("agentic_chunk", ""),
+                "raw_chunk": chunk.get("raw_chunk", ""),
+                "md_summary": chunk.get("md_summary", ""),
             })
             content = resp.content if hasattr(resp, "content") else str(resp)
         except Exception as e:
@@ -36,8 +37,10 @@ def gen_from_chunks(chunk_root: Path, params, max_qa: int | None = None):
         for item in arr:
             results.append({
                 "id": len(results),
-                "source_file": chunk.get("source_file", ""),
-                "agentic_chunk": chunk.get("agentic_chunk", ""),
+                "chunk_name": str(chunk_file),  # ← 이거 추가
+                "source_files": chunk.get("source_files", ""),
+                "raw_chunk": chunk.get("raw_chunk", ""),
+                "md_summary": chunk.get("md_summary", ""),
                 "question": item.get("question", ""),
                 "answer": item.get("answer", ""),
             })

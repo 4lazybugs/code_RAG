@@ -1,8 +1,11 @@
+embedor_model_name : "upskyy/bge-m3-korean" # only for 한국어
+#embedor_model_name : "BAAI/bge-m3" # for 다국어
+
 #################
 ### Trimming ##
 #################
 search_dirs:
-  # - "db/raw_db_extracted_paddle/"
+   - "db/raw_db_extracted_paddle/"
   # - "db/raw_db_extracted/consulting_2022_02"
   # - "db/raw_db_extracted/consulting_2022_04"
   # - "db/raw_db_extracted/consulting_2024_(1)"
@@ -28,21 +31,4 @@ headers:
 #################
 db_dirs:
   - "db/raw_db/in_use_manual/"
-md_out_dir: "db/raw_db_extracted_paddle_manual/"
-
-#################
-### Chunking #####
-#################
-md_in_dirs:
-  #- "db/raw_db_extracted_paddle_manual/"
-  - "db/md_for_chunking/"
-chunk_out_dir: "db/chunks_for_synthesis/"
-max_fnum: 100000  # 테스트용, null이면 전체 처리
-
-#################
-### QA ##########
-#################
-chunk_in_dirs:
-  - "db/chunks_for_synthesis/"
-qa_out_dir: "db/qa_data/qa_from_lumber/"
-MAX_QA: 10000000000000
+md_out_dir: "db/raw_db_extracted_paddle/"

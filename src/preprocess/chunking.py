@@ -48,13 +48,14 @@ def decision(raw_text: str, decision_chain) -> bool:
         return True
 
 
-def lumber_chunking(prose_pages: list[str], boundary_chain, accumulate_pages: int = 3) -> list[str]:
+def lumber_chunking(prose_pages: list[str], boundary_chain, accumulate_pages: int = 3) -> list[tuple[str, int, int]]:
     if not prose_pages:
         return []
 
     chunks = []
     current_chunk = [prose_pages[0]]
     accumulated = prose_pages[0]
+    start_idx = 0
 
     for i in range(1, len(prose_pages)):
         new_text = prose_pages[i]
@@ -73,36 +74,37 @@ def lumber_chunking(prose_pages: list[str], boundary_chain, accumulate_pages: in
                 is_boundary = False
 
             if is_boundary:
-                chunks.append("\n\n".join(current_chunk))
+                chunks.append(("\n\n".join(current_chunk), start_idx, i - 1))
                 current_chunk = [new_text]
                 accumulated = new_text
+                start_idx = i
                 continue
 
         current_chunk.append(new_text)
         accumulated += "\n\n" + new_text
 
     if current_chunk:
-        chunks.append("\n\n".join(current_chunk))
+        chunks.append(("\n\n".join(current_chunk), start_idx, len(prose_pages) - 1))
 
     return chunks
 
 
-def agentic_chunking(raw_chunk: str, meta_chain, agentic_chain) -> tuple[list[dict], str]:
+def agentic_chunking(raw_chunk: str, meta_chain, agentic_chain) -> tuple[str, list[str]]:
     try:
+        # 1) 요약 추출
         meta_response = meta_chain.invoke({"raw_text": raw_chunk})
-        meta = parse_json(meta_response.content)
-        md_summary = meta["md_summary"]
-    except Exception as e:
-        print(f"[WARN] 메타 추출 실패: {e}")
-        md_summary = ""
+        md_summary = parse_json(meta_response.content).get("md_summary", "")
 
-    try:
-        response = agentic_chain.invoke({
-            "raw_text": raw_chunk,
+        # 2) 요약 기반 청크 분리
+        agentic_response = agentic_chain.invoke({
             "md_summary": md_summary,
+            "raw_text":   raw_chunk,
         })
-        result = parse_json(response.content)
-        return result["chunks"], md_summary
+        chunks = parse_json(agentic_response.content)
+        chunk_texts = [c["chunk"] for c in chunks if c.get("chunk")]
+
+        return md_summary, chunk_texts
+
     except Exception as e:
-        print(f"[WARN] agentic chunking 실패: {e}")
-        return [], ""
+        print(f"[WARN] agentic_chunking 실패: {e}")
+        return "", [raw_chunk]

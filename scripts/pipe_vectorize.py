@@ -11,7 +11,7 @@ if __name__ == "__main__":
     VEC_DIR.mkdir(parents=True, exist_ok=True)
     EXTRACT_DIR = Path("db/raw_db_extracted/")
 
-    CFG_emb = get_config(path='configs/config_emb.yaml')
+    CFG_emb = get_config(path='configs/config_preproc.yaml')
     EMBED_MODEL = CFG_emb.embedor_model_name
 
     emb = Embeddor(EMBED_MODEL)

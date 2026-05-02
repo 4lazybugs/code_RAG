@@ -7,7 +7,7 @@ from langchain_openai import ChatOpenAI
 
 from src.config import get_config
 from src.prompts.chunking_prompt import (
-    md2text_prompt, boundary_prompt, agentic_prompt, decision_prompt, meta_prompt
+    md2text_prompt, boundary_prompt, decision_prompt, meta_prompt, agentic_prompt
 )
 from src.preprocess.chunking import (
     html2text, parse_json,
@@ -16,7 +16,6 @@ from src.preprocess.chunking import (
 
 
 def collect_md_files(md_dir: Path) -> list[Path]:
-    """재귀적으로 모든 하위 폴더의 .md 파일 수집 (숫자 순 정렬)"""
     def natural_key(path: Path):
         parts = re.split(r'(\d+)', path.stem)
         return [int(p) if p.isdigit() else p.lower() for p in parts]
@@ -34,7 +33,6 @@ def full_pipeline(
     accumulate_pages: int = 3,
 ) -> list[dict]:
 
-    # ── 리스트면 각 항목마다 재귀 호출 (파일/폴더 혼합 OK) ──────
     if isinstance(md_dir, list):
         all_chunks = []
         for d in md_dir:
@@ -55,7 +53,6 @@ def full_pipeline(
     md_dir = Path(md_dir)
     output_dir = Path(output_dir)
 
-    # ── 단일 .md 파일이면 해당 파일만 처리 ──────────────────────
     if md_dir.is_file() and md_dir.suffix == ".md":
         md_files = [md_dir]
         md_root  = md_dir.parent
@@ -64,13 +61,6 @@ def full_pipeline(
         md_files = collect_md_files(md_dir)
         md_root  = md_dir
         print(f"\n[INFO] 총 {len(md_files)}개 md 파일 발견")
-
-    llm = ChatOpenAI(model="gpt-4o-mini")
-    prose_chain    = md2text_prompt  | llm
-    boundary_chain = boundary_prompt | llm
-    meta_chain     = meta_prompt     | llm
-    agentic_chain  = agentic_prompt  | llm
-    decision_chain = decision_prompt | llm
 
     # ── 1단계: Decision + 줄글 변환 ──────────────────────────────
     print("\n[INFO] 1단계: Decision 필터링 + 줄글 변환 중...")
@@ -106,7 +96,6 @@ def full_pipeline(
         return parts[0] if len(parts) > 1 else md_root.name
 
     prose_pages_sorted = sorted(prose_pages, key=lambda x: get_base(x[1]))
-
     all_chunks = []
 
     for base_name, group in groupby(prose_pages_sorted, key=lambda x: get_base(x[1])):
@@ -118,32 +107,41 @@ def full_pipeline(
         lumber_chunks = lumber_chunking(group_texts, boundary_chain, accumulate_pages)
         print(f"  [{base_name}] {len(lumber_chunks)}개 큰 청크 생성")
 
-        chunk_idx = 1  # 폴더마다 초기화
+        chunk_idx = 1
 
-        for i, lumber_chunk in enumerate(lumber_chunks):
-            page_start = i * accumulate_pages
-            rep_file   = group_files[page_start] if page_start < len(group_files) else group_files[-1]
+        for i, (lumber_chunk, start_idx, end_idx) in enumerate(lumber_chunks):
+            rep_file   = group_files[start_idx]
+            end_file   = group_files[end_idx]
             rel_subdir = rep_file.parent.relative_to(md_root)
 
-            print(f"\n    큰 청크 {i+1}/{len(lumber_chunks)} 처리중... (출처: {rel_subdir})")
+            source_files = list(dict.fromkeys(
+                f.name for f in group_files[start_idx:end_idx+1]
+            ))
 
-            agentic_chunks, md_summary = agentic_chunking(lumber_chunk, meta_chain, agentic_chain)
-            print(f"    → {len(agentic_chunks)}개 agentic chunk 생성")
+            print(f"\n    큰 청크 {i+1}/{len(lumber_chunks)} 처리중... source_files: {source_files}")
+
+            md_summary, chunk_texts = agentic_chunking(lumber_chunk, meta_chain, agentic_chain)
+            print(f"    → {len(chunk_texts)}개 agentic chunk 생성")
 
             sub_output_dir = output_dir / rel_subdir
             sub_output_dir.mkdir(parents=True, exist_ok=True)
 
-            for chunk in agentic_chunks:
+            for chunk_text in chunk_texts:
                 record = {
-                    "id":            chunk_idx,
-                    "source_file":   rep_file.name,
-                    "md_summary":    md_summary,
-                    "raw_chunk":     chunk["raw_chunk"],
-                    "agentic_chunk": chunk["agentic_chunk"],
+                    "id":           chunk_idx,
+                    "source_files": source_files,
+                    "md_summary":   md_summary,
+                    "raw_chunk":    chunk_text,
                 }
                 all_chunks.append(record)
 
-                filename = f"{base_name}_chunk{chunk_idx:03d}.json"
+                if rep_file.name == end_file.name:
+                    filename = f"{rep_file.stem}_chunk{chunk_idx:03d}.json"
+                else:
+                    end_num    = re.search(r'(\d+)$', end_file.stem)
+                    end_suffix = end_num.group(1) if end_num else end_file.stem
+                    filename   = f"{rep_file.stem}_to_{end_suffix}_chunk{chunk_idx:03d}.json"
+
                 with open(sub_output_dir / filename, "w", encoding="utf-8") as f:
                     json.dump(record, f, ensure_ascii=False, indent=2)
 
@@ -153,20 +151,21 @@ def full_pipeline(
     return all_chunks
 
 
-#########  파라미터 로드 #######################
-CFG = get_config("configs/config_preproc.yaml")
+#########  파라미터  #######################
+CFG = get_config("configs/config_gen.yaml")
 
 MD_DIRS   = [Path(d) for d in CFG.md_in_dirs]
 CHUNK_DIR = Path(CFG.chunk_out_dir)
 
 load_dotenv()
 
-llm            = ChatOpenAI(model="gpt-4o-mini")
+llm            = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+prose_chain    = md2text_prompt  | llm
+boundary_chain = boundary_prompt | llm
 meta_chain     = meta_prompt     | llm
-chunking_chain = agentic_prompt  | llm
+agentic_chain  = agentic_prompt  | llm
 decision_chain = decision_prompt | llm
 ###############################################
-
 
 if __name__ == "__main__":
     load_dotenv()

@@ -41,7 +41,7 @@ class NLIFilter:
         entailed    = []
 
         for i, item in enumerate(qa2d_list):
-            context = item.get("agentic_chunk", "")   # context 대신 agentic_chunk 직접 사용
+            context = " ".join(filter(None, [item.get("md_summary", ""), item.get("raw_chunk", ""),]))
             label, score = self.predict(context, item["declarative"])
             result = {**item, "label": label, "score": score}
             all_results.append(result)
