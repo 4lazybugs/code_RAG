@@ -6,19 +6,20 @@ from dotenv import load_dotenv
 from itertools import groupby
 
 from src.config import get_config
-from src.postprocess.nli_filter import NLIFilter
+from src.postprocess.nli_filter import NLIFilter, nli_QA, nli_CD
 
-def run_nli_filter(qa2d_results: list[dict], nli: NLIFilter, threshold: float) -> tuple[list[dict], list[dict]]:
-    """3단계: NLI 기반 entailment 판단 → (전체, 필터링된 것) 반환"""
+def run_nli_filter(qa2d_results: list[dict], nli: NLIFilter, threshold: float, strategy):
     print(f"[INFO] NLI 필터링 중... (threshold={threshold})")
-    all_results, _ = nli.filter_batch(qa2d_results)
-    filtered = [
-        r for r in all_results
-        if r["label"] == "entailment" and r["score"] >= threshold
-    ]
+    all_results, entailed, neutral, contradiction = nli.filter_batch(qa2d_results)
+
+    if strategy == nli_CD:
+        filtered = [r for r in all_results if r["score_entailment"] >= threshold]
+    else:  # nli_QA
+        filtered = [r for r in all_results if r["score_entailment"] <= threshold]
+
     print(f"[INFO] 필터링 결과: {len(filtered)}/{len(all_results)} "
           f"({len(filtered)/max(len(all_results), 1)*100:.1f}%)")
-    return all_results, filtered
+    return all_results, entailed, neutral, contradiction, filtered
 
 def save_qa(qa_list: list[dict], chunk_root: Path, out_root: Path, suffix: str = "") -> None:
     chunk_files = list(chunk_root.rglob("*_chunk*.json"))
@@ -49,31 +50,42 @@ def load_qa_from_dir(qa_root: Path) -> list[dict]:
 ############### load params #######################
 CFG = get_config("configs/config_gen.yaml")
 
-QA_ROOT          = Path(CFG.qa_in_dir)
-OUT_ROOT         = Path(CFG.qa_filt_dir)
-NLI_MODEL        = "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli"
-ENTAIL_THRESHOLD = 0.95
+QA_ROOT  = Path(CFG.qa_in_dir)
+OUT_ROOT = Path(CFG.qa_filt_dir)
+NLI_MODEL = "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli"
+
+STRATEGIES = [
+    {"strategy": nli_CD, "threshold": 0.95},
+    {"strategy": nli_QA, "threshold": 0.3},
+]
 ###################################################
+
 
 if __name__ == "__main__":
     load_dotenv()
 
-    nli = NLIFilter(model_name=NLI_MODEL, device="cuda")
-
-    qa_list = load_qa_from_dir(QA_ROOT)
-
-    # chunk_root는 all/ 의 상위인 qa_out_dir 기준
     chunk_root = QA_ROOT
+    qa_list    = load_qa_from_dir(QA_ROOT)
 
-    all_results, filtered = run_nli_filter(qa_list, nli, ENTAIL_THRESHOLD)
+    for cfg in STRATEGIES:
+        strategy  = cfg["strategy"]
+        threshold = cfg["threshold"]
 
-    # 통과된 것 → selected
-    save_qa(filtered, chunk_root, OUT_ROOT, suffix="selected")
-    print(f"[INFO] 통과 QA {len(filtered)}개 저장 완료 → selected")
+        print(f"\n[INFO] === {strategy.__name__} 전략 시작 (threshold={threshold}) ===")
+        nli = NLIFilter(model_name=NLI_MODEL, strategy=strategy, device="cuda")
 
-    # 실패한 것 → rejected
-    rejected = [r for r in all_results if r not in filtered]
-    save_qa(rejected, chunk_root, OUT_ROOT, suffix="rejected")
-    print(f"[INFO] 실패 QA {len(rejected)}개 저장 완료 → rejected")
+        all_results, entailed, neutral, contradiction, filtered = run_nli_filter(
+            qa_list, nli, threshold, strategy
+        )
+
+        out_dir  = OUT_ROOT / strategy.__name__
+        rejected = [r for r in all_results if r not in filtered]
+
+        # threshold 기반 selected/rejected
+        save_qa(filtered,  chunk_root, out_dir, suffix="selected")
+        save_qa(rejected,  chunk_root, out_dir, suffix="rejected")
+
+        print(f"[INFO] entailed {len(entailed)} / neutral {len(neutral)} / contradiction {len(contradiction)}")
+        print(f"[INFO] selected {len(filtered)} / rejected {len(rejected)}")
 
     print(f"\n[INFO] 완료 → {OUT_ROOT}")
