@@ -1,4 +1,4 @@
-import json
+import json, re
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -16,13 +16,18 @@ from src.preprocess.chunking import (
 
 
 def collect_md_files(md_dir: Path) -> list[Path]:
-    """재귀적으로 모든 하위 폴더의 .md 파일 수집 (정렬 포함)"""
-    files = sorted(md_dir.rglob("*.md"))
+    """재귀적으로 모든 하위 폴더의 .md 파일 수집 (숫자 순 정렬)"""
+    def natural_key(path: Path):
+        # 파일명에서 숫자를 추출해 정수로 비교
+        parts = re.split(r'(\d+)', path.stem)
+        return [int(p) if p.isdigit() else p.lower() for p in parts]
+
+    files = sorted(md_dir.rglob("*.md"), key=natural_key)
     print(f"[INFO] 탐색 경로: {md_dir}")
     for f in files:
         print(f"  발견: {f.relative_to(md_dir)}")
     return files
-
+    
 def full_pipeline(
     md_dir: Path | list[Path],
     output_dir: Path,
@@ -42,8 +47,15 @@ def full_pipeline(
     md_dir = Path(md_dir)
     output_dir = Path(output_dir)
 
-    md_files = collect_md_files(md_dir)
-    print(f"\n[INFO] 총 {len(md_files)}개 md 파일 발견")
+    # ── 단일 .md 파일이면 해당 파일만 처리 ──────────────────────
+    if md_dir.is_file() and md_dir.suffix == ".md":
+        md_files = [md_dir]
+        md_root  = md_dir.parent   # 상대경로 기준점을 부모 디렉토리로
+        print(f"[INFO] 단일 파일 모드: {md_dir}")
+    else:
+        md_files = collect_md_files(md_dir)
+        md_root  = md_dir
+        print(f"\n[INFO] 총 {len(md_files)}개 md 파일 발견")
 
     llm = ChatOpenAI(model="gpt-4o-mini")
     prose_chain    = md2text_prompt  | llm
@@ -56,7 +68,7 @@ def full_pipeline(
     print("\n[INFO] 1단계: Decision 필터링 + 줄글 변환 중...")
     prose_pages = []
     for i, md_file in enumerate(md_files):
-        rel = md_file.relative_to(md_dir)
+        rel = md_file.relative_to(md_root)
         print(f"  처리중: {rel} ({i+1}/{len(md_files)})")
 
         content = md_file.read_text(encoding="utf-8")
@@ -95,9 +107,9 @@ def full_pipeline(
     for i, lumber_chunk in enumerate(lumber_chunks):
         page_start = i * accumulate_pages
         rep_file   = prose_files[page_start] if page_start < len(prose_files) else prose_files[-1]
-        rel_subdir = rep_file.parent.relative_to(md_dir)
+        rel_subdir = rep_file.parent.relative_to(md_root)
 
-        print(f"\n  큰 청크 {i+1}/{len(lumber_chunks)} 처리중... (출처: {rel_subdir})")
+        print(f"\n  큰 청크 {i+1}/{len(lumber_chunks)} 처리중... (출처: {rel_subdir or '.'})")
 
         agentic_chunks, md_summary = agentic_chunking(lumber_chunk, meta_chain, agentic_chain)
         print(f"  → {len(agentic_chunks)}개 agentic chunk 생성")
@@ -115,7 +127,9 @@ def full_pipeline(
             }
             all_chunks.append(record)
 
-            filename = f"{md_dir.name}_chunk{chunk_idx:03d}.json"
+            # 단일 파일 모드면 파일 stem, 디렉토리 모드면 디렉토리 이름 사용
+            base_name = md_root.stem if md_dir.is_file() and md_dir.suffix == ".md" else md_root.name
+            filename  = f"{base_name}_chunk{chunk_idx:03d}.json"
             with open(sub_output_dir / filename, "w", encoding="utf-8") as f:
                 json.dump(record, f, ensure_ascii=False, indent=2)
 

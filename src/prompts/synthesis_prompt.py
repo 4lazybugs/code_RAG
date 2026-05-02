@@ -85,7 +85,6 @@ qa_gen_prompt = ChatPromptTemplate.from_template(
   }}
 ]
 
-문서 요약: {md_summary}
 청크 내용: {agentic_chunk}
 """
 )
