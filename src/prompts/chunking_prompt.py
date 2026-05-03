@@ -23,8 +23,8 @@ boundary_prompt = ChatPromptTemplate.from_template(
 [중요 규칙]
 1. JSON만 출력하라.
 2. 코드블록 금지.
-3. 문맥 단절이란 주제나 대상이 완전히 바뀌는 것을 의미한다.
-4. 같은 주제 내 세부 내용 변화는 단절이 아니다.
+3. 문맥 단절이란 주제가 바뀌는 것을 의미한다.
+4. 같은 주제라도 핵심 대상이 바뀌면 문맥 단절로 본다.
 
 출력 스키마:
 {{
@@ -90,14 +90,20 @@ meta_prompt = ChatPromptTemplate.from_template(
 agentic_prompt = ChatPromptTemplate.from_template(
 """
 아래는 문서 전체 요약과 본문 텍스트다.
-요약을 참고하여 본문을 의미적으로 독립적인 청크들로 분리하라.
+
+문서 요약:
+{md_summary}
+
+본문:
+{raw_text}
+
+요약을 참고하여 본문을 의미적으로 독립적인 자연어 청크들로 분리하라.
 
 [중요 규칙]
 1. JSON 배열만 출력하라.
 2. 코드블록 금지.
 3. 각 청크는 단독으로 읽어도 의미가 통해야 한다.
-4. 너무 짧은 청크(1~2문장)는 인접 청크와 합쳐라.
-5. 원문 텍스트만 사용하고 추론하거나 내용을 추가하지 말 것.
+4. 원문 텍스트만 사용하고 추론하거나 내용을 추가하지 말 것.
 
 출력 스키마:
 [
@@ -105,10 +111,5 @@ agentic_prompt = ChatPromptTemplate.from_template(
   {{"chunk": "청크 내용"}}
 ]
 
-문서 요약:
-{md_summary}
-
-본문:
-{raw_text}
 """
 )

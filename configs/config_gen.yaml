@@ -2,7 +2,6 @@
 ### Chunking #####
 #################
 md_in_dirs:
-  #- "db/raw_db_extracted_paddle/"
   - "db/md_for_chunking/"
 chunk_out_dir: "db/chunks_for_synthesis/"
 max_fnum: 100000  # 테스트용, null이면 전체 처리

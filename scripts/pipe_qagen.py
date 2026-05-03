@@ -26,14 +26,7 @@ def run_qa_generation(chunk_root: Path, params: Params) -> list[dict]:
 def run_qa2d(chunk_results: list[dict], chain) -> list[dict]:
     """2단계: Q+A → Declarative sentence 변환"""
     print("[INFO] QA2D 변환 중...")
-    results = []
-    for i, item in enumerate(chunk_results):
-        converted = qa2d_batch([item], chain)[0]
-        results.append(converted)
-        print(f"    Q: {item['question']}")
-        print(f"    A: {item['answer']}")
-        print(f"    D: {converted['declarative']}")
-        print(f"  {'-'*50}")
+    results = qa2d_batch(chunk_results, chain)
     return results
 
 def save_qa(qa_list: list[dict], chunk_root: Path, out_root: Path, suffix: str) -> None:
@@ -72,7 +65,7 @@ if __name__ == "__main__":
     load_dotenv()
     OUT_ROOT.mkdir(parents=True, exist_ok=True)
 
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    llm = ChatOpenAI(model="gpt-5.4-mini", temperature=0)
 
     params_chunk = Params(
         global_={"llm": llm},

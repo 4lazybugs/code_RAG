@@ -10,8 +10,9 @@ from src.prompts.chunking_prompt import (
     md2text_prompt, boundary_prompt, decision_prompt, meta_prompt, agentic_prompt
 )
 from src.preprocess.chunking import (
-    html2text, parse_json,
-    decision, lumber_chunking, agentic_chunking
+    parse_json,
+    decision, decision_batch, lumber_chunking,
+    agentic_chunking, agentic_chunking_batch
 )
 
 
@@ -64,7 +65,7 @@ def full_pipeline(
 
     # ── 1단계: Decision + 줄글 변환 ──────────────────────────────
     print("\n[INFO] 1단계: Decision 필터링 + 줄글 변환 중...")
-    prose_pages = []
+    page_items = []
     for i, md_file in enumerate(md_files):
         rel = md_file.relative_to(md_root)
         print(f"  처리중: {rel} ({i+1}/{len(md_files)})")
@@ -74,16 +75,31 @@ def full_pipeline(
             print(f"  → [SKIP] 빈 페이지")
             continue
 
-        raw_text = html2text(content)
-        if not decision(raw_text, decision_chain):
-            print(f"  → [SKIP] 쓸모없는 페이지")
-            continue
+        # raw_text = html2text(content)
+        raw_text = content
+        page_items.append((md_file, raw_text))
 
-        response = prose_chain.invoke({"page_text": raw_text})
-        prose = response.content.strip()
-        if prose:
-            prose_pages.append((prose, md_file))
-            print(f"  → [PASS] 줄글 변환 완료")
+    raw_texts = [raw_text for _, raw_text in page_items]
+    useful_flags = decision_batch(raw_texts, decision_chain)
+
+    useful_items = [
+        (md_file, raw_text)
+        for (md_file, raw_text), is_useful in zip(page_items, useful_flags)
+        if is_useful
+    ]
+
+    print(f"\n[INFO] Decision 통과: {len(useful_items)}/{len(page_items)}")
+
+    prose_pages = []
+    if useful_items:
+        prose_inputs = [{"page_text": raw_text} for _, raw_text in useful_items]
+        prose_responses = prose_chain.batch(prose_inputs)
+
+        for (md_file, _), response in zip(useful_items, prose_responses):
+            prose = response.content.strip()
+            if prose:
+                prose_pages.append((prose, md_file))
+                print(f"  → [PASS] 줄글 변환 완료: {md_file.name}")
 
     print(f"\n[INFO] {len(prose_pages)}개 페이지 통과")
 
@@ -107,9 +123,11 @@ def full_pipeline(
         lumber_chunks = lumber_chunking(group_texts, boundary_chain, accumulate_pages)
         print(f"  [{base_name}] {len(lumber_chunks)}개 큰 청크 생성")
 
+        lumber_texts = [chunk for chunk, _, _ in lumber_chunks]
+        batch_results = agentic_chunking_batch(lumber_texts, meta_chain, agentic_chain)
         chunk_idx = 1
 
-        for i, (lumber_chunk, start_idx, end_idx) in enumerate(lumber_chunks):
+        for i, ((lumber_chunk, start_idx, end_idx), (md_summary, chunk_texts)) in enumerate(zip(lumber_chunks, batch_results)):
             rep_file   = group_files[start_idx]
             end_file   = group_files[end_idx]
             rel_subdir = rep_file.parent.relative_to(md_root)
@@ -119,8 +137,6 @@ def full_pipeline(
             ))
 
             print(f"\n    큰 청크 {i+1}/{len(lumber_chunks)} 처리중... source_files: {source_files}")
-
-            md_summary, chunk_texts = agentic_chunking(lumber_chunk, meta_chain, agentic_chain)
             print(f"    → {len(chunk_texts)}개 agentic chunk 생성")
 
             sub_output_dir = output_dir / rel_subdir
@@ -159,7 +175,7 @@ CHUNK_DIR = Path(CFG.chunk_out_dir)
 
 load_dotenv()
 
-llm            = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+llm            = ChatOpenAI(model="gpt-5.4-mini", temperature=0)
 prose_chain    = md2text_prompt  | llm
 boundary_chain = boundary_prompt | llm
 meta_chain     = meta_prompt     | llm
