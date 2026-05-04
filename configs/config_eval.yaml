@@ -1,4 +1,16 @@
 #################
+### NLI ##########
+#################
+qa_in_dir: "db/qa_data/qa_from_lumber/all"
+qa_filt_dir: "db/qa_data/qa_from_lumber/"
+MAX_QA: 10000000000000
+
+nli_cd_threshold: 0.9
+nli_qa_threshold: 0.9
+
+nli_model: "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli"
+
+#################
 ### ROUGE #######
 #################
 #tokenizer_name: "moses" # 다국어용

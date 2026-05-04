@@ -55,16 +55,18 @@ def load_qa_from_dir(qa_root: Path) -> list[dict]:
     return results
 
 ############### load params #######################
-CFG = get_config("configs/config_gen.yaml")
+CFG = get_config("configs/config_eval.yaml")
 
 QA_ROOT  = Path(CFG.qa_in_dir)
 OUT_ROOT = Path(CFG.qa_filt_dir)
-NLI_MODEL = "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli"
 
 STRATEGIES = [
-    {"strategy": nli_CD, "threshold": 0.95},
-    {"strategy": nli_QA, "threshold": 0.95},
+    {"strategy": nli_CD, "threshold": CFG.nli_cd_threshold},
+    {"strategy": nli_QA, "threshold": CFG.nli_qa_threshold},
 ]
+
+NLI_MODEL = CFG.nli_model
+MAX_QA = CFG.MAX_QA
 ###################################################
 
 if __name__ == "__main__":
@@ -72,6 +74,7 @@ if __name__ == "__main__":
 
     chunk_root = QA_ROOT
     qa_list    = load_qa_from_dir(QA_ROOT)
+    qa_list = qa_list[:MAX_QA]
 
     selected_by_strategy = {}
 

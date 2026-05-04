@@ -13,10 +13,3 @@ chunk_in_dirs:
   - "db/chunks_for_synthesis/"
 qa_out_dir: "db/qa_data/qa_from_lumber/"
 MAX_QA: 10000000000000
-
-#################
-### NLI ##########
-#################
-qa_in_dir: "db/qa_data/qa_from_lumber/all"
-qa_filt_dir: "db/qa_data/qa_from_lumber/"
-MAX_QA: 10000000000000
