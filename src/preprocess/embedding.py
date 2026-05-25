@@ -1,6 +1,7 @@
 # src/preproc/vectorize.py
 from __future__ import annotations
 
+import json
 import pickle
 from pathlib import Path
 from typing import List, Optional, Callable
@@ -24,13 +25,24 @@ class Embeddor(Embeddings):
     """SentenceTransformer 기반 임베딩 래퍼"""
     def __init__(self, model_name: Optional[str] = None, device: str = "cpu"):
         self.model = SentenceTransformer(model_name, device=device)
-        #self.model = SentenceTransformer(model_name, device="gpu")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return self.model.encode(texts, show_progress_bar=False, convert_to_numpy=True).tolist()
+        vecs = self.model.encode(
+            texts,
+            show_progress_bar=False,
+            convert_to_numpy=True,
+            normalize_embeddings=True,
+        )
+        return vecs.astype(float).tolist()
 
     def embed_query(self, text: str) -> List[float]:
-        return self.model.encode([text], show_progress_bar=False, convert_to_numpy=True)[0].tolist()
+        vec = self.model.encode(
+            [text],
+            show_progress_bar=False,
+            convert_to_numpy=True,
+            normalize_embeddings=True,
+        )[0]
+        return vec.astype(float).tolist()
 
 
 ############## 빌드 함수 #####################################################
@@ -76,6 +88,52 @@ def md2db(
             "rel_path": str(p.relative_to(md_root)),
             "type":     "md",
         })
+
+    for fn in fns:
+        fn(texts, vector_dir, pdf_name, metas, emb)
+
+############## json -> vector DB ##############################
+def json2db(
+    json_root: Path,
+    pdf_name: str,
+    vector_dir: Path,
+    emb: Embeddings | None = None,
+    fns: list[Callable] = [build_lexdb, build_chromadb],
+) -> None:
+    files = sorted(p for p in json_root.rglob("*.json") if p.is_file())
+    if not files:
+        print(f"[SKIP] no json: {json_root}")
+        return
+
+    texts, metas = [], []
+
+    for p in files:
+        data = json.loads(p.read_text(encoding="utf-8"))
+
+        raw_chunk = data.get("raw_chunk", "")
+        md_summary = data.get("md_summary", "")
+
+        # embedding 대상
+        text = raw_chunk
+
+        if not text.strip():
+            continue
+
+        texts.append(text)
+        metas.append({
+            "filename": p.name,
+            "source": str(p.resolve()),
+            "rel_path": str(p.relative_to(json_root)),
+            "type": "json_chunk",
+            "chunk_id": f"{p.stem}__c001",
+            "original_id": data.get("id", ""),
+            "source_files": ", ".join(data.get("source_files", [])),
+            "md_summary": md_summary,
+        })
+
+    if not texts:
+        print(f"[SKIP] empty chunks: {json_root}")
+        return
 
     for fn in fns:
         fn(texts, vector_dir, pdf_name, metas, emb)

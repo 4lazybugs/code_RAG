@@ -1,3 +1,4 @@
+chunk_dir: "db/chunks_for_synthesis"
 qa_dir: "db/qa_data/qa_in_use/book"
 infered_dir: "results/inferenced/book"
 eval_dir: "results/eval_score/book"

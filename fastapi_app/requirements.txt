@@ -1,0 +1,3 @@
+fastapi==0.115.12 #API framework
+uvicorn==0.34.3 # Web server runtime
+python-jose[cryptography]==3.5.0

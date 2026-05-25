@@ -1,5 +1,5 @@
 #################
-### NLI ##########
+### NLI #########
 #################
 qa_in_dir: "db/qa_data/qa_from_lumber/all"
 qa_filt_dir: "db/qa_data/qa_from_lumber/"

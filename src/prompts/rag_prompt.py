@@ -64,6 +64,22 @@ saq_rag_prompt = ChatPromptTemplate.from_template("""
 {question}
 """)
 
+rag_consult_prompt = ChatPromptTemplate.from_template("""
+당신은 농업 전문가다. 자료를 근거로 질문에 답하라.
+
+[판단 규칙]
+- 반드시 [참고 자료]에 명시된 정보만 사용한다.
+- 추측하거나 외부 지식을 사용하지 마라.
+
+---
+[참고 자료]
+{context}
+
+---
+[질문]
+{question}
+""")
+
 
 iter_rag_prompt = ChatPromptTemplate.from_template(
 """
