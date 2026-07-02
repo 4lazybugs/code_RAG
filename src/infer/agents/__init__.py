@@ -11,6 +11,6 @@ from .gateway_token import tokGate_agent
 
 __all__ = [
     "LLM_agent", "RAG_agent", "IterRAG_agent", 
-    "Judge_HF", "Judge_OpenAI", "Gateway_agent", 
+    "Judge_OpenAI", "Gateway_agent", 
     "RankGate_agent", "SimGate_agent","Reranker", "tokGate_agent"
     ]

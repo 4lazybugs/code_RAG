@@ -16,6 +16,8 @@ torchaudio==2.4.0
 transformers>=4.45.0,<5.0.0
 sentence-transformers>=3.1.0,<4.0.0
 
+pip install "transformers>=4.41.0,<5.0.0"
+
 # PaddleOCR 쪽에서 safetensors 0.6.x가 필요한 경우가 있어 상한을 완화
 # (기존 <0.5.0이면 PaddleOCR-VL/일부 파이프라인에서 충돌 가능)
 safetensors>=0.6.2,<0.7.0
