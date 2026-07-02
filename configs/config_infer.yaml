@@ -4,10 +4,10 @@
 #model_name: "yi:34b-chat"
 
 #model_name: "Qwen/Qwen2.5-3B-Instruct"  # 다국어 지원, 성능 괜찮음
-model_name: 'Qwen/Qwen2.5-7B-Instruct-GPTQ-Int8'
+#model_name: 'Qwen/Qwen2.5-7B-Instruct-GPTQ-Int8'
 #model_name : "Qwen/Qwen2.5-14B-Instruct"
 #model_name : "Qwen/Qwen2.5-32B-Instruct"
-#model_name: Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8
+model_name: Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8
 
 #model_name : 'llama3:70b'
 

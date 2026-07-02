@@ -9,7 +9,10 @@ ALGORITHM = "HS256"
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 
 
-async def get_user_identifier(token: Optional[str] = Depends(oauth2_scheme)):
+#async def get_user_identifier(token: Optional[str] = Depends(oauth2_scheme)):
+async def get_user_identifier():
+    '''
+    # TODO: 토큰 검증 로직 추가
     if token is None:
         return "global_unauthenticated_user"
 
@@ -26,3 +29,5 @@ async def get_user_identifier(token: Optional[str] = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
     return username
+    '''
+    return "global_unauthenticated_user"

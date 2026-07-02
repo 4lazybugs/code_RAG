@@ -36,7 +36,7 @@ class QwenRAG(AIPlatform):
         qwen = ChatOpenAI(
             model=cfg_infer.model_name,
             temperature=0,
-            base_url="http://127.0.0.1:8000/v1",
+            base_url="http://127.0.0.1:8000/v1/",
             api_key="EMPTY",
         )
 
