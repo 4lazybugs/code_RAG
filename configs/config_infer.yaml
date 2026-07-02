@@ -7,7 +7,7 @@
 #model_name: 'Qwen/Qwen2.5-7B-Instruct-GPTQ-Int8'
 #model_name : "Qwen/Qwen2.5-14B-Instruct"
 #model_name : "Qwen/Qwen2.5-32B-Instruct"
-model_name: Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8
+model_name: Qwen/Qwen2.5-32B-Instruct
 
 #model_name : 'llama3:70b'
 
