@@ -61,6 +61,41 @@ async def chat_completions(
         ]
     }
 
+MAX_INPUT_LENGTH = 200  # 질의 문구 최대 글자수 (문서에 정의한 항목크기 기준)
+
+@app.post("/v1/chat/completions")
+async def chat_completions(
+    request: ChatCompletionRequest,
+    user_id: str = Depends(get_user_identifier)
+):
+    if not request.messages or not request.messages[-1].content.strip():
+        return {
+            "message": "문구 작성 부탁드립니다.",
+            "status": "E"
+        }
+
+    user_prompt = request.messages[-1].content
+
+    if len(user_prompt) > MAX_INPUT_LENGTH:
+        return {
+            "message": f"질의 문구는 {MAX_INPUT_LENGTH}자 이내로 작성해주세요.",
+            "status": "E"
+        }
+
+    try:
+        response_text = rag.chat(user_prompt)
+    except Exception:
+        return {
+            "message": "서버 문제 발생했습니다.",
+            "status": "E"
+        }
+
+    return {
+        "message": "Answer successful",
+        "status": "S",
+        "llmAnswer": response_text
+    }
+
 @app.get("/")
 async def root():
     return {"message": "FastAPI is running"}
