@@ -248,11 +248,11 @@ if __name__ == "__main__":
     load_dotenv()
 
     # ── Table 5: Filter ablation ──
-    full_pipeline(
-        md_dir=MD_DIRS, output_dir=CHUNK_DIR / "ours",
-        accumulate_pages=1,
-        use_decision_filter=True, use_contextual_summary=True,
-    )
+    # full_pipeline(
+    #     md_dir=MD_DIRS, output_dir=CHUNK_DIR / "ours",
+    #     accumulate_pages=1,
+    #     use_decision_filter=True, use_contextual_summary=True,
+    # )
     full_pipeline(
         md_dir=MD_DIRS, output_dir=CHUNK_DIR / "ours_no_filter",
         accumulate_pages=1,
