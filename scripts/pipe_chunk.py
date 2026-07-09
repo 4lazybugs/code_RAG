@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from itertools import groupby
 
 from langchain_openai import ChatOpenAI
+from langchain_huggingface import HuggingFaceEmbeddings
 
 from src.config import get_config
 from src.prompts.chunking_prompt import (
@@ -13,8 +14,9 @@ from src.preprocess.chunking import (
     parse_json,
     decision, decision_batch, lumber_chunking,
     agentic_chunking, agentic_chunking_batch,
-    fixed_size_chunking, semantic_chunking, split_sentences
+    recursive_chunking, fixed_size_chunking, semantic_chunking, split_sentences
 )
+
 
 def collect_md_files(md_dir: Path) -> list[Path]:
     def natural_key(path: Path):
@@ -28,10 +30,26 @@ def collect_md_files(md_dir: Path) -> list[Path]:
     return files
 
 
+def collect_all_md_files(md_dirs: list[Path]) -> list[Path]:
+    """MD_DIRS 전체(파일/폴더 혼합)를 순회하며 md 파일 목록을 모은다."""
+    all_files = []
+    for d in md_dirs:
+        d = Path(d)
+        if d.is_file() and d.suffix == ".md":
+            all_files.append(d)
+        elif d.is_dir():
+            all_files.extend(collect_md_files(d))
+        else:
+            print(f"[WARN] 건너뜀 (파일/폴더 아님): {d}")
+    return all_files
+
+
 def full_pipeline(
     md_dir: Path | list[Path],
     output_dir: Path,
     accumulate_pages: int = 3,
+    use_decision_filter: bool = True,
+    use_contextual_summary: bool = True,
 ) -> list[dict]:
 
     if isinstance(md_dir, list):
@@ -47,7 +65,10 @@ def full_pipeline(
                 print(f"[WARN] 건너뜀 (파일/폴더 아님): {d}")
                 continue
             print(f"{'='*60}")
-            all_chunks.extend(full_pipeline(d, output_dir, accumulate_pages))
+            all_chunks.extend(full_pipeline(
+                d, output_dir, accumulate_pages,
+                use_decision_filter, use_contextual_summary,
+            ))
         print(f"\n[INFO] 전체 완료 — 총 {len(all_chunks)}개 청크")
         return all_chunks
 
@@ -63,7 +84,7 @@ def full_pipeline(
         md_root  = md_dir
         print(f"\n[INFO] 총 {len(md_files)}개 md 파일 발견")
 
-    # ── 1단계: Decision + 줄글 변환 ──────────────────────────────
+    # ── 1단계: Decision 필터링(조건부) + 줄글 변환 ──────────────
     print("\n[INFO] 1단계: Decision 필터링 + 줄글 변환 중...")
     page_items = []
     for i, md_file in enumerate(md_files):
@@ -75,20 +96,17 @@ def full_pipeline(
             print(f"  → [SKIP] 빈 페이지")
             continue
 
-        # raw_text = html2text(content)
         raw_text = content
         page_items.append((md_file, raw_text))
 
-    raw_texts = [raw_text for _, raw_text in page_items]
-    useful_flags = decision_batch(raw_texts, decision_chain)
-
-    useful_items = [
-        (md_file, raw_text)
-        for (md_file, raw_text), is_useful in zip(page_items, useful_flags)
-        if is_useful
-    ]
-
-    print(f"\n[INFO] Decision 통과: {len(useful_items)}/{len(page_items)}")
+    if use_decision_filter:
+        raw_texts = [t for _, t in page_items]
+        useful_flags = decision_batch(raw_texts, decision_chain)
+        useful_items = [(f, t) for (f, t), ok in zip(page_items, useful_flags) if ok]
+        print(f"\n[INFO] Decision 통과: {len(useful_items)}/{len(page_items)}")
+    else:
+        useful_items = page_items
+        print(f"\n[INFO] Decision 필터링 skip — 전체 {len(useful_items)}페이지 사용")
 
     prose_pages = []
     if useful_items:
@@ -146,7 +164,7 @@ def full_pipeline(
                 record = {
                     "id":           chunk_idx,
                     "source_files": source_files,
-                    "md_summary":   md_summary,
+                    "md_summary":   md_summary if use_contextual_summary else None,
                     "raw_chunk":    chunk_text,
                 }
                 all_chunks.append(record)
@@ -167,6 +185,43 @@ def full_pipeline(
     return all_chunks
 
 
+def run_baseline(md_files: list[Path], output_dir: Path, chunk_fn, tag: str, **kwargs) -> list[dict]:
+    """Recursive / Fixed-size / Semantic 등 non-LLM 청킹 baseline.
+
+    ours와 동일하게 Decision 필터링은 거치되, 자연어 변환(prose_chain)은 생략하고
+    OCR 원본 markdown을 그대로 청킹한다.
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    items = [(f, f.read_text(encoding="utf-8")) for f in md_files]
+    items = [(f, t) for f, t in items if t.strip()]
+
+    texts = [t for _, t in items]
+    flags = decision_batch(texts, decision_chain)
+    useful_items = [(f, t) for (f, t), ok in zip(items, flags) if ok]
+    print(f"[INFO] [{tag}] Decision 통과: {len(useful_items)}/{len(items)}")
+
+    all_chunks = []
+    idx = 1
+    for f, text in useful_items:
+        chunks = chunk_fn(text, **kwargs)
+        for chunk in chunks:
+            record = {
+                "id": idx,
+                "source_files": [f.name],
+                "md_summary": None,
+                "raw_chunk": chunk,
+            }
+            all_chunks.append(record)
+            with open(output_dir / f"{tag}_{idx:03d}.json", "w", encoding="utf-8") as out:
+                json.dump(record, out, ensure_ascii=False, indent=2)
+            idx += 1
+
+    print(f"[INFO] [{tag}] {len(all_chunks)}개 청크 저장 완료 → {output_dir}")
+    return all_chunks
+
+
 #########  파라미터  #######################
 CFG = get_config("configs/config_gen.yaml")
 
@@ -176,6 +231,11 @@ CHUNK_DIR = Path(CFG.chunk_out_dir)
 load_dotenv()
 
 llm            = ChatOpenAI(model="gpt-5.4-mini", temperature=0)
+embed_model = HuggingFaceEmbeddings(
+    model_name="BAAI/bge-m3",
+    model_kwargs={"device": "cpu"},   # GPU 있으면 "cuda"
+    encode_kwargs={"normalize_embeddings": True},
+)
 prose_chain    = md2text_prompt  | llm
 boundary_chain = boundary_prompt | llm
 meta_chain     = meta_prompt     | llm
@@ -183,11 +243,40 @@ agentic_chain  = agentic_prompt  | llm
 decision_chain = decision_prompt | llm
 ###############################################
 
+
 if __name__ == "__main__":
     load_dotenv()
 
+    # ── Table 5: Filter ablation ──
     full_pipeline(
-        md_dir=MD_DIRS,
-        output_dir=CHUNK_DIR,
+        md_dir=MD_DIRS, output_dir=CHUNK_DIR / "ours",
         accumulate_pages=1,
+        use_decision_filter=True, use_contextual_summary=True,
+    )
+    full_pipeline(
+        md_dir=MD_DIRS, output_dir=CHUNK_DIR / "ours_no_filter",
+        accumulate_pages=1,
+        use_decision_filter=False, use_contextual_summary=True,
+    )
+
+    # ── Table 6: Chunking method comparison ──
+    full_pipeline(
+        md_dir=MD_DIRS, output_dir=CHUNK_DIR / "lumber_no_contextual",
+        accumulate_pages=1,
+        use_decision_filter=True, use_contextual_summary=False,
+    )
+
+    md_files = collect_all_md_files(MD_DIRS)
+
+    run_baseline(
+        md_files, CHUNK_DIR / "recursive", recursive_chunking, "recursive",
+        chunk_size=512, overlap=50,
+    )
+    run_baseline(
+        md_files, CHUNK_DIR / "fixed", fixed_size_chunking, "fixed",
+        chunk_size=512, overlap=50,
+    )
+    run_baseline(
+        md_files, CHUNK_DIR / "semantic",
+        lambda t: semantic_chunking(split_sentences(t), embed_model), "semantic",
     )

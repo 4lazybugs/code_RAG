@@ -165,32 +165,55 @@ def agentic_chunking_batch(raw_chunks: list[str], meta_chain, agentic_chain):
     return results
 
 
-def fixed_size_chunking(text: str, chunk_size: int = 512, overlap: int = 50) -> list[str]:
-    """단순 고정 길이 청킹 (baseline)"""
+def recursive_chunking(text: str, chunk_size: int = 512, overlap: int = 50) -> list[str]:
+    """RecursiveCharacterTextSplitter 기반 baseline.
+ 
+    문단 → 줄 → 문장 → 단어 순으로 separator를 우선 고려해 자르는,
+    LangChain에서 가장 널리 쓰이는 표준 청킹 방식.
+    """
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=overlap,
         separators=["\n\n", "\n", ". ", " ", ""],
     )
     return splitter.split_text(text)
-
-
+ 
+ 
+def fixed_size_chunking(text: str, chunk_size: int = 512, overlap: int = 50) -> list[str]:
+    """순수 고정 길이 baseline.
+ 
+    separator를 전혀 고려하지 않고 문자 수 기준으로 기계적으로 자른다.
+    (recursive_chunking과 구분되는 가장 단순한 baseline)
+    """
+    if not text:
+        return []
+    step = max(chunk_size - overlap, 1)
+    chunks = []
+    for i in range(0, len(text), step):
+        chunk = text[i:i + chunk_size]
+        if chunk.strip():
+            chunks.append(chunk)
+        if i + chunk_size >= len(text):
+            break
+    return chunks
+ 
+ 
 def semantic_chunking(
     sentences: list[str],
     embed_model,
     breakpoint_percentile: float = 90.0,
 ) -> list[str]:
     """임베딩 기반 semantic chunking (LLM 미사용 baseline)
-
+ 
     인접 문장 간 임베딩 cosine similarity를 계산해,
     유사도가 급격히 떨어지는 지점(= 의미적 경계)에서 청크를 분리한다.
     """
-
+ 
     if len(sentences) <= 1:
         return sentences
-
+ 
     embeddings = np.array(embed_model.embed_documents(sentences))
-
+ 
     sims = [
         float(np.dot(embeddings[i], embeddings[i + 1]) /
               (np.linalg.norm(embeddings[i]) * np.linalg.norm(embeddings[i + 1])))
@@ -198,7 +221,7 @@ def semantic_chunking(
     ]
     distances = [1 - s for s in sims]
     threshold = np.percentile(distances, breakpoint_percentile)
-
+ 
     chunks, current = [], [sentences[0]]
     for i, d in enumerate(distances):
         if d > threshold:
@@ -208,11 +231,12 @@ def semantic_chunking(
             current.append(sentences[i + 1])
     if current:
         chunks.append(" ".join(current))
-
+ 
     return chunks
-
-
+ 
+ 
 def split_sentences(text: str) -> list[str]:
     """간단한 문장 분리 (한국어/영어 혼용 대응)"""
     sentences = re.split(r'(?<=[.!?。])\s+', text.strip())
     return [s.strip() for s in sentences if s.strip()]
+ 
