@@ -1,9 +1,12 @@
 from bs4 import BeautifulSoup
 from typing import Any
 import json
+import numpy as np
 from pathlib import Path
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+import re
 
 # def html2text(html: str) -> str:
 #     soup = BeautifulSoup(html, "html.parser")
@@ -160,3 +163,56 @@ def agentic_chunking_batch(raw_chunks: list[str], meta_chain, agentic_chain):
             results.append((md_summary, [raw_chunk]))
 
     return results
+
+
+def fixed_size_chunking(text: str, chunk_size: int = 512, overlap: int = 50) -> list[str]:
+    """단순 고정 길이 청킹 (baseline)"""
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=overlap,
+        separators=["\n\n", "\n", ". ", " ", ""],
+    )
+    return splitter.split_text(text)
+
+
+def semantic_chunking(
+    sentences: list[str],
+    embed_model,
+    breakpoint_percentile: float = 90.0,
+) -> list[str]:
+    """임베딩 기반 semantic chunking (LLM 미사용 baseline)
+
+    인접 문장 간 임베딩 cosine similarity를 계산해,
+    유사도가 급격히 떨어지는 지점(= 의미적 경계)에서 청크를 분리한다.
+    """
+
+    if len(sentences) <= 1:
+        return sentences
+
+    embeddings = np.array(embed_model.embed_documents(sentences))
+
+    sims = [
+        float(np.dot(embeddings[i], embeddings[i + 1]) /
+              (np.linalg.norm(embeddings[i]) * np.linalg.norm(embeddings[i + 1])))
+        for i in range(len(embeddings) - 1)
+    ]
+    distances = [1 - s for s in sims]
+    threshold = np.percentile(distances, breakpoint_percentile)
+
+    chunks, current = [], [sentences[0]]
+    for i, d in enumerate(distances):
+        if d > threshold:
+            chunks.append(" ".join(current))
+            current = [sentences[i + 1]]
+        else:
+            current.append(sentences[i + 1])
+    if current:
+        chunks.append(" ".join(current))
+
+    return chunks
+
+
+def split_sentences(text: str) -> list[str]:
+    """간단한 문장 분리 (한국어/영어 혼용 대응)"""
+    sentences = re.split(r'(?<=[.!?。])\s+', text.strip())
+    return [s.strip() for s in sentences if s.strip()]

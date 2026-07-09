@@ -12,9 +12,9 @@ from src.prompts.chunking_prompt import (
 from src.preprocess.chunking import (
     parse_json,
     decision, decision_batch, lumber_chunking,
-    agentic_chunking, agentic_chunking_batch
+    agentic_chunking, agentic_chunking_batch,
+    fixed_size_chunking, semantic_chunking, split_sentences
 )
-
 
 def collect_md_files(md_dir: Path) -> list[Path]:
     def natural_key(path: Path):
