@@ -12,7 +12,7 @@ from src.prompts.chunking_prompt import (
 )
 from src.preprocess.chunking import (
     parse_json,
-    decision, decision_batch, lumber_chunking,
+    decision, decision_batch, page_merging,
     agentic_chunking, agentic_chunking_batch,
     recursive_chunking, fixed_size_chunking, semantic_chunking, split_sentences
 )
@@ -45,7 +45,6 @@ def collect_all_md_files(md_dirs: list[Path]) -> list[Path]:
 
 
 # 같은 디렉토리에 대해 Decision 필터링을 여러 번 반복하지 않도록 캐싱한다.
-# (ours / lumber_no_contextual 등 use_decision_filter=True인 여러 버전이
 #  동일한 MD_DIRS를 공유하므로, 필터링 결과를 재사용해 LLM 호출을 줄인다)
 _FILTER_CACHE: dict[Path, list[tuple[Path, str]]] = {}
 
@@ -140,7 +139,7 @@ def full_pipeline(
     print(f"\n[INFO] {len(prose_pages)}개 페이지 통과")
 
     # ── 2단계 & 3단계: 폴더별로 분리해서 처리 ───────────────────
-    print("\n[INFO] 2단계 & 3단계: 폴더별 Lumber + Agentic Chunking 중...")
+    print("\n[INFO] 2단계 & 3단계: 폴더별 PageMerge + Agentic Chunking 중...")
 
     def get_base(md_file: Path) -> str:
         rel   = md_file.relative_to(md_root)
@@ -155,21 +154,21 @@ def full_pipeline(
         group_texts = [p for p, _ in group_pages]
         group_files = [f for _, f in group_pages]
 
-        print(f"\n  [{base_name}] {len(group_texts)}개 페이지 → Lumber Chunking")
-        lumber_chunks = lumber_chunking(group_texts, boundary_chain, accumulate_pages)
-        print(f"  [{base_name}] {len(lumber_chunks)}개 큰 청크 생성")
+        print(f"\n  [{base_name}] {len(group_texts)}개 페이지 → Page Merging")
+        merged_chunks = page_merging(group_texts, boundary_chain, accumulate_pages)
+        print(f"  [{base_name}] {len(merged_chunks)}개 큰 청크 생성")
 
-        lumber_texts = [chunk for chunk, _, _ in lumber_chunks]
+        merged_texts = [chunk for chunk, _, _ in merged_chunks]
 
         if use_agentic_chunking:
-            batch_results = agentic_chunking_batch(lumber_texts, meta_chain, agentic_chain)
+            batch_results = agentic_chunking_batch(merged_texts, meta_chain, agentic_chain)
         else:
-            # Agentic chunking skip — LumberChunker가 만든 큰 청크를 그대로 raw_chunk로 사용
-            batch_results = [("", [lumber_text]) for lumber_text in lumber_texts]
+            # Agentic chunking skip — Page Merging가 만든 큰 청크를 그대로 raw_chunk로 사용
+            batch_results = [("", [merged_text]) for merged_text in merged_texts]
 
         chunk_idx = 1
 
-        for i, ((lumber_chunk, start_idx, end_idx), (md_summary, chunk_texts)) in enumerate(zip(lumber_chunks, batch_results)):
+        for i, ((merged_chunk, start_idx, end_idx), (md_summary, chunk_texts)) in enumerate(zip(merged_chunks, batch_results)):
             rep_file   = group_files[start_idx]
             end_file   = group_files[end_idx]
             rel_subdir = rep_file.parent.relative_to(md_root)
@@ -178,11 +177,11 @@ def full_pipeline(
                 f.name for f in group_files[start_idx:end_idx+1]
             ))
 
-            print(f"\n    큰 청크 {i+1}/{len(lumber_chunks)} 처리중... source_files: {source_files}")
+            print(f"\n    큰 청크 {i+1}/{len(merged_chunks)} 처리중... source_files: {source_files}")
             if use_agentic_chunking:
                 print(f"    → {len(chunk_texts)}개 agentic chunk 생성")
             else:
-                print(f"    → agentic chunking skip, LumberChunker 청크 그대로 사용")
+                print(f"    → agentic chunking skip, merged 청크 그대로 사용")
 
             sub_output_dir = output_dir / rel_subdir
             sub_output_dir.mkdir(parents=True, exist_ok=True)
@@ -329,9 +328,9 @@ if __name__ == "__main__":
     )
 
     # ── Table 6: Chunking method comparison ──
-    # LumberChunker(경계 판단)만 사용, Agentic 재분할과 Contextual summary 둘 다 제거
+    # page merging (경계 판단)만 사용, Agentic 재분할과 Contextual summary 둘 다 제거
     full_pipeline(
-        md_dir=MD_DIRS, output_dir=CHUNK_DIR / "lumber_no_contextual",
+        md_dir=MD_DIRS, output_dir=CHUNK_DIR / "merging_no_contextual",
         accumulate_pages=1,
         use_decision_filter=True, use_contextual_summary=False, use_agentic_chunking=False,
     )

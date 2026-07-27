@@ -8,30 +8,6 @@ from langchain_openai import ChatOpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import re
 
-# def html2text(html: str) -> str:
-#     soup = BeautifulSoup(html, "html.parser")
-
-#     # 이미지 태그 제거
-#     for img in soup.find_all("img"):
-#         img.decompose()
-
-#     result = []
-
-#     # 마크다운 텍스트 라인 처리 (## 헤더, 일반 텍스트)
-#     for line in html.split("\n"):
-#         stripped = line.strip()
-#         # 순수 마크다운 라인 (HTML 태그 없는 것)
-#         if stripped and "<" not in stripped:
-#             result.append(stripped)
-
-#     # 테이블 처리
-#     for tr in soup.find_all("tr"):
-#         cells = [td.get_text(separator=" ", strip=True) for td in tr.find_all(["td", "th"])]
-#         cells = [c for c in cells if c]
-#         if cells:
-#             result.append(" | ".join(cells))
-
-#     return "\n".join(result)
 
 def parse_json(text: str) -> dict:
     text = text.strip()
@@ -67,7 +43,7 @@ def decision_batch(raw_texts: list[str], decision_chain) -> list[bool]:
     return results
 
 
-def lumber_chunking(prose_pages: list[str], boundary_chain, accumulate_pages: int = 3) -> list[tuple[str, int, int]]:
+def page_merging(prose_pages: list[str], boundary_chain, accumulate_pages: int = 3) -> list[tuple[str, int, int]]:
     if not prose_pages:
         return []
 
@@ -106,6 +82,7 @@ def lumber_chunking(prose_pages: list[str], boundary_chain, accumulate_pages: in
         chunks.append(("\n\n".join(current_chunk), start_idx, len(prose_pages) - 1))
 
     return chunks
+
 
 
 def agentic_chunking(raw_chunk: str, meta_chain, agentic_chain) -> tuple[str, list[str]]:
@@ -165,7 +142,7 @@ def agentic_chunking_batch(raw_chunks: list[str], meta_chain, agentic_chain):
     return results
 
 
-def recursive_chunking(text: str, chunk_size: int = 512, overlap: int = 50) -> list[str]:
+def recursive_chunking(text: str, chunk_size: int = 128, overlap: int = 50) -> list[str]:
     """RecursiveCharacterTextSplitter 기반 baseline.
  
     문단 → 줄 → 문장 → 단어 순으로 separator를 우선 고려해 자르는,
@@ -178,25 +155,29 @@ def recursive_chunking(text: str, chunk_size: int = 512, overlap: int = 50) -> l
     )
     return splitter.split_text(text)
  
+
+
+def fixed_size_chunking(text: str, max_tokens: int = 512, overlap: int = 10) -> list[str]:
+    """순수 고정 길이 baseline (토큰=단어 단위).
  
-def fixed_size_chunking(text: str, chunk_size: int = 512, overlap: int = 50) -> list[str]:
-    """순수 고정 길이 baseline.
- 
-    separator를 전혀 고려하지 않고 문자 수 기준으로 기계적으로 자른다.
+    separator를 전혀 고려하지 않고 단어 수 기준으로 기계적으로 자른다.
     (recursive_chunking과 구분되는 가장 단순한 baseline)
     """
     if not text:
         return []
-    step = max(chunk_size - overlap, 1)
+    words = text.split()
+    if not words:
+        return []
+    step = max(max_tokens - overlap, 1)
     chunks = []
-    for i in range(0, len(text), step):
-        chunk = text[i:i + chunk_size]
-        if chunk.strip():
-            chunks.append(chunk)
-        if i + chunk_size >= len(text):
+    for i in range(0, len(words), step):
+        chunk_words = words[i:i + max_tokens]
+        if chunk_words:
+            chunks.append(" ".join(chunk_words))
+        if i + max_tokens >= len(words):
             break
     return chunks
- 
+
  
 def semantic_chunking(
     sentences: list[str],
@@ -233,7 +214,125 @@ def semantic_chunking(
         chunks.append(" ".join(current))
  
     return chunks
+
+
+def lumber_chunking(
+    paragraphs: list[str],
+    lumber_chain,
+    max_tokens: int = 128,
+) -> list[tuple[str, int, int]]:
+    """LumberChunker (Duarte et al., 2024, EMNLP Findings) 변형 청킹.
  
+    원 논문은 토큰 수 θ를 "최소 누적치"로 써서, θ를 넘긴 그룹을 만든 뒤
+    그 안에서 LLM이 단절 지점을 찾는다. 이 방식은 LLM이 단절을 못 찾으면
+    그룹 전체(= θ를 이미 초과한 크기)가 그대로 청크가 되어버려서,
+    "모든 청크가 max_tokens 이하"라는 하드 캡을 보장하지 못한다.
+ 
+    여기서는 그 문제를 없애기 위해 순서를 바꿨다:
+      1) 다음 문단을 더하면 max_tokens를 넘기게 되는 바로 그 시점에
+         누적을 멈춘다. -> 이 시점의 그룹은 이미 max_tokens 이하로 보장됨.
+      2) 그 그룹(이미 cap 이하)을 lumber_chain(LLM)에 "ID: 텍스트" 형태로
+         넘겨, 의미 단절이 있으면 그 지점의 ID를 반환받는다.
+      3) 반환된 ID까지만 하나의 청크로 확정한다. LLM이 단절을 못 찾으면
+         boundary_id는 그룹의 마지막 ID를 그대로 가리키므로, 이 경우에도
+         청크 크기는 "1)에서 이미 cap 이하로 보장된 그룹"과 같아진다.
+         즉 LLM 응답이 무엇이든 결과 청크는 절대 max_tokens를 넘지 않는다
+         (단, 문단 하나 자체가 max_tokens보다 큰 예외 케이스는 아래 참고).
+ 
+    Args:
+        paragraphs: 문단/페이지 단위로 이미 분리된 텍스트 리스트.
+        lumber_chain: {"numbered_paragraphs": str} -> JSON
+            {"boundary_id": int, "reason": str} 를 반환하는 체인.
+            (prompts.py의 lumber_prompt | llm 형태로 만들면 됨)
+            boundary_id는 그룹 내 상대 인덱스(0-based) 기준.
+        max_tokens: 청크 하나가 절대 넘을 수 없는 최대 토큰 수 (하드 캡).
+ 
+    Returns:
+        (chunk_text, start_idx, end_idx) 튜플 리스트.
+        start_idx/end_idx는 원본 paragraphs 리스트 기준 절대 인덱스.
+ 
+    Note:
+        문단 하나만으로도 max_tokens를 넘는 경우(예: 표가 통째로 한 문단인
+        경우)는 더 쪼갤 문단이 없으므로 그 문단 단독으로 청크가 되고,
+        이때는 cap을 넘을 수 있다. 이런 케이스는 함수 밖에서
+        recursive_chunking 등으로 후처리하는 것을 권장한다.
+    """
+    if not paragraphs:
+        return []
+ 
+    def _count_tokens(text: str) -> int:
+        # 간단한 근사치: 공백 기준 단어 수.
+        # 정확도가 필요하면 tiktoken 등으로 교체 가능.
+        return len(text.split())
+ 
+    chunks: list[tuple[str, int, int]] = []
+    start_idx = 0
+    n = len(paragraphs)
+ 
+    while start_idx < n:
+        group_ids = [start_idx]
+        group_token_count = _count_tokens(paragraphs[start_idx])
+        i = start_idx + 1
+ 
+        # max_tokens를 "넘기기 전"까지만 문단을 누적 (넘기게 될 문단은 포함 X)
+        while i < n:
+            next_tokens = _count_tokens(paragraphs[i])
+            if group_token_count + next_tokens > max_tokens:
+                break
+            group_ids.append(i)
+            group_token_count += next_tokens
+            i += 1
+ 
+        # 문단이 하나뿐이면 더 쪼갤 게 없으므로 그대로 확정
+        if len(group_ids) == 1:
+            chunks.append((paragraphs[start_idx], start_idx, start_idx))
+            start_idx += 1
+            continue
+ 
+        # 그룹을 "ID {상대인덱스}: {텍스트}" 형태로 LLM에 전달
+        numbered_group = "\n\n".join(
+            f"ID {pid - start_idx}: {paragraphs[pid]}" for pid in group_ids
+        )
+ 
+        try:
+            response = lumber_chain.invoke({"numbered_paragraphs": numbered_group})
+            result = parse_json(response.content)
+            boundary_offset = int(result.get("boundary_id", len(group_ids) - 1))
+            boundary_offset = max(0, min(boundary_offset, len(group_ids) - 1))
+            print(
+                f"  그룹 [{start_idx}:{start_idx + len(group_ids) - 1}] "
+                f"({group_token_count} tok) -> 분할 ID {boundary_offset} "
+                f"({result.get('reason', '')})"
+            )
+        except Exception as e:
+            print(f"[WARN] lumber_chunking 경계 판단 실패: {e}")
+            boundary_offset = len(group_ids) - 1  # 실패 시 그룹 끝까지를 청크로
+ 
+        end_idx = start_idx + boundary_offset
+        chunks.append(("\n\n".join(paragraphs[start_idx:end_idx + 1]), start_idx, end_idx))
+        start_idx = end_idx + 1
+ 
+    return chunks
+ 
+ 
+def lumber_chunking_batch(
+    paragraph_groups: list[list[str]],
+    lumber_chain,
+    max_tokens: int = 550,
+) -> list[list[tuple[str, int, int]]]:
+    """여러 문서(paragraphs 리스트)에 대해 lumber_chunking을 순차 적용.
+ 
+    그룹 시작점이 이전 그룹의 분할 결과에 따라 달라지는 순차 의존적
+    알고리즘이라, agentic_chunking_batch처럼 한 번에 batch invoke로
+    병렬화할 수 없다. 문서 간에는 독립적이므로 문서 단위로만 순회한다.
+    """
+    return [
+        lumber_chunking(paragraphs, lumber_chain, max_tokens)
+        for paragraphs in paragraph_groups
+    ]
+ 
+
+
  
 def split_sentences(text: str) -> list[str]:
     """간단한 문장 분리 (한국어/영어 혼용 대응)"""

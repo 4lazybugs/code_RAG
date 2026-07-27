@@ -8,7 +8,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK"] = "True"
 
-from src.preprocess.extract import extract_paddle, pdfs_to_imgs
+from src.preprocess.parsing import extract_paddle, pdfs_to_imgs
 from paddleocr import PaddleOCRVL
 
 

@@ -40,6 +40,33 @@ boundary_prompt = ChatPromptTemplate.from_template(
 """
 )
 
+lumber_prompt = ChatPromptTemplate.from_template(
+"""
+아래는 매뉴얼 문서에서 순서대로 이어지는 문단들이며, 각 문단 앞에 ID가 붙어 있다.
+
+문단들을 순서대로 읽으면서, 어느 ID부터 내용/주제가 바뀌기 시작하는지 판단하라.
+그 ID는 새로운 청크의 시작점이 된다.
+
+[중요 규칙]
+1. JSON만 출력하라.
+2. 코드블록 금지.
+3. 주제가 바뀐다는 것은 핵심 대상, 목적, 절차 단위가 달라짐을 의미한다.
+4. 같은 주제라도 핵심 대상이 바뀌면 문맥 단절로 본다.
+5. boundary_id는 "직전 청크의 마지막 ID"를 의미한다. 즉 문맥 단절이 없으면
+   마지막 문단의 ID를 그대로 반환하라.
+6. boundary_id는 반드시 주어진 문단들의 ID 범위 안의 정수여야 한다.
+
+출력 스키마:
+{{
+  "boundary_id": 0,
+  "reason": "판단 이유"
+}}
+
+문단들:
+{numbered_paragraphs}
+"""
+)
+
 decision_prompt = ChatPromptTemplate.from_template(
 """
 아래 텍스트가 RAG 청크로 유효한지 판단하라.
