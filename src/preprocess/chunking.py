@@ -157,7 +157,7 @@ def recursive_chunking(text: str, chunk_size: int = 128, overlap: int = 50) -> l
  
 
 
-def fixed_size_chunking(text: str, max_tokens: int = 512, overlap: int = 10) -> list[str]:
+def fixed_size_chunking(text: str, max_tokens: int = 128, overlap: int = 10) -> list[str]:
     """순수 고정 길이 baseline (토큰=단어 단위).
  
     separator를 전혀 고려하지 않고 단어 수 기준으로 기계적으로 자른다.
@@ -219,7 +219,7 @@ def semantic_chunking(
 def lumber_chunking(
     paragraphs: list[str],
     lumber_chain,
-    max_tokens: int = 128,
+    max_tokens: int = 64,
 ) -> list[tuple[str, int, int]]:
     """LumberChunker (Duarte et al., 2024, EMNLP Findings) 변형 청킹.
  
@@ -314,7 +314,24 @@ def lumber_chunking(
  
     return chunks
  
- 
+
+def lumber_chunking_from_text(
+    text: str,
+    lumber_chain,
+    max_tokens: int = 128,
+    paragraph_sep: str = "\n\n",
+) -> list[str]:
+    """lumber_chunking을 baseline 인터페이스(text -> list[str])에 맞춘 버전.
+
+    recursive_chunking / fixed_size_chunking과 동일하게 원본 텍스트 하나를
+    받아서, 내부에서 문단 분리 -> lumber_chunking -> 텍스트만 추출까지
+    한 번에 처리한다. start_idx/end_idx가 필요 없는 baseline 비교용.
+    """
+    paragraphs = [p.strip() for p in text.split(paragraph_sep) if p.strip()]
+    results = lumber_chunking(paragraphs, lumber_chain, max_tokens=max_tokens)
+    return [chunk_text for chunk_text, _, _ in results]
+
+
 def lumber_chunking_batch(
     paragraph_groups: list[list[str]],
     lumber_chain,

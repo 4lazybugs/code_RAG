@@ -10,7 +10,7 @@ from PIL import Image
 from paddleocr import PaddleOCRVL, PPStructureV3
 
 from pathlib import Path
-from md_utils import collect_md_files, get_filtered_pages
+from src.preprocess.md_utils import collect_md_files, get_filtered_pages
 
 # Docling imports: https://docling-project.github.io/docling/
 #from docling.document_converter import DocumentConverter
