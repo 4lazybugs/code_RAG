@@ -7,7 +7,7 @@ from src.config import get_config
 from src.infer.agents import LLM_agent, RAG_agent, SimGate_agent
 from src.retrieval import build_retrievers, Multi_Retriever, Embeddor
 from src.infer.qa_type.base import QAtype
-from src.prompts import saq_rag_prompt, saq_llm_prompt, rag_consult_prompt, relv_prompt, faith_prompt
+from src.prompts import saq_rag_prompt, saq_llm_prompt, rag_consult_prompt
 from src.infer.qa_type.load_input import saq_input
 from src.infer.qa_type.load_output import gate_rag_output, gate_sota_output
 

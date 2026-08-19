@@ -106,9 +106,9 @@ anthropic
 
 apted
 pdf2image
-
+httpx
 xlrd
-
+asyncio
 
 ####### for fast api ###########
 fastapi==0.115.12 #API framework

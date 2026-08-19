@@ -8,7 +8,6 @@ python -m vllm.entrypoints.openai.api_server \
   --gpu-memory-utilization 0.9 \
   --swap-space 16 
 
-
 # Qwen/Qwen2.5-3B-Instruct
 # Qwen/Qwen2.5-14B-Instruct
 
