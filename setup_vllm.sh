@@ -4,9 +4,13 @@ python -m vllm.entrypoints.openai.api_server \
   --host 127.0.0.1 \
   --port 8000 \
   --model Qwen/Qwen2.5-32B-Instruct \
-  --max-model-len 6144 \
-  --gpu-memory-utilization 0.9 \
+  --max-model-len 12288 \
+  --gpu-memory-utilization 0.95 \
   --swap-space 16 
+
+#==================================================================
+# model weight 올리는데 61GB들고 context length는 또 따로 올려야됨 GPU에
+
 
 # Qwen/Qwen2.5-3B-Instruct
 # Qwen/Qwen2.5-14B-Instruct

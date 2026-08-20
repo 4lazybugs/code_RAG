@@ -6,7 +6,7 @@ from src.config import get_config
 from src.infer.agents import RAG_agent as _RAG_agent
 from src.retrieval import build_retrievers, Multi_Retriever, Embeddor
 from src.infer.qa_type.base import QAtype
-from src.prompts import rag_consult_prompt
+from src.prompts import rag_consult_prompt, rag_paid_consult_prompt, interpretation_prompt
 from src.infer.qa_type.load_input import saq_input
 from src.infer.qa_type.load_output import gate_rag_output
 
@@ -53,8 +53,34 @@ class QwenRAG(AIPlatform):
             retriever=multi_retriever,
         )
 
-    def chat(self, prompt: str) -> str:
+
+
+
+        qa_rag_paid = (QAtype()
+            .set_prompt(rag_paid_consult_prompt)
+            .set_inputs(saq_input)
+            .set_outputs(gate_rag_output)
+            .build())
+
+        self.agent_paid = _RAG_agent(
+            llm=qwen,
+            qa_type=qa_rag_paid,
+            retriever=multi_retriever,
+        )
+
+
+    def interpret(self, query: str) -> dict:
+        chain = interpretation_prompt | self.agent.llm
+        response = chain.invoke({"question": query})
+        import json
+        try:
+            return json.loads(response.content)
+        except json.JSONDecodeError:
+            return {"crop": "", "modelType": [], "task": [], "keyword": []}
+
+    def chat(self, prompt: str, flag_paid: bool = False, **_context) -> str:
+        agent = self.agent_paid if flag_paid else self.agent
 
         sample = {"id": "api", "question": prompt, "answer": ""}
-        out = self.agent.answer_once(sample)
+        out = agent.answer_once(sample, flag_paid=flag_paid, **_context)
         return out["generated"]

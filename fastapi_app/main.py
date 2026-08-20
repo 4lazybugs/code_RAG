@@ -18,13 +18,13 @@ rag = QwenRAG()
 
 MAX_INPUT_LENGTH = 200  # 질의 문구 최대 글자수 (문서에 정의한 항목크기 기준)
 class RAGRequest(BaseModel):
-    query: str
+    query_rag: str
     farm_cd: Optional[str] = None
     house_cd: Optional[str] = None
     basetime: Optional[str] = None
 
 # --- 사업단 API 엔드포인트 정의 ---
-class SajubdanEndpoint(str, Enum):
+class Endpoint_ui(str, Enum):
     ENV_SENSOR = "https://itconv.co.kr:16706/genAi/pilot/api/sensorData"        # 환경데이터 조회
     NUTRIENT = "https://itconv.co.kr:16706/genAi/pilot/api/nutrientData"        # 양액데이터 조회 (실제 경로명 확인 필요)
     SPECTRAL_DETECTION = "https://itconv.co.kr:16706/genAi/pilot/api/spectralDetection"  # 생성요소AI 조회
@@ -36,8 +36,8 @@ class SajubdanAPIError(Exception):
 
 
 # --- 공통 호출 함수 (핵심 로직 단 하나) ---
-async def call_sajubdan_api(
-    endpoint: SajubdanEndpoint,
+async def call_rdb_api(
+    endpoint: Endpoint_ui,
     farm_cd: str,
     house_cd: str,
     basetime: str,
@@ -64,25 +64,79 @@ async def call_sajubdan_api(
 
     return data.get("dataList1", [])
 
-async def flow_itc(request: RAGRequest):
+
+def latest_row(data: list[dict], keys: list[str] | None = None) -> dict:
+    """RDB 시계열 데이터에서 최신 1건만 추출 (마지막 row = 최신, timestamp 정렬 확인됨)"""
+    if not data:
+        return {}
+    row = data[-1]
+    if keys:
+        return {k: row[k] for k in keys if k in row}
+    return row
+
+# --- 디버깅 전용: RDB 크기만 확인 (flow_itc와 완전히 별개) ---
+@app.post("/v1/debug/rdb-size")
+async def debug_rdb_size(request: RAGRequest):
+    if not (request.farm_cd and request.house_cd and request.basetime):
+        return {"message": "farm_cd/house_cd/basetime 필요", "status": "E"}
+
     try:
         env_data, nutrient_data, spectral_data = await asyncio.gather(
-            call_sajubdan_api(SajubdanEndpoint.ENV_SENSOR, request.farm_cd, request.house_cd, request.basetime),
-            call_sajubdan_api(SajubdanEndpoint.NUTRIENT, request.farm_cd, request.house_cd, request.basetime),
-            call_sajubdan_api(SajubdanEndpoint.SPECTRAL_DETECTION, request.farm_cd, request.house_cd, request.basetime),
+            call_rdb_api(Endpoint_ui.ENV_SENSOR, request.farm_cd, request.house_cd, request.basetime),
+            call_rdb_api(Endpoint_ui.NUTRIENT, request.farm_cd, request.house_cd, request.basetime),
+            call_rdb_api(Endpoint_ui.SPECTRAL_DETECTION, request.farm_cd, request.house_cd, request.basetime),
         )
     except SajubdanAPIError as e:
         return {"message": str(e), "status": "E"}
     except httpx.HTTPError as e:
         return {"message": f"사업단 API 통신 오류: {str(e)}", "status": "E"}
 
-    # 2. VDB + RDB(성대측 로직) — 3개 데이터를 컨텍스트로 최종 답변 생성
-    final_answer = await rag.chat_with_context(
-        query=request.query,
-        env_context=env_data,
-        nutrient_context=nutrient_data,
-        spectral_context=spectral_data
-    )
+    return {
+        "status": "S",
+        "env_rows": len(env_data),
+        "env_chars": len(str(env_data)),
+        "env_first_row": env_data[0] if env_data else None,   # 추가
+        "env_last_row": env_data[-1] if env_data else None,   # 추가
+        "nutrient_rows": len(nutrient_data),
+        "nutrient_chars": len(str(nutrient_data)),
+        "spectral_rows": len(spectral_data),
+        "spectral_chars": len(str(spectral_data)),
+    }
+
+async def flow_itc(request: RAGRequest):
+    if request.farm_cd and request.house_cd and request.basetime:
+        try:
+            env_data, nutrient_data, spectral_data = await asyncio.gather(
+                call_rdb_api(Endpoint_ui.ENV_SENSOR, request.farm_cd, request.house_cd, request.basetime),
+                call_rdb_api(Endpoint_ui.NUTRIENT, request.farm_cd, request.house_cd, request.basetime),
+                call_rdb_api(Endpoint_ui.SPECTRAL_DETECTION, request.farm_cd, request.house_cd, request.basetime),
+            )
+        except SajubdanAPIError as e:
+            return {"message": str(e), "status": "E"}
+        except httpx.HTTPError as e:
+            return {"message": f"사업단 API 통신 오류: {str(e)}", "status": "E"}
+
+        env_latest = latest_row(env_data, keys=["outdoor_temperature"])
+        nutrient_latest = latest_row(nutrient_data, keys=["zone01_set"])
+
+        final_answer = rag.chat(
+            prompt=request.query_rag,
+            flag_paid=True,
+            env_context=env_latest,
+            nutrient_context=nutrient_latest,
+            spectral_context=None,
+        )
+
+        return {
+            "message": "Answer successful",
+            "status": "S",
+            "farm_cd": request.farm_cd,
+            "house_cd": request.house_cd,
+            "basetime": request.basetime,
+            "llmAnswer": final_answer
+        }
+
+    final_answer = rag.chat(prompt=request.query_rag, flag_paid=False)
 
     return {
         "message": "Answer successful",
@@ -109,25 +163,24 @@ async def get_models():
 
 # --- Flow ② : 사업단 오케스트레이션 (조건 미충족 → query만 존재) ---
 async def flow_orchestration(request: RAGRequest):
-    # 1. VDB 검색
-    # 2. 1차 답변 생성
-    answer = rag.chat(request.query)
+    answer = rag.chat(prompt=request.query_rag)
+    interpretation = rag.interpret(request.query_rag)
 
     return {
-        "message": "Answer successful",
-        "status": "S",
-        "llmAnswer": answer
+        "answer": answer,
+        "interpretation": interpretation
     }
+
 
 @app.post("/v1/chat/completions")
 async def chat_completions(
     request: RAGRequest,
     user_id: str = Depends(get_user_identifier)
 ):
-    if not request.query.strip():
+    if not request.query_rag.strip():
         return {"message": "문구 작성 부탁드립니다.", "status": "E"}
 
-    if len(request.query) > MAX_INPUT_LENGTH:
+    if len(request.query_rag) > MAX_INPUT_LENGTH:
         return {
             "message": f"질의 문구는 {MAX_INPUT_LENGTH}자 이내로 작성해주세요.",
             "status": "E"
@@ -146,32 +199,29 @@ async def chat_completions(
         return {"message": f"서버 문제 발생했습니다: {str(e)}", "status": "E"}  # 임시로 에러 내용도 응답에 포함
 
 
+class RetrieveRequest(BaseModel):
+    query: str
+
+
+@app.post("/v1/debug/retrieve")
+async def debug_retrieve(request: RetrieveRequest):
+    if not request.query_rag.strip():
+        return {"message": "문구 작성 부탁드립니다.", "status": "E"}
+
+    try:
+        results = rag.retrieve_only(request.query_rag)
+        return {
+            "status": "S",
+            "query": request.query_rag,
+            "count": len(results),
+            "results": results,
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"message": f"서버 문제 발생했습니다: {str(e)}", "status": "E"}
+
 @app.get("/")
 async def root():
     return {"message": "FastAPI is running"}
 
-
-
-async def flow_itc(request: RAGRequest):
-    try:
-        env_data, nutrient_data, spectral_data = await asyncio.gather(
-            call_sajubdan_api(SajubdanEndpoint.ENV_SENSOR, request.farm_cd, request.house_cd, request.basetime),
-            call_sajubdan_api(SajubdanEndpoint.NUTRIENT, request.farm_cd, request.house_cd, request.basetime),
-            call_sajubdan_api(SajubdanEndpoint.SPECTRAL_DETECTION, request.farm_cd, request.house_cd, request.basetime),
-        )
-    except SajubdanAPIError as e:
-        return {"message": str(e), "status": "E"}
-    except httpx.HTTPError as e:
-        return {"message": f"사업단 API 통신 오류: {str(e)}", "status": "E"}
-
-    # TODO: chat_with_context 구현 전까지 임시로 원본 데이터만 반환해서 API 연동 확인
-    return {
-        "message": "Answer successful (TEST MODE - LLM 미적용)",
-        "status": "S",
-        "farm_cd": request.farm_cd,
-        "house_cd": request.house_cd,
-        "basetime": request.basetime,
-        "env_data": env_data,
-        "nutrient_data": nutrient_data,
-        "spectral_data": spectral_data
-    }
